@@ -2532,71 +2532,78 @@
 
             <div class="space-y-4">
                 <!-- Google Drive Card -->
-                <div class="bg-slate-950/50 border border-slate-850 p-4 rounded-2xl flex flex-col gap-3">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-2.5">
-                            <i class="fa-brands fa-google-drive text-emerald-400 text-xl"></i>
-                            <span class="text-sm font-bold text-slate-200">Google Drive</span>
+                <div class="bg-slate-950/50 border border-slate-850 p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div class="flex items-start gap-3">
+                        <div class="h-10 w-10 rounded-xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20 text-emerald-400 flex-shrink-0 mt-0.5">
+                            <i class="fa-brands fa-google-drive text-xl"></i>
                         </div>
-                        <span class="text-[9px] font-bold bg-emerald-500/10 text-emerald-400 px-1.5 py-0.5 rounded uppercase tracking-wider">Popup Auth</span>
-                    </div>
-                    <p class="text-[11px] text-slate-400 leading-normal">Secured to your Google Account. Backs up file to your root folders with app-created files scope.</p>
-                    <div class="flex flex-col sm:flex-row gap-2.5 items-end">
-                        <div class="flex-1 w-full">
-                            <label class="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Developer Client ID</label>
-                            <input type="text" id="gdriveClientIdInput" placeholder="Enter google client ID..." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 transition">
+                        <div>
+                            <span class="text-sm font-bold text-slate-200 block">Google Drive</span>
+                            <span class="text-[11px] text-slate-400 leading-normal block">Sync backups directly to your personal Google Drive account.</span>
                         </div>
-                        <button onclick="saveToGoogleDrive()" class="h-9 px-4 bg-emerald-500 hover:bg-emerald-600 text-slate-950 text-xs font-bold rounded-lg transition whitespace-nowrap shadow flex items-center justify-center gap-1.5 w-full sm:w-auto">
-                            <i class="fa-brands fa-google-drive"></i> Backup to Drive
-                        </button>
                     </div>
+                    <button onclick="saveToGoogleDrive()" class="h-9 px-4 bg-emerald-500 hover:bg-emerald-600 text-slate-950 text-xs font-bold rounded-lg transition whitespace-nowrap shadow flex items-center justify-center gap-1.5 w-full sm:w-auto">
+                        <i class="fa-brands fa-google-drive"></i> Backup to Drive
+                    </button>
                 </div>
 
                 <!-- Dropbox Card -->
-                <div class="bg-slate-950/50 border border-slate-850 p-4 rounded-2xl flex flex-col gap-3">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-2.5">
-                            <i class="fa-brands fa-dropbox text-blue-400 text-xl"></i>
-                            <span class="text-sm font-bold text-slate-200">Dropbox</span>
+                <div class="bg-slate-950/50 border border-slate-850 p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div class="flex items-start gap-3">
+                        <div class="h-10 w-10 rounded-xl bg-blue-500/10 flex items-center justify-center border border-blue-500/20 text-blue-400 flex-shrink-0 mt-0.5">
+                            <i class="fa-brands fa-dropbox text-xl"></i>
                         </div>
-                        <span class="text-[9px] font-bold bg-blue-500/10 text-blue-400 px-1.5 py-0.5 rounded uppercase tracking-wider">Redirect Grant</span>
-                    </div>
-                    <p class="text-[11px] text-slate-400 leading-normal">Connects to Dropbox and saves a JSON database copy under your main account app directories.</p>
-                    <div class="flex flex-col sm:flex-row gap-2.5 items-end">
-                        <div class="flex-1 w-full">
-                            <label class="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Developer App Key</label>
-                            <input type="text" id="dropboxClientIdInput" placeholder="Enter dropbox app key..." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500 transition">
+                        <div>
+                            <span class="text-sm font-bold text-slate-200 block">Dropbox</span>
+                            <span class="text-[11px] text-slate-400 leading-normal block">Connect to Dropbox and save a backup copy in your apps folder.</span>
                         </div>
-                        <button onclick="saveToDropbox()" class="h-9 px-4 bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold rounded-lg transition whitespace-nowrap shadow flex items-center justify-center gap-1.5 w-full sm:w-auto">
-                            <i class="fa-brands fa-dropbox"></i> Backup to Dropbox
-                        </button>
                     </div>
+                    <button onclick="saveToDropbox()" class="h-9 px-4 bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold rounded-lg transition whitespace-nowrap shadow flex items-center justify-center gap-1.5 w-full sm:w-auto">
+                        <i class="fa-brands fa-dropbox"></i> Backup to Dropbox
+                    </button>
                 </div>
 
                 <!-- Microsoft OneDrive Card -->
-                <div class="bg-slate-950/50 border border-slate-850 p-4 rounded-2xl flex flex-col gap-3">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-2.5">
-                            <i class="fa-brands fa-windows text-indigo-400 text-xl"></i>
-                            <span class="text-sm font-bold text-slate-200">OneDrive</span>
+                <div class="bg-slate-950/50 border border-slate-850 p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div class="flex items-start gap-3">
+                        <div class="h-10 w-10 rounded-xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 text-indigo-400 flex-shrink-0 mt-0.5">
+                            <i class="fa-brands fa-windows text-xl"></i>
                         </div>
-                        <span class="text-[9px] font-bold bg-indigo-500/10 text-indigo-400 px-1.5 py-0.5 rounded uppercase tracking-wider">Redirect Grant</span>
-                    </div>
-                    <p class="text-[11px] text-slate-400 leading-normal">Backs up to Microsoft OneDrive using Microsoft Graph REST APIs. Requires standard App registration ID.</p>
-                    <div class="flex flex-col sm:flex-row gap-2.5 items-end">
-                        <div class="flex-1 w-full">
-                            <label class="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Microsoft App Client ID</label>
-                            <input type="text" id="onedriveClientIdInput" placeholder="Enter Microsoft App ID..." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 transition">
+                        <div>
+                            <span class="text-sm font-bold text-slate-200 block">OneDrive</span>
+                            <span class="text-[11px] text-slate-400 leading-normal block">Save backups directly to Microsoft OneDrive.</span>
                         </div>
-                        <button onclick="saveToOneDrive()" class="h-9 px-4 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-bold rounded-lg transition whitespace-nowrap shadow flex items-center justify-center gap-1.5 w-full sm:w-auto">
-                            <i class="fa-brands fa-windows"></i> Backup to OneDrive
-                        </button>
                     </div>
+                    <button onclick="saveToOneDrive()" class="h-9 px-4 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-bold rounded-lg transition whitespace-nowrap shadow flex items-center justify-center gap-1.5 w-full sm:w-auto">
+                        <i class="fa-brands fa-windows"></i> Backup to OneDrive
+                    </button>
                 </div>
             </div>
+
+            <!-- Collapsible Developer Settings Section -->
+            <details class="no-print mt-6 border-t border-slate-850 pt-4">
+                <summary class="cursor-pointer text-[10px] text-slate-500 hover:text-slate-400 font-bold uppercase tracking-wider select-none flex items-center gap-1">
+                    <i class="fa-solid fa-gear"></i> Developer API Settings (Optional Override)
+                </summary>
+                <div class="mt-4 space-y-4 bg-slate-950/50 border border-slate-850 p-4 rounded-2xl">
+                    <p class="text-[10px] text-slate-450 leading-relaxed">If you host this site on a custom domain, you can configure your own OAuth Client IDs here. These will save locally inside your browser storage.</p>
+                    <div>
+                        <label class="block text-[9px] font-semibold text-slate-500 uppercase tracking-wider mb-1 font-sans">Google OAuth Client ID</label>
+                        <input type="text" id="gdriveClientIdInput" placeholder="Enter google client ID..." class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 transition">
+                    </div>
+                    <div>
+                        <label class="block text-[9px] font-semibold text-slate-500 uppercase tracking-wider mb-1 font-sans">Dropbox App Key</label>
+                        <input type="text" id="dropboxClientIdInput" placeholder="Enter dropbox app key..." class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500 transition">
+                    </div>
+                    <div>
+                        <label class="block text-[9px] font-semibold text-slate-500 uppercase tracking-wider mb-1 font-sans">Microsoft OneDrive Client ID</label>
+                        <input type="text" id="onedriveClientIdInput" placeholder="Enter Microsoft App ID..." class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 transition">
+                    </div>
+                </div>
+            </details>
             
             <div class="pt-5 border-t border-slate-850 flex justify-between items-center mt-5 text-[10px] text-slate-500">
-                <span>All OAuth processing is strictly client-side.</span>
+                <span>All OAuth authentications occur client-side.</span>
                 <button onclick="closeCloudSyncModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-lg transition text-[11px]">
                     Close
                 </button>
