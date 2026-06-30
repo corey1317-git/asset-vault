@@ -512,6 +512,13 @@
                 <input type="password" id="settings-key" placeholder="AIzaSy..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-emerald-500/40">
                 <span class="text-[10px] text-slate-500 mt-1 block">Get a free key in 30 seconds from the <a href="https://aistudio.google.com/" target="_blank" class="text-emerald-400 hover:underline">Google AI Studio</a>.</span>
             </div>
+            <div class="border-t border-slate-800 pt-4">
+                <label class="block text-slate-300 font-semibold mb-1">Backup Provider — OpenRouter <span class="text-[10px] font-normal text-slate-500">(optional)</span></label>
+                <input type="password" id="settings-openrouter-key" placeholder="sk-or-v1-..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-emerald-500/40 mb-2">
+                <label class="block text-slate-400 text-[10px] font-semibold uppercase tracking-wider mb-1">Model ID</label>
+                <input type="text" id="settings-openrouter-model" placeholder="google/gemma-4-31b-it:free" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-emerald-500/40">
+                <span class="text-[10px] text-slate-500 mt-1 block">Used automatically if Gemini fails or isn't configured. Get a free key from <a href="https://openrouter.ai/keys" target="_blank" class="text-emerald-400 hover:underline">OpenRouter</a> — model ID is editable so a future retirement doesn't break this again.</span>
+            </div>
             <div id="settings-status" class="text-[11px] font-semibold text-slate-500">Checking status...</div>
             <button onclick="saveSettings()" class="w-full py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold rounded-xl shadow-lg transition">
                 Save Settings
@@ -1189,15 +1196,96 @@
         }
     }
 
+    // ── AI Providers: Gemini (primary) + OpenRouter (automatic backup) ──
+    async function callGeminiJSON(promptText, geminiKey) {
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${geminiKey}`;
+        const payload = {
+            contents: [{ parts: [{ text: promptText }] }],
+            generationConfig: { responseMimeType: 'application/json', temperature: 0.3 }
+        };
+
+        let attempts = 0, delay = 800;
+        while (attempts < 4) {
+            const response = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            if (response.status === 429 || response.status >= 500) {
+                attempts++;
+                if (attempts >= 4) throw new Error(`Gemini error: HTTP ${response.status} after retries`);
+                await new Promise(r => setTimeout(r, delay));
+                delay *= 2;
+                continue;
+            }
+            if (!response.ok) {
+                let detail = '';
+                try { const errBody = await response.json(); detail = errBody.error && errBody.error.message; } catch (e) {}
+                throw new Error(`Gemini error: HTTP ${response.status}${detail ? ' — ' + detail : ''}`);
+            }
+            const data = await response.json();
+            let raw = (data.candidates && data.candidates[0] && data.candidates[0].content.parts[0].text) || '';
+            raw = raw.replace(/```json\s*/gi, '').replace(/```\s*/gi, '').trim();
+            if (!raw) throw new Error("Gemini returned an empty response.");
+            return JSON.parse(raw);
+        }
+        throw new Error("Gemini error: exhausted retries");
+    }
+
+    async function callOpenRouterJSON(promptText, orKey, orModel) {
+        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${orKey}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                model: orModel,
+                messages: [
+                    { role: 'system', content: 'Always return ONLY raw JSON — no markdown fences, no commentary.' },
+                    { role: 'user', content: promptText }
+                ],
+                response_format: { type: 'json_object' }
+            })
+        });
+        if (!response.ok) {
+            let detail = '';
+            try { const errBody = await response.json(); detail = errBody.error && errBody.error.message; } catch (e) {}
+            throw new Error(`OpenRouter error: HTTP ${response.status}${detail ? ' — ' + detail : ''}`);
+        }
+        const data = await response.json();
+        let raw = (data.choices && data.choices[0] && data.choices[0].message.content) || '';
+        raw = raw.replace(/```json\s*/gi, '').replace(/```\s*/gi, '').trim();
+        if (!raw) throw new Error("OpenRouter returned an empty response.");
+        return JSON.parse(raw);
+    }
+
+    async function callAIWithFallback(promptText) {
+        const geminiKey = localStorage.getItem('thorpetech_gemini_api_key') || '';
+        const orKey = localStorage.getItem('thorpetech_openrouter_api_key') || '';
+        const orModel = localStorage.getItem('thorpetech_openrouter_model') || 'google/gemma-4-31b-it:free';
+
+        let geminiError = null;
+        if (geminiKey) {
+            try { return { data: await callGeminiJSON(promptText, geminiKey), provider: 'Gemini', fellBack: false }; }
+            catch (err) { geminiError = err; }
+        }
+        if (orKey) {
+            try {
+                const data = await callOpenRouterJSON(promptText, orKey, orModel);
+                return { data, provider: 'OpenRouter (backup)', fellBack: !!geminiError };
+            } catch (err) {
+                if (geminiError) throw new Error(`Both providers failed. ${geminiError.message} | ${err.message}`);
+                throw err;
+            }
+        }
+        if (geminiError) throw geminiError;
+        throw new Error("No AI provider configured. Add a Gemini or OpenRouter key in Settings.");
+    }
+
     // ── AI Specs Enrich ───────────────────────────────────────
     async function enrichMower() {
         if (!selectedId) return;
         const v = mowers.find(m => m.id === selectedId);
         if (!v) return;
 
-        const apiKey = localStorage.getItem('thorpetech_gemini_api_key');
-        if (!apiKey) {
-            showToast("API Key Required", "Please configure your Gemini API Key in Settings.", "rose");
+        const hasGemini = !!localStorage.getItem('thorpetech_gemini_api_key');
+        const hasOpenRouter = !!localStorage.getItem('thorpetech_openrouter_api_key');
+        if (!hasGemini && !hasOpenRouter) {
+            showToast("API Key Required", "Please configure a Gemini or OpenRouter API key in Settings.", "rose");
             openSettingsModal();
             return;
         }
@@ -1233,20 +1321,8 @@ Return ONLY the raw JSON object. Do not include markdown formatting, backticks, 
 `;
 
         try {
-            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{ parts: [{ text: promptText }] }],
-                    generationConfig: { responseMimeType: 'application/json' }
-                })
-            });
-
-            if (!response.ok) throw new Error("API call failed.");
-            
-            const rawRes = await response.json();
-            const jsonText = rawRes.candidates[0].content.parts[0].text;
-            const parsed = JSON.parse(jsonText.trim());
+            const result = await callAIWithFallback(promptText);
+            const parsed = result.data;
 
             if (parsed.engine) v.engine = parsed.engine;
             if (parsed.deckSize) v.deckSize = parsed.deckSize;
@@ -1263,11 +1339,15 @@ Return ONLY the raw JSON object. Do not include markdown formatting, backticks, 
 
             saveData();
             selectMower(selectedId);
-            showToast('Enriched!', `${v.make} ${v.model} details updated with AI specifications.`, 'emerald');
+            if (result.fellBack) {
+                showToast('Enriched (Backup Provider)', `Gemini was unavailable, so OpenRouter updated ${v.make} ${v.model}.`, 'emerald');
+            } else {
+                showToast('Enriched!', `${v.make} ${v.model} details updated with AI specifications.`, 'emerald');
+            }
 
         } catch (err) {
             console.error(err);
-            showToast('Enrich Failed', 'Could not fetch specifications. Check your API key.', 'rose');
+            showToast('Enrich Failed', err.message || 'Could not fetch specifications.', 'rose');
         }
 
         if (btn) {
@@ -1343,9 +1423,11 @@ Return ONLY the raw JSON object. Do not include markdown formatting, backticks, 
         const modal = document.getElementById('settingsModal');
         modal.classList.remove('hidden');
         modal.classList.add('flex');
-        
+
         const key = localStorage.getItem('thorpetech_gemini_api_key') || '';
         document.getElementById('settings-key').value = key;
+        document.getElementById('settings-openrouter-key').value = localStorage.getItem('thorpetech_openrouter_api_key') || '';
+        document.getElementById('settings-openrouter-model').value = localStorage.getItem('thorpetech_openrouter_model') || 'google/gemma-4-31b-it:free';
         updateApiKeyDot();
     }
     function closeSettingsModal() {
@@ -1357,22 +1439,40 @@ Return ONLY the raw JSON object. Do not include markdown formatting, backticks, 
         const key = document.getElementById('settings-key').value.trim();
         if (key) {
             localStorage.setItem('thorpetech_gemini_api_key', key);
-            showToast("Saved", "API key configured successfully.", "emerald");
         } else {
             localStorage.removeItem('thorpetech_gemini_api_key');
-            showToast("Removed", "API key cleared.", "amber");
         }
+
+        const orKey = document.getElementById('settings-openrouter-key').value.trim();
+        const orModel = document.getElementById('settings-openrouter-model').value.trim() || 'google/gemma-4-31b-it:free';
+        localStorage.setItem('thorpetech_openrouter_model', orModel);
+        if (orKey) {
+            localStorage.setItem('thorpetech_openrouter_api_key', orKey);
+        } else {
+            localStorage.removeItem('thorpetech_openrouter_api_key');
+        }
+
+        showToast("Saved", (key || orKey) ? "AI provider settings saved." : "API keys cleared.", (key || orKey) ? "emerald" : "amber");
         updateApiKeyDot();
         closeSettingsModal();
     }
     function updateApiKeyDot() {
-        const hasKey = !!localStorage.getItem('thorpetech_gemini_api_key');
-        document.getElementById('api-key-dot').classList.toggle('hidden', !hasKey);
-        
+        const hasGemini = !!localStorage.getItem('thorpetech_gemini_api_key');
+        const hasOpenRouter = !!localStorage.getItem('thorpetech_openrouter_api_key');
+        document.getElementById('api-key-dot').classList.toggle('hidden', !hasGemini && !hasOpenRouter);
+
         const statusEl = document.getElementById('settings-status');
         if (statusEl) {
-            statusEl.textContent = hasKey ? '✓ API key configured - AI Specs Enrich is active.' : '✗ No API Key set.';
-            statusEl.className = hasKey ? 'text-[11px] font-semibold text-emerald-400' : 'text-[11px] font-semibold text-slate-500';
+            if (hasGemini && hasOpenRouter) {
+                statusEl.textContent = '✓ Gemini + OpenRouter backup configured - AI Specs Enrich is active.';
+                statusEl.className = 'text-[11px] font-semibold text-emerald-400';
+            } else if (hasGemini || hasOpenRouter) {
+                statusEl.textContent = `✓ ${hasGemini ? 'Gemini' : 'OpenRouter'} configured - AI Specs Enrich is active.`;
+                statusEl.className = 'text-[11px] font-semibold text-emerald-400';
+            } else {
+                statusEl.textContent = '✗ No API key set.';
+                statusEl.className = 'text-[11px] font-semibold text-slate-500';
+            }
         }
     }
 

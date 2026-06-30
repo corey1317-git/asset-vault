@@ -865,6 +865,9 @@
     <script>
         // Gemini API key — stored in localStorage, never hardcoded
         let apiKey = localStorage.getItem('av_gemini_api_key') || "";
+        // OpenRouter backup provider — used automatically if Gemini fails or isn't configured
+        let openrouterApiKey = localStorage.getItem('av_openrouter_api_key') || "";
+        let openrouterModel = localStorage.getItem('av_openrouter_model') || 'google/gemma-4-31b-it:free';
 
         // Developer cloud API configurations (specify standard OAuth 2.0 app client IDs here)
         const googleClientId = "386561707147-fkqqbg1qeb7prudclclmcbg26ctcpgkb.apps.googleusercontent.com";
@@ -1990,23 +1993,91 @@
             generateAssetWithAI('receipt');
         }
 
-        // Exponential backoff query dispatcher
-        async function fetchGeminiWithRetry(url, payload, retries = 5, delay = 1000) {
-            for (let i = 0; i < retries; i++) {
-                try {
-                    const response = await fetch(url, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify(payload)
-                    });
-                    if (response.ok) return await response.json();
-                } catch (e) {
-                    // Fail silently, retry next
+        // ── AI Providers: Gemini (primary) + OpenRouter (automatic backup) ──
+        // Plain-JSON-instruction prompting (not responseSchema) is used deliberately: combining
+        // Google Search grounding with strict schema mode is restricted to Gemini 3-series models,
+        // so schema mode silently broke this feature. Markdown-fence-stripped JSON.parse is more
+        // broadly compatible across both providers and whatever model the user configures.
+        async function callGeminiJSON(promptText, systemText, useSearch, imageBase64, imageMime) {
+            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`;
+            const parts = [{ text: promptText }];
+            if (imageBase64) parts.push({ inlineData: { mimeType: imageMime, data: imageBase64 } });
+            const payload = {
+                contents: [{ parts }],
+                systemInstruction: { parts: [{ text: systemText + " Always return ONLY raw JSON — no markdown fences, no commentary." }] },
+                generationConfig: { temperature: 0.3 }
+            };
+            if (useSearch) payload.tools = [{ "google_search": {} }];
+
+            let attempts = 0, delay = 800;
+            while (attempts < 4) {
+                const response = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+                if (response.status === 429 || response.status >= 500) {
+                    attempts++;
+                    if (attempts >= 4) throw new Error(`Gemini error: HTTP ${response.status} after retries`);
+                    await new Promise(r => setTimeout(r, delay));
+                    delay *= 2;
+                    continue;
                 }
-                await new Promise(resolve => setTimeout(resolve, delay));
-                delay *= 2;
+                if (!response.ok) {
+                    let detail = '';
+                    try { const errBody = await response.json(); detail = errBody.error && errBody.error.message; } catch (e) {}
+                    throw new Error(`Gemini error: HTTP ${response.status}${detail ? ' — ' + detail : ''}`);
+                }
+                const data = await response.json();
+                let raw = (data.candidates && data.candidates[0] && data.candidates[0].content.parts[0].text) || '';
+                raw = raw.replace(/```json\s*/gi, '').replace(/```\s*/gi, '').trim();
+                if (!raw) throw new Error("Gemini returned an empty response.");
+                return JSON.parse(raw);
             }
-            throw new Error("Unable to connect with Gemini AI services after 5 sequential backoff retries.");
+            throw new Error("Gemini error: exhausted retries");
+        }
+
+        async function callOpenRouterJSON(promptText, systemText, imageBase64, imageMime) {
+            const userContent = imageBase64
+                ? [{ type: 'text', text: promptText }, { type: 'image_url', image_url: { url: `data:${imageMime};base64,${imageBase64}` } }]
+                : promptText;
+            const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${openrouterApiKey}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    model: openrouterModel,
+                    messages: [
+                        { role: 'system', content: systemText + " Always return ONLY raw JSON — no markdown fences, no commentary." },
+                        { role: 'user', content: userContent }
+                    ],
+                    response_format: { type: 'json_object' }
+                })
+            });
+            if (!response.ok) {
+                let detail = '';
+                try { const errBody = await response.json(); detail = errBody.error && errBody.error.message; } catch (e) {}
+                throw new Error(`OpenRouter error: HTTP ${response.status}${detail ? ' — ' + detail : ''}`);
+            }
+            const data = await response.json();
+            let raw = (data.choices && data.choices[0] && data.choices[0].message.content) || '';
+            raw = raw.replace(/```json\s*/gi, '').replace(/```\s*/gi, '').trim();
+            if (!raw) throw new Error("OpenRouter returned an empty response.");
+            return JSON.parse(raw);
+        }
+
+        async function callAIWithFallback(promptText, systemText, useSearch, imageBase64, imageMime) {
+            let geminiError = null;
+            if (apiKey) {
+                try { return { data: await callGeminiJSON(promptText, systemText, useSearch, imageBase64, imageMime), provider: 'Gemini', fellBack: false }; }
+                catch (err) { geminiError = err; }
+            }
+            if (openrouterApiKey) {
+                try {
+                    const data = await callOpenRouterJSON(promptText, systemText, imageBase64, imageMime);
+                    return { data, provider: 'OpenRouter (backup)', fellBack: !!geminiError };
+                } catch (err) {
+                    if (geminiError) throw new Error(`Both providers failed. ${geminiError.message} | ${err.message}`);
+                    throw err;
+                }
+            }
+            if (geminiError) throw geminiError;
+            throw new Error("No AI provider configured. Add a Gemini or OpenRouter key in Settings.");
         }
 
         // Main Multimodal AI Generation controller 
@@ -2015,17 +2086,19 @@
             const statusLabel = document.getElementById('aiLoadingStatus');
             const subtextLabel = document.getElementById('aiLoadingSubtext');
 
-            if (!apiKey) {
-                showNotification("API Key Required", "Click the ⚙ Settings button in the header to add your free Gemini API key.", "amber");
+            if (!apiKey && !openrouterApiKey) {
+                showNotification("API Key Required", "Click the ⚙ Settings button in the header to add a free Gemini or OpenRouter API key.", "amber");
                 openSettingsModal();
                 return;
             }
 
             if (overlay) overlay.classList.remove('hidden');
-            if (statusLabel) statusLabel.innerText = "Connecting to Gemini 2.5 Flash...";
-            if (subtextLabel) subtextLabel.innerText = "Setting up connection context with Google Generative AI servers...";
+            if (statusLabel) statusLabel.innerText = "Connecting to AI...";
+            if (subtextLabel) subtextLabel.innerText = apiKey ? "Trying Gemini first..." : "Using OpenRouter backup...";
 
-            let parts = [];
+            const schemaHint = `Return ONLY a raw JSON object (no markdown fences, no commentary) matching exactly this shape: {"name": string, "category": one of ["Yard Tools","Electronics","Appliances","Home Utilities"], "model": string, "serial": string (use "REPLACE_WITH_YOUR_SERIAL" if not found), "serial2": string, "price": number, "purchaseDate": "YYYY-MM-DD", "warrantyEndDate": "YYYY-MM-DD" or empty, "purchasedFrom": string, "manualUrl": string, "imageUrl": string, "parts": string[], "tips": string}.`;
+            let promptText = '';
+            let imageBase64 = null, imageMime = null;
 
             if (mode === 'text') {
                 const promptVal = document.getElementById('aiProductPrompt').value.trim();
@@ -2035,72 +2108,27 @@
                     return;
                 }
                 if (statusLabel) statusLabel.innerText = "Analyzing descriptions...";
-                if (subtextLabel) subtextLabel.innerText = "Formulating research queries for Google Search Grounding...";
-                parts.push({ text: `Analyze the following item description: "${promptVal}". Research the correct category, typical retail replacement cost, precise model numbers, support manual links, key parts/consumables, and storage care tips. Use Google Search grounding to find a high-quality, royalty-free stock image URL matching this item.` });
+                if (subtextLabel) subtextLabel.innerText = "Formulating research queries...";
+                promptText = `Analyze the following item description: "${promptVal}". Research the correct category, typical retail replacement cost, precise model numbers, support manual links, key parts/consumables, and storage care tips. Find a high-quality, royalty-free stock image URL matching this item. ${schemaHint}`;
             } else {
                 if (statusLabel) statusLabel.innerText = "Reading receipt...";
                 if (subtextLabel) subtextLabel.innerText = "Extracting raw transaction lines, dates, and total amounts...";
-                parts.push({ text: "Perform a complete multimodal analysis of this transaction receipt. Extract the product name, precise purchase date, vendor retailer, and final price. Use Google Search grounding to resolve correct manufacturer model numbers and matching product photo image URLs." });
-                parts.push({
-                    inlineData: {
-                        mimeType: stagedAIReceiptMimeType,
-                        data: stagedAIReceiptBase64
-                    }
-                });
+                promptText = `Perform a complete multimodal analysis of this transaction receipt. Extract the product name, precise purchase date, vendor retailer, and final price. Resolve correct manufacturer model numbers and matching product photo image URLs. ${schemaHint}`;
+                imageBase64 = stagedAIReceiptBase64;
+                imageMime = stagedAIReceiptMimeType;
             }
 
-            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
-            
-            // AI output schema definition
-            const payload = {
-                contents: [{ parts: parts }],
-                systemInstruction: {
-                    parts: [{ text: "You are a professional homeowners insurance asset investigator. Analyze purchase receipts or prompt descriptors and structure an output asset JSON schema. Use Google Search to find verified, publicly accessible stock image URLs (preferably Unsplash product shots) and support documentation links for that specific model." }]
-                },
-                tools: [{ "google_search": {} }],
-                generationConfig: {
-                    responseMimeType: "application/json",
-                    responseSchema: {
-                        type: "OBJECT",
-                        properties: {
-                            name: { type: "STRING", description: "Official commercial name of the product" },
-                            category: { type: "STRING", enum: ["Yard Tools", "Electronics", "Appliances", "Home Utilities"], description: "The most logical category for this item" },
-                            model: { type: "STRING", description: "The manufacturer's official model number/identifier" },
-                            serial: { type: "STRING", description: "The extracted serial code if present on receipt, else default placeholder 'REPLACE_WITH_YOUR_SERIAL'" },
-                            serial2: { type: "STRING", description: "Secondary kit component serial if visible, otherwise empty" },
-                            price: { type: "NUMBER", description: "The core unit cost" },
-                            purchaseDate: { type: "STRING", description: "The transaction date in YYYY-MM-DD format" },
-                            warrantyEndDate: { type: "STRING", description: "The warranty expiration date in YYYY-MM-DD format if mentioned, else calculate it if a warranty term (like 2-year warranty) is shown, otherwise leave empty" },
-                            purchasedFrom: { type: "STRING", description: "The specific retail store vendor" },
-                            manualUrl: { type: "STRING", description: "Support or guide webpage link for this specific model" },
-                            imageUrl: { type: "STRING", description: "A high-quality verified public image URL of the product" },
-                            parts: {
-                                type: "ARRAY",
-                                items: { type: "STRING" },
-                                description: "Key parts, consumables, replacement blades, accessories, or matching filters"
-                            },
-                            tips: { type: "STRING", description: "Optimal operating guidelines, winterizing advice, storage methods, or preventative upkeep checklists." }
-                        },
-                        required: ["name", "category", "price", "serial", "imageUrl"]
-                    }
-                }
-            };
+            const systemText = "You are a professional homeowners insurance asset investigator. Analyze purchase receipts or prompt descriptors and structure an output asset JSON object. Find verified, publicly accessible stock image URLs (preferably Unsplash product shots) and support documentation links for that specific model.";
 
             try {
-                if (statusLabel) statusLabel.innerText = "Grounding Product Data...";
-                if (subtextLabel) subtextLabel.innerText = "Resolving technical specifications via Google Search grounding tools...";
-                
-                const responseData = await fetchGeminiWithRetry(endpoint, payload);
-                const rawText = responseData.candidates?.[0]?.content?.parts?.[0]?.text;
-                
-                if (!rawText) {
-                    throw new Error("Empty content received from Generative Model.");
-                }
+                if (statusLabel) statusLabel.innerText = "Researching Product Data...";
+                if (subtextLabel) subtextLabel.innerText = "Resolving technical specifications...";
+
+                const result = await callAIWithFallback(promptText, systemText, true, imageBase64, imageMime);
+                const assetObj = result.data;
 
                 if (statusLabel) statusLabel.innerText = "Compiling parameters...";
                 if (subtextLabel) subtextLabel.innerText = "Building registry profile fields and binding local image data...";
-
-                const assetObj = JSON.parse(rawText);
 
                 // Pre-fill manual review form
                 document.getElementById('formName').value = assetObj.name || '';
@@ -2137,18 +2165,22 @@
 
                 if (overlay) overlay.classList.add('hidden');
                 switchModalTab('manual');
-                showNotification("AI Magic Success!", `Pre-filled inventory details for ${assetObj.name}.`, "emerald");
+                if (result.fellBack) {
+                    showNotification("AI Success (Backup Provider)", `Gemini was unavailable, so OpenRouter filled in details for ${assetObj.name}.`, "emerald");
+                } else {
+                    showNotification("AI Magic Success!", `Pre-filled inventory details for ${assetObj.name}.`, "emerald");
+                }
 
             } catch (err) {
                 if (overlay) overlay.classList.add('hidden');
-                showNotification("AI Generation Failed", "Gemini couldn't parse the spec sheet. Please check your network or enter manually.", "rose");
+                showNotification("AI Generation Failed", err.message || "Please check your network or enter manually.", "rose");
             }
         }
 
         // AI Enrich: Update care guides, parts, tips, and manual URL for an existing asset
         async function enrichAssetWithAI(id) {
-            if (!apiKey) {
-                showNotification("API Key Required", "Click the ⚙ Settings button in the header to add your free Gemini API key.", "amber");
+            if (!apiKey && !openrouterApiKey) {
+                showNotification("API Key Required", "Click the ⚙ Settings button in the header to add a free Gemini or OpenRouter API key.", "amber");
                 openSettingsModal();
                 return;
             }
@@ -2165,62 +2197,25 @@
 
             showNotification("AI Researching...", `Fetching care data for ${asset.name}...`, "indigo");
 
-            const prompt = `Research specific maintenance and care information for this home asset:
+            const schemaHint = `Return ONLY a raw JSON object (no markdown fences, no commentary) matching exactly this shape: {"youtubeGuides": [{"label": string, "query": string}], "parts": string[], "manualUrl": string, "imageUrl": string, "tips": string}.`;
+            const promptText = `Research specific maintenance and care information for this home asset:
 Name: ${asset.name}
 Model Number: ${asset.model || 'unknown'}
 Category: ${asset.category}
 
-Use Google Search to find accurate, model-specific information. Return:
+Find accurate, model-specific information. Return:
 1. 2-4 YouTube search queries that will find real tutorials specifically for this model number (e.g. "EGO LM2135SP blade replacement" not just "lawn mower blade")
 2. Specific replacement parts and consumables for this exact model, including part numbers where known
 3. The official manufacturer support or manual URL for this specific model
-4. Practical care tips, maintenance schedule, and storage advice tailored to this product`;
+4. Practical care tips, maintenance schedule, and storage advice tailored to this product
 
-            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+${schemaHint}`;
 
-            const payload = {
-                contents: [{ parts: [{ text: prompt }] }],
-                systemInstruction: {
-                    parts: [{ text: "You are a home appliance and power tool maintenance expert. Provide accurate, model-specific care information. YouTube search queries must include the specific model number to avoid dead links. Use Google Search to verify real manufacturer URLs." }]
-                },
-                tools: [{ "google_search": {} }],
-                generationConfig: {
-                    responseMimeType: "application/json",
-                    responseSchema: {
-                        type: "OBJECT",
-                        properties: {
-                            youtubeGuides: {
-                                type: "ARRAY",
-                                items: {
-                                    type: "OBJECT",
-                                    properties: {
-                                        label: { type: "STRING", description: "Short action label, e.g. 'Replace Blade' or 'Clean Filter'" },
-                                        query: { type: "STRING", description: "Specific YouTube search query including the model number" }
-                                    },
-                                    required: ["label", "query"]
-                                },
-                                description: "2-4 YouTube search queries for maintenance tutorials for this exact model"
-                            },
-                            parts: {
-                                type: "ARRAY",
-                                items: { type: "STRING" },
-                                description: "Specific replacement parts, consumables, or accessories with part numbers where known"
-                            },
-                            manualUrl: { type: "STRING", description: "Official manufacturer support or manual page URL for this specific model. Empty string if not found." },
-                            imageUrl: { type: "STRING", description: "A high-quality, publicly accessible product image URL for this exact model. Prefer manufacturer or major retailer images. Empty string if not found." },
-                            tips: { type: "STRING", description: "Specific maintenance tips, recommended schedule, and storage advice for this product" }
-                        },
-                        required: ["youtubeGuides", "tips"]
-                    }
-                }
-            };
+            const systemText = "You are a home appliance and power tool maintenance expert. Provide accurate, model-specific care information. YouTube search queries must include the specific model number to avoid dead links. Verify real manufacturer URLs.";
 
             try {
-                const responseData = await fetchGeminiWithRetry(endpoint, payload);
-                const rawText = responseData.candidates?.[0]?.content?.parts?.[0]?.text;
-                if (!rawText) throw new Error("Empty response");
-
-                const enrichData = JSON.parse(rawText);
+                const result = await callAIWithFallback(promptText, systemText, true, null, null);
+                const enrichData = result.data;
                 const index = assetData.findIndex(item => item.id === id);
 
                 if (index !== -1) {
@@ -2258,10 +2253,14 @@ Use Google Search to find accurate, model-specific information. Return:
                 }
 
                 renderAll();
-                showNotification("Enrich Complete!", `Care guides updated for ${asset.name}.`, "emerald");
+                if (result.fellBack) {
+                    showNotification("Enrich Complete (Backup Provider)", `Gemini was unavailable, so OpenRouter updated care guides for ${asset.name}.`, "emerald");
+                } else {
+                    showNotification("Enrich Complete!", `Care guides updated for ${asset.name}.`, "emerald");
+                }
 
             } catch (err) {
-                showNotification("Enrich Failed", "Gemini couldn't research this model. Check your API key and try again.", "rose");
+                showNotification("Enrich Failed", err.message || "Check your API key and try again.", "rose");
                 // Restore button if render didn't fire
                 const btn2 = document.getElementById(`enrich-btn-${id}`);
                 if (btn2) {
@@ -2660,6 +2659,16 @@ Use Google Search to find accurate, model-specific information. Return:
             // Hide status
             const statusEl = document.getElementById('apiKeyStatus');
             if (statusEl) statusEl.classList.add('hidden');
+
+            const orInput = document.getElementById('settingsOpenRouterKeyInput');
+            if (orInput) { orInput.value = openrouterApiKey || ''; orInput.type = 'password'; }
+            const orModelInput = document.getElementById('settingsOpenRouterModelInput');
+            if (orModelInput) orModelInput.value = openrouterModel || '';
+            const orEye = document.getElementById('openRouterKeyEyeIcon');
+            if (orEye) { orEye.classList.remove('fa-eye-slash'); orEye.classList.add('fa-eye'); }
+            const orStatusEl = document.getElementById('openRouterKeyStatus');
+            if (orStatusEl) orStatusEl.classList.add('hidden');
+
             modal.classList.remove('hidden');
             modal.classList.add('flex');
         }
@@ -2720,11 +2729,54 @@ Use Google Search to find accurate, model-specific information. Return:
         function updateApiKeyDot() {
             const dot = document.getElementById('api-key-dot');
             if (!dot) return;
-            if (!apiKey) {
-                dot.classList.remove('hidden'); // amber dot = key missing
+            if (!apiKey && !openrouterApiKey) {
+                dot.classList.remove('hidden'); // amber dot = no provider configured
             } else {
                 dot.classList.add('hidden');
             }
+        }
+
+        function toggleOpenRouterKeyVisibility() {
+            const input = document.getElementById('settingsOpenRouterKeyInput');
+            const icon = document.getElementById('openRouterKeyEyeIcon');
+            if (!input) return;
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye'); icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash'); icon.classList.add('fa-eye');
+            }
+        }
+
+        function saveOpenRouterSettings() {
+            const input = document.getElementById('settingsOpenRouterKeyInput');
+            const modelInput = document.getElementById('settingsOpenRouterModelInput');
+            const statusEl = document.getElementById('openRouterKeyStatus');
+            const statusText = document.getElementById('openRouterKeyStatusText');
+            const newKey = (input ? input.value.trim() : '');
+            const newModel = (modelInput ? modelInput.value.trim() : '') || 'google/gemma-4-31b-it:free';
+
+            openrouterModel = newModel;
+            localStorage.setItem('av_openrouter_model', newModel);
+
+            if (!newKey) {
+                openrouterApiKey = '';
+                localStorage.removeItem('av_openrouter_api_key');
+                updateApiKeyDot();
+                if (statusText) statusText.textContent = 'Backup key cleared.';
+                if (statusText) statusText.className = 'text-[11px] text-center font-medium text-slate-400';
+                if (statusEl) statusEl.classList.remove('hidden');
+                return;
+            }
+
+            openrouterApiKey = newKey;
+            localStorage.setItem('av_openrouter_api_key', newKey);
+            updateApiKeyDot();
+            if (statusText) statusText.textContent = '✓ Backup provider saved!';
+            if (statusText) statusText.className = 'text-[11px] text-center font-medium text-emerald-400';
+            if (statusEl) statusEl.classList.remove('hidden');
+            setTimeout(() => closeSettingsModal(), 1200);
         }
 
         // Close settings modal on backdrop click
@@ -2933,10 +2985,43 @@ Use Google Search to find accurate, model-specific information. Return:
                 </div>
             </div>
 
+            <!-- Backup Provider Section -->
+            <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 mb-4">
+                <div class="flex items-center gap-2 mb-3">
+                    <i class="fa-solid fa-life-ring text-indigo-400 text-sm"></i>
+                    <span class="text-xs font-bold text-slate-200 uppercase tracking-wider">Backup Provider (OpenRouter)</span>
+                    <span class="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-1.5 py-0.5 rounded-full font-semibold">FREE</span>
+                </div>
+                <p class="text-[11px] text-slate-400 mb-3 leading-relaxed">Optional. If Gemini fails or isn't configured, AI Generate and AI Enrich automatically retry with this provider instead.</p>
+                <div class="flex gap-2 mb-3">
+                    <input type="password" id="settingsOpenRouterKeyInput" placeholder="Paste your OpenRouter API key here..."
+                        class="flex-1 bg-slate-900 border border-slate-700 focus:border-violet-500 rounded-lg px-3 py-2 text-sm text-slate-200 placeholder-slate-600 focus:outline-none transition font-mono">
+                    <button onclick="toggleOpenRouterKeyVisibility()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 border border-slate-700 rounded-lg transition text-xs" title="Show/hide key">
+                        <i id="openRouterKeyEyeIcon" class="fa-solid fa-eye"></i>
+                    </button>
+                </div>
+                <label class="block text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Model ID</label>
+                <input type="text" id="settingsOpenRouterModelInput" placeholder="google/gemma-4-31b-it:free"
+                    class="w-full bg-slate-900 border border-slate-700 focus:border-violet-500 rounded-lg px-3 py-2 text-sm text-slate-200 placeholder-slate-600 focus:outline-none transition font-mono mb-3">
+                <p class="text-[10px] text-slate-500 mb-3 leading-relaxed">Editable so a future model retirement doesn't break this again — swap in any model ID from <a href="https://openrouter.ai/models?max_price=0" target="_blank" class="text-indigo-400 hover:text-indigo-300">openrouter.ai's free model list</a>.</p>
+                <div class="flex gap-2">
+                    <a href="https://openrouter.ai/keys" target="_blank"
+                        class="flex-1 text-center px-3 py-2 bg-slate-800 hover:bg-slate-700 text-indigo-400 hover:text-indigo-300 border border-slate-700 text-xs font-semibold rounded-lg transition flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i> Get Free Key at OpenRouter
+                    </a>
+                    <button onclick="saveOpenRouterSettings()" class="flex-1 px-3 py-2 bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold rounded-lg transition flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-floppy-disk"></i> Save Backup
+                    </button>
+                </div>
+                <div id="openRouterKeyStatus" class="mt-2.5 hidden">
+                    <p id="openRouterKeyStatusText" class="text-[11px] text-center font-medium"></p>
+                </div>
+            </div>
+
             <div class="bg-indigo-500/5 border border-indigo-500/20 rounded-xl p-3">
                 <p class="text-[11px] text-indigo-300 leading-relaxed">
                     <i class="fa-solid fa-shield-halved mr-1"></i>
-                    <strong>Privacy:</strong> Your API key is stored only in this browser's localStorage. It never leaves your device and is never sent to any server other than Google's Gemini API directly.
+                    <strong>Privacy:</strong> Your API keys are stored only in this browser's localStorage. They never leave your device and are never sent anywhere except directly to Google's or OpenRouter's API.
                 </p>
             </div>
         </div>
