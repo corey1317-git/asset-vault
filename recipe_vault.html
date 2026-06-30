@@ -366,7 +366,7 @@
                 </button>
             </div>
             <label class="block text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Model ID</label>
-            <input type="text" id="settingsOpenRouterModelInput" placeholder="meta-llama/llama-3.3-8b-instruct:free"
+            <input type="text" id="settingsOpenRouterModelInput" placeholder="qwen/qwen-2.5-72b-instruct:free"
                 class="w-full bg-slate-900 border border-slate-700 focus:border-amber-500 rounded-lg px-3 py-2 text-sm text-slate-200 placeholder-slate-600 focus:outline-none transition font-mono mb-3">
             <p class="text-[10px] text-slate-500 mb-3 leading-relaxed">Editable so a future model retirement doesn't break this again — swap in any model ID from <a href="https://openrouter.ai/models?max_price=0" target="_blank" class="text-amber-400 hover:text-amber-300">openrouter.ai's free model list</a>.</p>
             <div class="flex gap-2 mb-2">
@@ -438,7 +438,7 @@
     let recipesCache = [];
     let apiKey = localStorage.getItem('rv_gemini_api_key') || "";
     let openrouterApiKey = localStorage.getItem('rv_openrouter_api_key') || "";
-    let openrouterModel = localStorage.getItem('rv_openrouter_model') || 'meta-llama/llama-3.3-8b-instruct:free';
+    let openrouterModel = localStorage.getItem('rv_openrouter_model') || 'qwen/qwen-2.5-72b-instruct:free';
     let driveFileId = localStorage.getItem('rv_drive_file_id') || null;
     let googleTokenClient = null;
     let accessToken = null;
@@ -1399,7 +1399,7 @@
         const statusEl = document.getElementById('openRouterKeyStatus');
         const statusText = document.getElementById('openRouterKeyStatusText');
         const testKey = (input ? input.value.trim() : '');
-        const testModel = (modelInput ? modelInput.value.trim() : '') || 'meta-llama/llama-3.3-8b-instruct:free';
+        const testModel = (modelInput ? modelInput.value.trim() : '') || 'qwen/qwen-2.5-72b-instruct:free';
 
         if (!testKey) {
             statusText.textContent = 'Paste a key first.';
@@ -1503,7 +1503,7 @@
         const statusEl = document.getElementById('openRouterKeyStatus');
         const statusText = document.getElementById('openRouterKeyStatusText');
         const newKey = (input ? input.value.trim() : '');
-        const newModel = (modelInput ? modelInput.value.trim() : '') || 'meta-llama/llama-3.3-8b-instruct:free';
+        const newModel = (modelInput ? modelInput.value.trim() : '') || 'qwen/qwen-2.5-72b-instruct:free';
 
         openrouterModel = newModel;
         localStorage.setItem('rv_openrouter_model', newModel);

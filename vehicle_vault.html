@@ -816,7 +816,7 @@
                 </button>
             </div>
             <label class="block text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Model ID</label>
-            <input type="text" id="settingsOpenRouterModelInput" placeholder="meta-llama/llama-3.3-8b-instruct:free"
+            <input type="text" id="settingsOpenRouterModelInput" placeholder="qwen/qwen-2.5-72b-instruct:free"
                 class="w-full bg-slate-900 border border-slate-700 focus:border-violet-500 rounded-lg px-3 py-2 text-sm text-slate-200 placeholder-slate-600 focus:outline-none transition font-mono mb-3">
             <p class="text-[10px] text-slate-500 mb-3 leading-relaxed">Editable so a future model retirement doesn't break this again — swap in any model ID from <a href="https://openrouter.ai/models?max_price=0" target="_blank" class="text-indigo-400 hover:text-indigo-300">openrouter.ai's free model list</a>.</p>
             <div class="flex gap-2 mb-2">
@@ -1381,7 +1381,7 @@
 let vehicles = JSON.parse(localStorage.getItem('vehicle_vault_data') || '[]');
 let apiKey = localStorage.getItem('vv_gemini_api_key') || '';
 let openrouterApiKey = localStorage.getItem('vv_openrouter_api_key') || '';
-let openrouterModel = localStorage.getItem('vv_openrouter_model') || 'meta-llama/llama-3.3-8b-instruct:free';
+let openrouterModel = localStorage.getItem('vv_openrouter_model') || 'qwen/qwen-2.5-72b-instruct:free';
 let selectedId = null;
 let editingId = null;
 let stagedImageBase64 = null;
@@ -3560,7 +3560,7 @@ async function testOpenRouterKey() {
     const btn = document.getElementById('testOpenRouterKeyBtn');
     const statusEl = document.getElementById('openrouter-key-status');
     const testKey = input?.value.trim() || '';
-    const testModel = (modelInput?.value.trim() || '') || 'meta-llama/llama-3.3-8b-instruct:free';
+    const testModel = (modelInput?.value.trim() || '') || 'qwen/qwen-2.5-72b-instruct:free';
 
     if (!testKey) {
         statusEl.textContent = 'Paste a key first.';
@@ -3657,7 +3657,7 @@ function saveOpenRouterSettings() {
     const modelInput = document.getElementById('settingsOpenRouterModelInput');
     const statusEl = document.getElementById('openrouter-key-status');
     const newKey = input?.value.trim() || '';
-    const newModel = (modelInput?.value.trim() || '') || 'meta-llama/llama-3.3-8b-instruct:free';
+    const newModel = (modelInput?.value.trim() || '') || 'qwen/qwen-2.5-72b-instruct:free';
 
     openrouterModel = newModel;
     localStorage.setItem('vv_openrouter_model', newModel);

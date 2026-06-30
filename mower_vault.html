@@ -528,7 +528,7 @@
                 <label class="block text-slate-300 font-semibold mb-1">Backup Provider — OpenRouter <span class="text-[10px] font-normal text-slate-500">(optional)</span></label>
                 <input type="password" id="settings-openrouter-key" placeholder="sk-or-v1-..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-emerald-500/40 mb-2">
                 <label class="block text-slate-400 text-[10px] font-semibold uppercase tracking-wider mb-1">Model ID</label>
-                <input type="text" id="settings-openrouter-model" placeholder="meta-llama/llama-3.3-8b-instruct:free" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-emerald-500/40">
+                <input type="text" id="settings-openrouter-model" placeholder="qwen/qwen-2.5-72b-instruct:free" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-emerald-500/40">
                 <span class="text-[10px] text-slate-500 mt-1 block">Used automatically if Gemini fails or isn't configured. Get a free key from <a href="https://openrouter.ai/keys" target="_blank" class="text-emerald-400 hover:underline">OpenRouter</a> — model ID is editable so a future retirement doesn't break this again.</span>
                 <button onclick="testOpenRouterKey()" id="testOpenRouterKeyBtn" type="button" class="w-full mt-2 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-[11px] font-bold rounded-lg transition flex items-center justify-center gap-1.5">
                     <i class="fa-solid fa-vial"></i> Test Key
@@ -1335,7 +1335,7 @@
     async function callAIWithFallback(promptText, useSearch) {
         const geminiKey = localStorage.getItem('thorpetech_gemini_api_key') || '';
         const orKey = localStorage.getItem('thorpetech_openrouter_api_key') || '';
-        const orModel = localStorage.getItem('thorpetech_openrouter_model') || 'meta-llama/llama-3.3-8b-instruct:free';
+        const orModel = localStorage.getItem('thorpetech_openrouter_model') || 'qwen/qwen-2.5-72b-instruct:free';
 
         let geminiError = null;
         if (geminiKey) {
@@ -1551,7 +1551,7 @@ Return ONLY the raw JSON object. Do not include markdown formatting, backticks, 
         const btn = document.getElementById('testOpenRouterKeyBtn');
         const statusEl = document.getElementById('openrouter-test-status');
         const testKey = input?.value.trim() || '';
-        const testModel = (modelInput?.value.trim() || '') || 'meta-llama/llama-3.3-8b-instruct:free';
+        const testModel = (modelInput?.value.trim() || '') || 'qwen/qwen-2.5-72b-instruct:free';
 
         if (!testKey) {
             statusEl.textContent = 'Paste a key first.';
@@ -1599,7 +1599,7 @@ Return ONLY the raw JSON object. Do not include markdown formatting, backticks, 
         const key = localStorage.getItem('thorpetech_gemini_api_key') || '';
         document.getElementById('settings-key').value = key;
         document.getElementById('settings-openrouter-key').value = localStorage.getItem('thorpetech_openrouter_api_key') || '';
-        document.getElementById('settings-openrouter-model').value = localStorage.getItem('thorpetech_openrouter_model') || 'meta-llama/llama-3.3-8b-instruct:free';
+        document.getElementById('settings-openrouter-model').value = localStorage.getItem('thorpetech_openrouter_model') || 'qwen/qwen-2.5-72b-instruct:free';
         document.getElementById('gemini-test-status')?.classList.add('hidden');
         document.getElementById('openrouter-test-status')?.classList.add('hidden');
         updateApiKeyDot();
@@ -1618,7 +1618,7 @@ Return ONLY the raw JSON object. Do not include markdown formatting, backticks, 
         }
 
         const orKey = document.getElementById('settings-openrouter-key').value.trim();
-        const orModel = document.getElementById('settings-openrouter-model').value.trim() || 'meta-llama/llama-3.3-8b-instruct:free';
+        const orModel = document.getElementById('settings-openrouter-model').value.trim() || 'qwen/qwen-2.5-72b-instruct:free';
         localStorage.setItem('thorpetech_openrouter_model', orModel);
         if (orKey) {
             localStorage.setItem('thorpetech_openrouter_api_key', orKey);
