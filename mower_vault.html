@@ -100,6 +100,7 @@
 
     <!-- Toolbar Actions -->
     <div class="flex flex-wrap items-center gap-2">
+        <span id="backup-status-pill" class="px-2.5 py-1.5 rounded-xl text-[10px] font-bold border transition-colors duration-300 select-none"></span>
         <input type="file" id="import-file" class="hidden" accept=".json" onchange="importData(event)">
         <button onclick="document.getElementById('import-file').click()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-750 text-xs font-semibold rounded-xl transition flex items-center gap-1.5" title="Import Mower Database File">
             <i class="fa-solid fa-file-import"></i> Import
@@ -610,6 +611,7 @@
     let mowers = [];
     let selectedId = null;
     let currentTab = 'specs';
+    let hasUnsavedChanges = false;
 
     // ── Init ──────────────────────────────────────────────────
     window.addEventListener('DOMContentLoaded', () => {
@@ -620,6 +622,14 @@
         if (!localStorage.getItem('mower_welcome_dismissed')) {
             setTimeout(() => openWelcomeModal(), 400);
         }
+
+        // Navigation exit protection
+        window.addEventListener('beforeunload', (e) => {
+            if (hasUnsavedChanges) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
     });
 
     // ── Data Persistence ──────────────────────────────────────
@@ -637,6 +647,7 @@
         }
         updateDashboard();
         renderList();
+        updateBackupStatus(false);
     }
 
     function getSampleMower() {
@@ -687,6 +698,20 @@
     function saveData() {
         localStorage.setItem('thorpetech_mower_vault', JSON.stringify(mowers));
         updateDashboard();
+        updateBackupStatus(true);
+    }
+
+    function updateBackupStatus(dirty) {
+        hasUnsavedChanges = dirty;
+        const pill = document.getElementById('backup-status-pill');
+        if (!pill) return;
+        if (dirty) {
+            pill.textContent = '⚠️ Unsaved Changes';
+            pill.className = 'px-2.5 py-1.5 rounded-xl text-[10px] font-bold border transition-colors duration-300 select-none bg-amber-500/10 text-amber-400 border-amber-500/20';
+        } else {
+            pill.textContent = '✓ Backed Up';
+            pill.className = 'px-2.5 py-1.5 rounded-xl text-[10px] font-bold border transition-colors duration-300 select-none bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+        }
     }
 
     function updateDashboard() {
@@ -1373,6 +1398,7 @@ Return ONLY the raw JSON object. Do not include markdown formatting, backticks, 
             document.body.removeChild(a);
             URL.revokeObjectURL(url);
             showToast("Exported", "Saved database backup to downloads.", "emerald");
+            updateBackupStatus(false);
         } catch(e) {
             showToast("Export Failed", "Could not compile file payload.", "rose");
         }
@@ -1394,6 +1420,7 @@ Return ONLY the raw JSON object. Do not include markdown formatting, backticks, 
                     document.getElementById('detail-placeholder').classList.remove('hidden');
                     renderList();
                     showToast("Import Complete", `Loaded ${mowers.length} mower profiles!`, "emerald");
+                    updateBackupStatus(false);
                 } else {
                     throw new Error("Invalid backup format.");
                 }
@@ -1465,6 +1492,7 @@ Return ONLY the raw JSON object. Do not include markdown formatting, backticks, 
 
             if (response.ok) {
                 showToast("Upload Complete", "Saved backup to Google Drive!", "emerald");
+                updateBackupStatus(false);
             } else {
                 const errData = await response.json();
                 throw new Error(errData.error?.message || "Response failed");

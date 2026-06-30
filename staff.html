@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff - Thorpe Tech</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #030712; /* slate-950 */
+        }
+
+        .mesh-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+            background: radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.04) 0%, transparent 40%),
+                        radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.04) 0%, transparent 40%);
+        }
+
+        .grid-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background-image: linear-gradient(rgba(255, 255, 255, 0.007) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(255, 255, 255, 0.007) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        .glass-card {
+            background: rgba(17, 24, 39, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        .glow-blob {
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.05) 0%, rgba(16, 185, 129, 0.01) 60%, transparent 100%);
+            filter: blur(60px);
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .glow-indigo:hover {
+            box-shadow: 0 0 30px rgba(99, 102, 241, 0.15);
+        }
+
+        .glow-emerald:hover {
+            box-shadow: 0 0 30px rgba(16, 185, 129, 0.15);
+        }
+    </style>
+</head>
+<body class="text-slate-100 min-h-screen flex flex-col justify-between overflow-x-hidden relative">
+
+    <div class="mesh-bg"></div>
+    <div class="grid-overlay"></div>
+    <div class="glow-blob top-10 -left-48"></div>
+
+    <!-- Header Section -->
+    <header class="border-b border-slate-900 bg-slate-950/40 backdrop-blur-md px-8 py-5 flex justify-between items-center z-10">
+        <a href="index.html" class="flex items-center space-x-3 hover:opacity-90 transition">
+            <div class="h-10 w-10 rounded-xl overflow-hidden shadow-lg shadow-indigo-500/10 border border-slate-800 flex items-center justify-center bg-slate-900">
+                <i class="fa-solid fa-house-laptop text-indigo-400 text-lg"></i>
+            </div>
+            <div>
+                <h1 class="font-extrabold text-lg tracking-tight bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">Thorpe Tech</h1>
+                <p class="text-[10px] text-indigo-400 font-semibold uppercase tracking-wider">Software Labs</p>
+            </div>
+        </a>
+        <div>
+            <a href="index.html" class="px-4 py-2 bg-slate-900 hover:bg-slate-850 border border-slate-800 text-xs font-bold rounded-xl transition flex items-center gap-1.5 text-slate-300">
+                <i class="fa-solid fa-arrow-left"></i> Back to Home
+            </a>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="flex-1 max-w-5xl mx-auto w-full px-6 py-12 z-10">
+
+        <div class="text-center space-y-2 mb-10">
+            <h2 class="text-3xl font-extrabold text-white tracking-tight">Meet the Brain Trust</h2>
+            <p class="text-sm text-slate-500">The exceptional talent powering the innovations at Thorpe Tech.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <!-- Staff Card 1: CSO -->
+            <div class="glass-card border border-slate-900/80 hover:border-indigo-500/30 rounded-2xl p-6 flex flex-col items-center text-center transition-all duration-300 transform hover:-translate-y-1 glow-indigo group">
+                <div class="h-32 w-32 rounded-2xl overflow-hidden mb-4 border border-slate-800 shadow-md">
+                    <img src="mascot.jpg" class="h-full w-full object-cover grayscale group-hover:grayscale-0 transition duration-300" alt="Big Jim">
+                </div>
+                <h3 class="font-extrabold text-slate-100 text-base">Big Jim</h3>
+                <p class="text-[10px] text-indigo-400 font-bold uppercase tracking-wider mt-0.5">Chief Mascot &amp; CSO</p>
+                <p class="text-xs text-slate-400 mt-4 leading-relaxed text-left">
+                    Big Jim has guarded the Thorpe Tech office since day one, protecting local assets and databases with natural intimidation, sharp fangs, and 90s swagger. As Chief Security Officer, his philosophy is simple: nothing leaves the premises without his approval, and nothing gets in without being thoroughly sniffed first.
+                </p>
+                <p class="text-xs text-slate-400 mt-3 leading-relaxed text-left">
+                    Off duty, Big Jim enjoys sunbathing on warm rocks, reviewing access logs, and maintaining an unrivaled office security presence. He does not do performance reviews; he does vibe checks.
+                </p>
+            </div>
+
+            <!-- Staff Card 2: Senior Developer -->
+            <div class="glass-card border border-slate-900/80 hover:border-emerald-500/30 rounded-2xl p-6 flex flex-col items-center text-center transition-all duration-300 transform hover:-translate-y-1 glow-emerald group">
+                <div class="h-32 w-32 rounded-2xl overflow-hidden mb-4 border border-slate-800 shadow-md">
+                    <img src="big_jim_coder.jpg" class="h-full w-full object-cover grayscale group-hover:grayscale-0 transition duration-300" alt="Big Jim Jr.">
+                </div>
+                <h3 class="font-extrabold text-slate-100 text-base">Big Jim Jr.</h3>
+                <p class="text-[10px] text-emerald-400 font-bold uppercase tracking-wider mt-0.5">Principal Software Engineer</p>
+                <p class="text-xs text-slate-400 mt-4 leading-relaxed text-left">
+                    Big Jim Jr. translates user inputs into beautiful, local-first code configurations. He writes JavaScript at roughly 80 words per minute, powered entirely by grass and neon light, and has never once asked for a server.
+                </p>
+                <p class="text-xs text-slate-400 mt-3 leading-relaxed text-left">
+                    He champions client-side architecture above all else and is responsible for the Gemini-powered scanning features across the Vault product line. Known to debug best after a long nap in a sunbeam.
+                </p>
+            </div>
+
+            <!-- Staff Card 3: Support Specialist -->
+            <div class="glass-card border border-slate-900/80 hover:border-amber-500/30 rounded-2xl p-6 flex flex-col items-center text-center transition-all duration-300 transform hover:-translate-y-1 group hover:shadow-[0_0_30px_rgba(245,158,11,0.15)]">
+                <div class="h-32 w-32 rounded-2xl overflow-hidden mb-4 border border-slate-800 shadow-md">
+                    <img src="big_jim_technician.jpg" class="h-full w-full object-cover grayscale group-hover:grayscale-0 transition duration-300" alt="Jimmy the Tool">
+                </div>
+                <h3 class="font-extrabold text-slate-100 text-base">Jimmy the Tool</h3>
+                <p class="text-[10px] text-amber-400 font-bold uppercase tracking-wider mt-0.5">Hardware Maintenance Lead</p>
+                <p class="text-xs text-slate-400 mt-4 leading-relaxed text-left">
+                    Jimmy keeps the physical side of operations running, ensuring all home appliances and lawn mowers stay fully oiled, functional, and backed up. His favorite tool is a 10mm socket, mostly because it is the one that always seems to go missing.
+                </p>
+                <p class="text-xs text-slate-400 mt-3 leading-relaxed text-left">
+                    Jimmy believes every maintenance schedule deserves a paper trail, which is exactly why the Asset Vault's care tracker exists. He inspects new hardware purchases personally before they're cleared for the Vault.
+                </p>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-900 bg-slate-950/60 py-6 text-center text-xs text-slate-600 z-10 flex flex-col items-center gap-2">
+        <p>&copy; 2026 Thorpe Tech. All rights reserved. Client-first secure designs.</p>
+        <div class="flex items-center gap-3">
+            <a href="index.html" class="hover:text-slate-400 transition font-semibold">Home</a>
+            <span class="text-slate-800">|</span>
+            <a href="staff.html" class="text-indigo-400 hover:text-indigo-300 font-semibold transition">Staff</a>
+            <span class="text-slate-800">|</span>
+            <a href="privacy.html" class="hover:text-slate-400 transition font-semibold">Privacy Policy</a>
+            <span class="text-slate-800">|</span>
+            <a href="terms.html" class="hover:text-slate-400 transition font-semibold">Terms of Service</a>
+        </div>
+    </footer>
+
+</body>
+</html>
