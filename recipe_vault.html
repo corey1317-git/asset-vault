@@ -1134,7 +1134,7 @@
     // so schema mode silently broke this feature. Markdown-fence-stripped JSON.parse is more
     // broadly compatible across both providers and whatever model the user configures.
     async function callGeminiJSON(promptText, useSearch) {
-        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`;
         const parts = [{ text: promptText }];
 
         const getPayload = (searchEnabled) => {
@@ -1368,7 +1368,7 @@
         statusEl.classList.remove('hidden');
 
         try {
-            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${testKey}`;
+            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${testKey}`;
             const response = await fetch(endpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

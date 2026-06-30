@@ -3272,7 +3272,7 @@ function closeDocLightbox() {
 
 // ── AI Providers: Gemini (primary) + OpenRouter (automatic backup) ──
 async function callGeminiJSON(promptText, useSearch) {
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`;
     const parts = [{ text: promptText }];
 
     const getPayload = (searchEnabled) => {
@@ -3530,7 +3530,7 @@ async function testGeminiKey() {
     statusEl.classList.remove('hidden');
 
     try {
-        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${testKey}`;
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${testKey}`;
         const response = await fetch(endpoint, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

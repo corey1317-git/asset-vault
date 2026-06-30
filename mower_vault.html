@@ -1229,7 +1229,7 @@
 
     // ── AI Providers: Gemini (primary) + OpenRouter (automatic backup) ──
     async function callGeminiJSON(promptText, geminiKey, useSearch) {
-        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`;
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${geminiKey}`;
         const parts = [{ text: promptText }];
 
         const getPayload = (searchEnabled) => {
@@ -1521,7 +1521,7 @@ Return ONLY the raw JSON object. Do not include markdown formatting, backticks, 
         statusEl.classList.remove('hidden');
 
         try {
-            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${testKey}`;
+            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${testKey}`;
             const response = await fetch(endpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
