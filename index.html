@@ -180,10 +180,6 @@
         <!-- Hero intro section with mascot -->
         <section class="flex flex-col md:flex-row items-center justify-between gap-10 max-w-4xl mx-auto">
             <div class="text-left space-y-5 max-w-xl">
-                <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold select-none">
-                    <span class="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                    Portal Live &bull; 2 Apps Available
-                </div>
                 <h2 class="text-4xl md:text-5xl font-black tracking-tight leading-[1.05] hero-gradient-text">
                     Sleek Tools.<br>Client-Side Integrity.
                 </h2>
@@ -193,16 +189,19 @@
 
                 <!-- Feature Pills -->
                 <div class="flex flex-wrap gap-2">
-                    <span class="feature-pill inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold rounded-full cursor-default select-none">
+                    <span class="feature-pill inline-flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold rounded-full cursor-default select-none" title="All database items stored client-side">
                         <i class="fa-solid fa-lock text-[9px]"></i> Local-First
                     </span>
-                    <span class="feature-pill inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-bold rounded-full cursor-default select-none">
+                    <span class="feature-pill inline-flex items-center gap-1.5 px-3 py-1.5 bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 text-xs font-bold rounded-full cursor-default select-none" title="Google Drive OAuth2 direct database backups">
+                        <i class="fa-brands fa-google-drive text-[9px]"></i> Google Drive Save
+                    </span>
+                    <span class="feature-pill inline-flex items-center gap-1.5 px-3 py-1.5 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-bold rounded-full cursor-default select-none" title="Gemini Multimodal parser scans and search grounding">
                         <i class="fa-solid fa-wand-magic-sparkles text-[9px]"></i> Gemini AI
                     </span>
-                    <span class="feature-pill inline-flex items-center gap-1.5 px-3 py-1.5 bg-violet-500/10 border border-violet-500/20 text-violet-400 text-xs font-bold rounded-full cursor-default select-none">
+                    <span class="feature-pill inline-flex items-center gap-1.5 px-3 py-1.5 bg-violet-500/10 border border-violet-500/20 text-violet-400 text-xs font-bold rounded-full cursor-default select-none" title="No server tracking or third-party cookies">
                         <i class="fa-solid fa-shield-halved text-[9px]"></i> Zero Data Leaks
                     </span>
-                    <span class="feature-pill inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-bold rounded-full cursor-default select-none">
+                    <span class="feature-pill inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-bold rounded-full cursor-default select-none" title="Structured document PDFs for claims">
                         <i class="fa-solid fa-file-shield text-[9px]"></i> Insurance Ready
                     </span>
                 </div>
@@ -478,6 +477,22 @@
                     <div class="flex flex-col text-left">
                         <span class="text-[8px] text-slate-500 font-bold uppercase tracking-wider leading-none">Forms by</span>
                         <span class="text-xs font-extrabold text-rose-500 group-hover:text-rose-400 transition-colors">Formspree</span>
+                    </div>
+                </a>
+                <!-- Gemini Link -->
+                <a href="https://deepmind.google/technologies/gemini/" target="_blank" class="flex items-center gap-2.5 px-3.5 py-2 bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-slate-700 rounded-xl text-slate-300 transition-all duration-200 group">
+                    <i class="fa-solid fa-wand-magic-sparkles text-indigo-400 text-base group-hover:scale-110 transition-transform animate-pulse"></i>
+                    <div class="flex flex-col text-left">
+                        <span class="text-[8px] text-slate-500 font-bold uppercase tracking-wider leading-none">Intelligence by</span>
+                        <span class="text-xs font-extrabold text-indigo-400 group-hover:text-indigo-300 transition-colors">Gemini API</span>
+                    </div>
+                </a>
+                <!-- Antigravity Link -->
+                <a href="https://github.com/google-deepmind" target="_blank" class="flex items-center gap-2.5 px-3.5 py-2 bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-slate-700 rounded-xl text-slate-300 transition-all duration-200 group">
+                    <i class="fa-solid fa-feather-pointed text-cyan-400 text-base group-hover:scale-110 transition-transform"></i>
+                    <div class="flex flex-col text-left">
+                        <span class="text-[8px] text-slate-500 font-bold uppercase tracking-wider leading-none">AI Agent</span>
+                        <span class="text-xs font-extrabold text-cyan-400 group-hover:text-cyan-300 transition-colors">Antigravity</span>
                     </div>
                 </a>
             </div>
