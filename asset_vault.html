@@ -783,6 +783,29 @@
         let assetData = JSON.parse(localStorage.getItem('vault_assets')) || initialAssetData;
         let careTasks = JSON.parse(localStorage.getItem('vault_tasks')) || initialTasks;
 
+        // Migration patch: Automatically update old mock Unsplash URLs and missing mock warranties
+        let migrated = false;
+        assetData.forEach(item => {
+            if (item.id === 1) {
+                if (!item.imageUrl || item.imageUrl.includes("photo-1584473457406-6240486418e9")) {
+                    item.imageUrl = "mower.jpg";
+                    migrated = true;
+                }
+                if (!item.warrantyEndDate) {
+                    item.warrantyEndDate = "2028-04-20";
+                    migrated = true;
+                }
+            } else if (item.id === 2) {
+                if (!item.warrantyEndDate) {
+                    item.warrantyEndDate = "2027-01-15";
+                    migrated = true;
+                }
+            }
+        });
+        if (migrated) {
+            localStorage.setItem('vault_assets', JSON.stringify(assetData));
+        }
+
         // Ensure all default initial tasks are present in careTasks if not already existing
         initialTasks.forEach(t => {
             let taskExists = careTasks.some(existing => existing.id === t.id);
