@@ -111,7 +111,6 @@
             <button onclick="openFeedbackModal()" class="px-3.5 py-1.5 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/20 hover:border-indigo-500/30 text-xs font-bold rounded-xl transition flex items-center gap-1.5">
                 <i class="fa-solid fa-comment-dots"></i> Send Feedback
             </button>
-            <span class="text-xs text-slate-500 font-mono hidden sm:inline">domain: <span class="text-slate-300 font-bold">thorpetech.org</span></span>
             <a href="https://github.com/corey1317-git" target="_blank" class="h-9 w-9 rounded-xl bg-slate-900 border border-slate-800 hover:border-indigo-500/30 flex items-center justify-center text-slate-400 hover:text-indigo-400 transition" title="GitHub Profile">
                 <i class="fa-brands fa-github text-lg"></i>
             </a>
@@ -274,14 +273,26 @@
             </div>
         </section>
 
-        <!-- Tech highlight banner at the bottom -->
-        <section class="border-t border-slate-900/80 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-slate-500">
-            <span class="font-mono">Built with modern client-side tech stacks:</span>
-            <div class="flex flex-wrap justify-center gap-2">
-                <span class="px-2.5 py-1 bg-slate-900 rounded-lg text-[10px] text-slate-400 font-semibold border border-slate-850">HTML5 / CSS3</span>
-                <span class="px-2.5 py-1 bg-slate-900 rounded-lg text-[10px] text-slate-400 font-semibold border border-slate-850">Tailwind CSS</span>
-                <span class="px-2.5 py-1 bg-slate-900 rounded-lg text-[10px] text-slate-400 font-semibold border border-slate-850">JavaScript ES6+</span>
-                <span class="px-2.5 py-1 bg-slate-900 rounded-lg text-[10px] text-slate-400 font-semibold border border-slate-850">GitHub Pages</span>
+        <!-- Partnership Shoutout Banner -->
+        <section class="border-t border-slate-900/80 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-slate-500">
+            <span class="font-mono">Proudly registered and powered by:</span>
+            <div class="flex flex-wrap justify-center gap-3">
+                <!-- Porkbun Link -->
+                <a href="https://porkbun.com" target="_blank" class="flex items-center gap-2.5 px-3.5 py-2 bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-slate-700 rounded-xl text-slate-300 transition-all duration-200 group">
+                    <img src="https://raw.githubusercontent.com/selfh-st/icons/main/svg/porkbun.svg" alt="Porkbun Logo" class="h-4.5 w-4.5 object-contain group-hover:scale-110 transition-transform">
+                    <div class="flex flex-col text-left">
+                        <span class="text-[8px] text-slate-500 font-bold uppercase tracking-wider leading-none">Domains by</span>
+                        <span class="text-xs font-extrabold text-pink-400 group-hover:text-pink-300 transition-colors">Porkbun</span>
+                    </div>
+                </a>
+                <!-- Formspree Link -->
+                <a href="https://formspree.io" target="_blank" class="flex items-center gap-2.5 px-3.5 py-2 bg-slate-900 hover:bg-slate-850 border border-slate-800 hover:border-slate-700 rounded-xl text-slate-300 transition-all duration-200 group">
+                    <img src="https://www.vectorlogo.zone/logos/formspree/formspree-icon.svg" alt="Formspree Logo" class="h-4.5 w-4.5 object-contain group-hover:scale-110 transition-transform">
+                    <div class="flex flex-col text-left">
+                        <span class="text-[8px] text-slate-500 font-bold uppercase tracking-wider leading-none">Forms by</span>
+                        <span class="text-xs font-extrabold text-rose-500 group-hover:text-rose-400 transition-colors">Formspree</span>
+                    </div>
+                </a>
             </div>
         </section>
 
