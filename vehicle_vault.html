@@ -162,6 +162,9 @@
                     </div>
                     <!-- Action buttons overlay -->
                     <div class="absolute top-2 right-2 flex gap-1.5">
+                        <button id="detail-glovebox-btn" onclick="openGloveboxModal()" class="px-2.5 py-1.5 bg-rose-600/90 backdrop-blur hover:bg-rose-500 text-white border border-rose-450 text-[10px] font-extrabold rounded-lg transition flex items-center gap-1.5 shadow-lg shadow-rose-600/20" title="Roadside Emergency Glovebox">
+                            <i class="fa-solid fa-shield-halved"></i> Digital Glovebox
+                        </button>
                         <button id="detail-enrich-btn" onclick="enrichVehicle()" class="px-2.5 py-1.5 bg-slate-900/80 backdrop-blur hover:bg-violet-600 text-violet-300 hover:text-white border border-violet-500/30 text-[10px] font-bold rounded-lg transition flex items-center gap-1">
                             <i class="fa-solid fa-wand-magic-sparkles text-[10px]"></i> AI Enrich
                         </button>
@@ -350,7 +353,7 @@
 
             <!-- Insurance & Registration -->
             <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-3">
-                <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Insurance &amp; Registration</p>
+                <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Insurance, Registration &amp; Emergency Info</p>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-[10px] text-slate-500 mb-1">Insurance Provider</label>
@@ -361,12 +364,56 @@
                         <input id="f-ins-policy" type="text" placeholder="POL-0000000" class="w-full bg-slate-900 border border-slate-800 focus:border-cyan-500 rounded-lg p-2 text-sm placeholder-slate-700 focus:outline-none transition font-mono">
                     </div>
                     <div>
+                        <label class="block text-[10px] text-slate-500 mb-1">Insurance Phone #</label>
+                        <input id="f-ins-phone" type="text" placeholder="1-800-555-0199" class="w-full bg-slate-900 border border-slate-800 focus:border-cyan-500 rounded-lg p-2 text-sm placeholder-slate-700 focus:outline-none transition">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] text-slate-500 mb-1">Emergency Contact Info</label>
+                        <input id="f-emergency-contact" type="text" placeholder="Mom: 555-0123" class="w-full bg-slate-900 border border-slate-800 focus:border-cyan-500 rounded-lg p-2 text-sm placeholder-slate-700 focus:outline-none transition">
+                    </div>
+                    <div>
                         <label class="block text-[10px] text-slate-500 mb-1">Insurance Expiry</label>
                         <input id="f-ins-expiry" type="date" class="w-full bg-slate-900 border border-slate-800 focus:border-cyan-500 rounded-lg p-2 text-sm text-slate-400 focus:outline-none transition">
                     </div>
                     <div>
                         <label class="block text-[10px] text-slate-500 mb-1">Registration Expiry</label>
                         <input id="f-reg-expiry" type="date" class="w-full bg-slate-900 border border-slate-800 focus:border-cyan-500 rounded-lg p-2 text-sm text-slate-400 focus:outline-none transition">
+                    </div>
+                </div>
+                <!-- Document card scans (Driver's License, Insurance, Registration) -->
+                <div class="pt-3 border-t border-slate-850">
+                    <p class="text-[9px] font-bold uppercase tracking-wider text-slate-500 mb-2">Digital Cards / Document Scans</p>
+                    <div class="grid grid-cols-3 gap-2">
+                        <!-- Driver's License Card -->
+                        <div class="flex flex-col items-center">
+                            <span class="text-[8px] text-slate-500 mb-1">Driver's License</span>
+                            <div id="dl-preview-wrap" class="h-16 w-full rounded bg-slate-900 border border-slate-800 flex items-center justify-center cursor-pointer hover:border-cyan-500/50 transition relative overflow-hidden animate-pulse" onclick="document.getElementById('dl-file-input').click()">
+                                <img id="dl-preview" class="w-full h-full object-cover hidden">
+                                <i id="dl-icon" class="fa-solid fa-id-card text-slate-700 text-lg"></i>
+                            </div>
+                            <input type="file" id="dl-file-input" accept="image/*" class="hidden" onchange="handleDlUpload(event)">
+                            <button type="button" onclick="clearDl()" id="clear-dl-btn" class="hidden text-[8px] text-rose-500 mt-0.5">Remove</button>
+                        </div>
+                        <!-- Insurance Card -->
+                        <div class="flex flex-col items-center">
+                            <span class="text-[8px] text-slate-500 mb-1">Insurance Card</span>
+                            <div id="ins-preview-wrap" class="h-16 w-full rounded bg-slate-900 border border-slate-800 flex items-center justify-center cursor-pointer hover:border-cyan-500/50 transition relative overflow-hidden animate-pulse" onclick="document.getElementById('ins-file-input').click()">
+                                <img id="ins-preview" class="w-full h-full object-cover hidden">
+                                <i id="ins-icon" class="fa-solid fa-file-invoice text-slate-700 text-lg"></i>
+                            </div>
+                            <input type="file" id="ins-file-input" accept="image/*" class="hidden" onchange="handleInsUpload(event)">
+                            <button type="button" onclick="clearIns()" id="clear-ins-btn" class="hidden text-[8px] text-rose-500 mt-0.5">Remove</button>
+                        </div>
+                        <!-- Registration Scan -->
+                        <div class="flex flex-col items-center">
+                            <span class="text-[8px] text-slate-500 mb-1">Registration Card</span>
+                            <div id="reg-preview-wrap" class="h-16 w-full rounded bg-slate-900 border border-slate-800 flex items-center justify-center cursor-pointer hover:border-cyan-500/50 transition relative overflow-hidden animate-pulse" onclick="document.getElementById('reg-file-input').click()">
+                                <img id="reg-preview" class="w-full h-full object-cover hidden">
+                                <i id="reg-icon" class="fa-solid fa-file-contract text-slate-700 text-lg"></i>
+                            </div>
+                            <input type="file" id="reg-file-input" accept="image/*" class="hidden" onchange="handleRegUpload(event)">
+                            <button type="button" onclick="clearReg()" id="clear-reg-btn" class="hidden text-[8px] text-rose-500 mt-0.5">Remove</button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -460,6 +507,18 @@
                 <label class="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Notes</label>
                 <textarea id="log-notes" rows="2" placeholder="Used Mobil 1 5W-30, next due at 50k miles..." class="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-xl p-2.5 text-sm placeholder-slate-700 focus:outline-none transition resize-none"></textarea>
             </div>
+            <div>
+                <label class="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Receipt Scan / Photo (Optional)</label>
+                <div id="receipt-preview-wrap" class="h-20 w-full rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center cursor-pointer hover:border-cyan-500/50 transition relative overflow-hidden" onclick="document.getElementById('receipt-file-input').click()">
+                    <img id="receipt-preview" class="w-full h-full object-cover hidden">
+                    <div id="receipt-placeholder" class="flex flex-col items-center gap-1 text-slate-650">
+                        <i class="fa-solid fa-receipt text-xl"></i>
+                        <span class="text-[9px]">Tap to upload receipt photo</span>
+                    </div>
+                </div>
+                <input type="file" id="receipt-file-input" accept="image/*" class="hidden" onchange="handleReceiptUpload(event)">
+                <button type="button" onclick="clearReceipt()" id="clear-receipt-btn" class="hidden mt-1 text-[10px] text-rose-450 hover:text-rose-400 transition w-full text-center">Remove Receipt</button>
+            </div>
             <div class="flex justify-end gap-3 pt-1">
                 <button onclick="closeLogModal()" class="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-xl transition text-sm">Cancel</button>
                 <button onclick="saveLog()" class="px-5 py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold rounded-xl transition text-sm flex items-center gap-2">
@@ -531,6 +590,97 @@
     </div>
 </div>
 
+<!-- Glovebox / Emergency Dashboard Modal -->
+<div id="glovebox-modal" class="fixed inset-0 z-[800] hidden items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+    <div class="bg-slate-900 border border-slate-700 rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-slate-800 sticky top-0 bg-slate-900 z-10">
+            <div class="flex items-center gap-3">
+                <div class="h-10 w-10 rounded-xl bg-rose-600/10 text-rose-400 flex items-center justify-center border border-rose-600/20">
+                    <i class="fa-solid fa-shield-halved text-lg"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-white text-base leading-tight">Digital Glovebox</h3>
+                    <p class="text-xs text-slate-400">Emergency &amp; Roadside Dashboard</p>
+                </div>
+            </div>
+            <button onclick="closeGloveboxModal()" class="text-slate-500 hover:text-slate-300 transition"><i class="fa-solid fa-xmark text-lg"></i></button>
+        </div>
+        <div class="p-6 space-y-6">
+            <div class="bg-slate-950/85 border border-slate-850 rounded-2xl p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="space-y-2">
+                    <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Vehicle Details</p>
+                    <div class="space-y-1">
+                        <div class="text-xs text-slate-400">Year / Make / Model: <span id="gb-year-make" class="text-white font-bold"></span></div>
+                        <div class="text-xs text-slate-400">Plate: <span id="gb-plate" class="text-white font-bold font-mono"></span></div>
+                        <div class="text-xs text-slate-400">VIN: <span id="gb-vin" class="text-white font-mono text-[11px] block md:inline"></span></div>
+                        <div class="text-xs text-slate-400">Color: <span id="gb-color" class="text-white font-bold"></span></div>
+                    </div>
+                </div>
+                <div class="space-y-2">
+                    <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Insurance &amp; Contacts</p>
+                    <div class="space-y-1">
+                        <div class="text-xs text-slate-400">Carrier: <span id="gb-ins-provider" class="text-white font-bold"></span></div>
+                        <div class="text-xs text-slate-400">Policy #: <span id="gb-ins-policy" class="text-white font-bold font-mono"></span></div>
+                        <div class="text-xs text-slate-400">Insurance Phone: <span class="text-white font-bold"><a id="gb-ins-phone" href="" class="text-cyan-400 hover:underline"></a></span></div>
+                        <div class="text-xs text-slate-400">Emergency Contact: <span class="text-white font-bold"><a id="gb-emergency-contact" href="" class="text-cyan-400 hover:underline"></a></span></div>
+                    </div>
+                </div>
+            </div>
+            <div class="space-y-2">
+                <p class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Tap Card to View Fullscreen</p>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div id="gb-dl-card" class="bg-slate-950 border border-slate-850 rounded-xl p-3 flex flex-col items-center justify-between text-center min-h-[140px] cursor-pointer hover:border-cyan-500/40 transition group">
+                        <span class="text-xs font-bold text-slate-300 mb-2">Driver's License</span>
+                        <div class="h-20 w-full rounded bg-slate-900 border border-slate-800 flex items-center justify-center overflow-hidden relative">
+                            <img id="gb-dl-img" class="w-full h-full object-cover hidden">
+                            <i id="gb-dl-placeholder" class="fa-solid fa-id-card text-slate-700 text-3xl group-hover:scale-105 transition-transform"></i>
+                        </div>
+                    </div>
+                    <div id="gb-ins-card" class="bg-slate-950 border border-slate-850 rounded-xl p-3 flex flex-col items-center justify-between text-center min-h-[140px] cursor-pointer hover:border-cyan-500/40 transition group">
+                        <span class="text-xs font-bold text-slate-300 mb-2">Insurance Card</span>
+                        <div class="h-20 w-full rounded bg-slate-900 border border-slate-800 flex items-center justify-center overflow-hidden relative">
+                            <img id="gb-ins-img" class="w-full h-full object-cover hidden">
+                            <i id="gb-ins-placeholder" class="fa-solid fa-file-invoice text-slate-700 text-3xl group-hover:scale-105 transition-transform"></i>
+                        </div>
+                    </div>
+                    <div id="gb-reg-card" class="bg-slate-950 border border-slate-850 rounded-xl p-3 flex flex-col items-center justify-between text-center min-h-[140px] cursor-pointer hover:border-cyan-500/40 transition group">
+                        <span class="text-xs font-bold text-slate-300 mb-2">Registration Card</span>
+                        <div class="h-20 w-full rounded bg-slate-900 border border-slate-800 flex items-center justify-center overflow-hidden relative">
+                            <img id="gb-reg-img" class="w-full h-full object-cover hidden">
+                            <i id="gb-reg-placeholder" class="fa-solid fa-file-contract text-slate-700 text-3xl group-hover:scale-105 transition-transform"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="bg-slate-950/40 border border-slate-850/80 rounded-2xl p-4 space-y-3">
+                <div class="flex items-center gap-2 pb-2 border-b border-slate-850/80">
+                    <i class="fa-solid fa-triangle-exclamation text-amber-500"></i>
+                    <span class="text-xs font-bold uppercase tracking-wider text-slate-300">What to do in an Accident</span>
+                </div>
+                <ul class="space-y-2 text-xs text-slate-400 pl-4 list-decimal leading-relaxed">
+                    <li><strong>Safety First:</strong> Pull over to a safe area, turn on hazard lights, and check for injuries. Call 911 immediately if emergency care is required.</li>
+                    <li><strong>Swap Information:</strong> Share your name, contact phone, and this digital Insurance policy with other drivers involved.</li>
+                    <li><strong>Document Scene:</strong> Take photos of all vehicle damages, license plates, the accident intersection, and the other driver's license card.</li>
+                    <li><strong>File a Police Report:</strong> In many jurisdictions, calling the police is required to create a formal collision record for insurance.</li>
+                </ul>
+            </div>
+        </div>
+        <div class="px-6 py-4 border-t border-slate-800 flex justify-end">
+            <button onclick="closeGloveboxModal()" class="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl transition text-xs">
+                Close Glovebox
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Document Lightbox Modal -->
+<div id="doc-lightbox" class="fixed inset-0 z-[9999] hidden items-center justify-center p-4 bg-black/95 backdrop-blur-sm" onclick="closeDocLightbox()">
+    <button onclick="closeDocLightbox()" class="absolute top-6 right-6 text-white hover:text-slate-300 transition text-2xl">
+        <i class="fa-solid fa-xmark"></i>
+    </button>
+    <img id="lightbox-img" src="" class="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl">
+</div>
+
 <!-- ═══════════ JAVASCRIPT ═══════════ -->
 <script>
 // ── State ────────────────────────────────────────────────
@@ -539,6 +689,10 @@ let apiKey = localStorage.getItem('vv_gemini_api_key') || '';
 let selectedId = null;
 let editingId = null;
 let stagedImageBase64 = null;
+let stagedDlBase64 = null;
+let stagedInsBase64 = null;
+let stagedRegBase64 = null;
+let stagedReceiptBase64 = null;
 let mileageTargetId = null;
 let currentTab = 'schedule';
 
@@ -1000,6 +1154,10 @@ function renderLog(v) {
                 ${l.notes ? `<div class="text-[10px] text-slate-600 mt-1 italic">${esc(l.notes)}</div>` : ''}
             </div>
             <div class="flex items-center gap-2 flex-shrink-0">
+                ${l.receiptUrl ? `
+                <button onclick="viewDoc('${esc(l.receiptUrl)}')" class="text-cyan-400 hover:text-cyan-300 text-[11px]" title="View Receipt">
+                    <i class="fa-solid fa-receipt text-[13px]"></i>
+                </button>` : ''}
                 ${l.cost ? `<span class="text-[10px] font-bold text-emerald-400">$${parseFloat(l.cost).toFixed(2)}</span>` : ''}
                 <button onclick="deleteLog(${v.id}, ${l.id})" class="opacity-0 group-hover:opacity-100 transition text-slate-600 hover:text-rose-400 text-[10px]"><i class="fa-solid fa-trash"></i></button>
             </div>
@@ -1198,10 +1356,49 @@ function openEditModal() {
     document.getElementById('f-purchase-date').value = v.purchaseDate || '';
     document.getElementById('f-ins-provider').value = v.insuranceProvider || '';
     document.getElementById('f-ins-policy').value = v.insurancePolicyNumber || '';
+    document.getElementById('f-ins-phone').value = v.insurancePhone || '';
+    document.getElementById('f-emergency-contact').value = v.emergencyContact || '';
     document.getElementById('f-ins-expiry').value = v.insuranceExpiry || '';
     document.getElementById('f-reg-expiry').value = v.registrationExpiry || '';
     document.getElementById('f-price').value = v.purchasePrice || '';
     document.getElementById('f-purchased-from').value = v.purchasedFrom || '';
+
+    // Card previews
+    stagedDlBase64 = v.dlImage || null;
+    if (v.dlImage) {
+        document.getElementById('dl-preview').src = v.dlImage;
+        document.getElementById('dl-preview').classList.remove('hidden');
+        document.getElementById('dl-icon').classList.add('hidden');
+        document.getElementById('clear-dl-btn').classList.remove('hidden');
+    } else {
+        document.getElementById('dl-preview').classList.add('hidden');
+        document.getElementById('dl-icon').classList.remove('hidden');
+        document.getElementById('clear-dl-btn').classList.add('hidden');
+    }
+
+    stagedInsBase64 = v.insImage || null;
+    if (v.insImage) {
+        document.getElementById('ins-preview').src = v.insImage;
+        document.getElementById('ins-preview').classList.remove('hidden');
+        document.getElementById('ins-icon').classList.add('hidden');
+        document.getElementById('clear-ins-btn').classList.remove('hidden');
+    } else {
+        document.getElementById('ins-preview').classList.add('hidden');
+        document.getElementById('ins-icon').classList.remove('hidden');
+        document.getElementById('clear-ins-btn').classList.add('hidden');
+    }
+
+    stagedRegBase64 = v.regImage || null;
+    if (v.regImage) {
+        document.getElementById('reg-preview').src = v.regImage;
+        document.getElementById('reg-preview').classList.remove('hidden');
+        document.getElementById('reg-icon').classList.add('hidden');
+        document.getElementById('clear-reg-btn').classList.remove('hidden');
+    } else {
+        document.getElementById('reg-preview').classList.add('hidden');
+        document.getElementById('reg-icon').classList.remove('hidden');
+        document.getElementById('clear-reg-btn').classList.add('hidden');
+    }
 
     // Image preview
     const previewImg = document.getElementById('img-preview');
@@ -1228,12 +1425,15 @@ function closeAddModal() {
     modal.classList.add('hidden');
     modal.classList.remove('flex');
     stagedImageBase64 = null;
+    stagedDlBase64 = null;
+    stagedInsBase64 = null;
+    stagedRegBase64 = null;
 }
 
 function clearFormFields() {
     ['f-nickname','f-year','f-trim','f-color','f-vin','f-plate',
      'f-mileage','f-purchase-date','f-ins-provider','f-ins-policy','f-ins-expiry',
-     'f-reg-expiry','f-price','f-purchased-from'].forEach(id => {
+     'f-reg-expiry','f-price','f-purchased-from','f-ins-phone','f-emergency-contact'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.value = '';
     });
@@ -1245,6 +1445,9 @@ function clearFormFields() {
     document.getElementById('img-preview').classList.add('hidden');
     document.getElementById('img-preview-placeholder').classList.remove('hidden');
     document.getElementById('clear-img-btn').classList.add('hidden');
+    clearDl();
+    clearIns();
+    clearReg();
 }
 
 function saveVehicle() {
@@ -1271,11 +1474,16 @@ function saveVehicle() {
         v.purchaseDate = document.getElementById('f-purchase-date').value;
         v.insuranceProvider = document.getElementById('f-ins-provider').value.trim();
         v.insurancePolicyNumber = document.getElementById('f-ins-policy').value.trim();
+        v.insurancePhone = document.getElementById('f-ins-phone').value.trim();
+        v.emergencyContact = document.getElementById('f-emergency-contact').value.trim();
         v.insuranceExpiry = document.getElementById('f-ins-expiry').value;
         v.registrationExpiry = document.getElementById('f-reg-expiry').value;
         v.purchasePrice = parseFloat(document.getElementById('f-price').value) || v.purchasePrice;
         v.purchasedFrom = document.getElementById('f-purchased-from').value.trim();
         if (stagedImageBase64) v.imageUrl = stagedImageBase64;
+        if (stagedDlBase64) v.dlImage = stagedDlBase64;
+        if (stagedInsBase64) v.insImage = stagedInsBase64;
+        if (stagedRegBase64) v.regImage = stagedRegBase64;
     } else {
         const year = parseInt(document.getElementById('f-year').value) || new Date().getFullYear();
         const nick = document.getElementById('f-nickname').value.trim() || `${year} ${make} ${model}`;
@@ -1292,9 +1500,14 @@ function saveVehicle() {
             purchasedFrom: document.getElementById('f-purchased-from').value.trim(),
             insuranceProvider: document.getElementById('f-ins-provider').value.trim(),
             insurancePolicyNumber: document.getElementById('f-ins-policy').value.trim(),
+            insurancePhone: document.getElementById('f-ins-phone').value.trim(),
+            emergencyContact: document.getElementById('f-emergency-contact').value.trim(),
             insuranceExpiry: document.getElementById('f-ins-expiry').value,
             registrationExpiry: document.getElementById('f-reg-expiry').value,
             imageUrl: stagedImageBase64 || '',
+            dlImage: stagedDlBase64 || '',
+            insImage: stagedInsBase64 || '',
+            regImage: stagedRegBase64 || '',
             maintenanceLogs: [],
             serviceIntervals: DEFAULT_INTERVALS.map(i => ({...i, lastDate: null, lastMileage: null})),
             youtubeGuides: [], commonIssues: [], tips: '',
@@ -1339,6 +1552,7 @@ function openLogModal(prefillType) {
     document.getElementById('log-cost').value = '';
     document.getElementById('log-shop').value = '';
     document.getElementById('log-notes').value = '';
+    clearReceipt();
     if (prefillType) {
         const sel = document.getElementById('log-type');
         const opt = [...sel.options].find(o => o.value === prefillType);
@@ -1357,6 +1571,7 @@ function closeLogModal() {
     const modal = document.getElementById('log-modal');
     modal.classList.add('hidden');
     modal.classList.remove('flex');
+    clearReceipt();
 }
 
 function saveLog() {
@@ -1375,7 +1590,7 @@ function saveLog() {
     const shop = document.getElementById('log-shop').value.trim();
     const notes = document.getElementById('log-notes').value.trim();
 
-    const record = { id: Date.now(), type, date, mileage, cost, shop, notes };
+    const record = { id: Date.now(), type, date, mileage, cost, shop, notes, receiptUrl: stagedReceiptBase64 || '' };
     if (!v.maintenanceLogs) v.maintenanceLogs = [];
     v.maintenanceLogs.push(record);
 
@@ -1467,6 +1682,247 @@ function clearImage() {
     document.getElementById('img-preview-placeholder').classList.remove('hidden');
     document.getElementById('clear-img-btn').classList.add('hidden');
     document.getElementById('img-file-input').value = '';
+}
+
+// ── Document Compression & Emergency Glovebox Handlers ─────
+function compressDocument(file, callback) {
+    const canvas = document.createElement('canvas');
+    const img = new Image();
+    img.onload = () => {
+        const MAX = 1024; // higher resolution for documents/text readability
+        let w = img.width, h = img.height;
+        if (w > MAX || h > MAX) {
+            if (w > h) { h = h * MAX / w; w = MAX; }
+            else { w = w * MAX / h; h = MAX; }
+        }
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        const base64 = canvas.toDataURL('image/jpeg', 0.85); // slightly higher quality
+        callback(base64);
+    };
+    img.src = URL.createObjectURL(file);
+}
+
+function handleDlUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    compressDocument(file, (base64) => {
+        stagedDlBase64 = base64;
+        const preview = document.getElementById('dl-preview');
+        const icon = document.getElementById('dl-icon');
+        const clearBtn = document.getElementById('clear-dl-btn');
+        if (preview) { preview.src = base64; preview.classList.remove('hidden'); }
+        if (icon) icon.classList.add('hidden');
+        if (clearBtn) clearBtn.classList.remove('hidden');
+    });
+}
+
+function clearDl() {
+    stagedDlBase64 = null;
+    if (editingId) { const v = getVehicle(editingId); if (v) v.dlImage = ''; }
+    const preview = document.getElementById('dl-preview');
+    const icon = document.getElementById('dl-icon');
+    const clearBtn = document.getElementById('clear-dl-btn');
+    if (preview) preview.classList.add('hidden');
+    if (icon) icon.classList.remove('hidden');
+    if (clearBtn) clearBtn.classList.add('hidden');
+    const input = document.getElementById('dl-file-input');
+    if (input) input.value = '';
+}
+
+function handleInsUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    compressDocument(file, (base64) => {
+        stagedInsBase64 = base64;
+        const preview = document.getElementById('ins-preview');
+        const icon = document.getElementById('ins-icon');
+        const clearBtn = document.getElementById('clear-ins-btn');
+        if (preview) { preview.src = base64; preview.classList.remove('hidden'); }
+        if (icon) icon.classList.add('hidden');
+        if (clearBtn) clearBtn.classList.remove('hidden');
+    });
+}
+
+function clearIns() {
+    stagedInsBase64 = null;
+    if (editingId) { const v = getVehicle(editingId); if (v) v.insImage = ''; }
+    const preview = document.getElementById('ins-preview');
+    const icon = document.getElementById('ins-icon');
+    const clearBtn = document.getElementById('clear-ins-btn');
+    if (preview) preview.classList.add('hidden');
+    if (icon) icon.classList.remove('hidden');
+    if (clearBtn) clearBtn.classList.add('hidden');
+    const input = document.getElementById('ins-file-input');
+    if (input) input.value = '';
+}
+
+function handleRegUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    compressDocument(file, (base64) => {
+        stagedRegBase64 = base64;
+        const preview = document.getElementById('reg-preview');
+        const icon = document.getElementById('reg-icon');
+        const clearBtn = document.getElementById('clear-reg-btn');
+        if (preview) { preview.src = base64; preview.classList.remove('hidden'); }
+        if (icon) icon.classList.add('hidden');
+        if (clearBtn) clearBtn.classList.remove('hidden');
+    });
+}
+
+function clearReg() {
+    stagedRegBase64 = null;
+    if (editingId) { const v = getVehicle(editingId); if (v) v.regImage = ''; }
+    const preview = document.getElementById('reg-preview');
+    const icon = document.getElementById('reg-icon');
+    const clearBtn = document.getElementById('clear-reg-btn');
+    if (preview) preview.classList.add('hidden');
+    if (icon) icon.classList.remove('hidden');
+    if (clearBtn) clearBtn.classList.add('hidden');
+    const input = document.getElementById('reg-file-input');
+    if (input) input.value = '';
+}
+
+function handleReceiptUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    compressDocument(file, (base64) => {
+        stagedReceiptBase64 = base64;
+        const preview = document.getElementById('receipt-preview');
+        const placeholder = document.getElementById('receipt-placeholder');
+        const clearBtn = document.getElementById('clear-receipt-btn');
+        if (preview) { preview.src = base64; preview.classList.remove('hidden'); }
+        if (placeholder) placeholder.classList.add('hidden');
+        if (clearBtn) clearBtn.classList.remove('hidden');
+    });
+}
+
+function clearReceipt() {
+    stagedReceiptBase64 = null;
+    const preview = document.getElementById('receipt-preview');
+    const placeholder = document.getElementById('receipt-placeholder');
+    const clearBtn = document.getElementById('clear-receipt-btn');
+    if (preview) preview.classList.add('hidden');
+    if (placeholder) placeholder.classList.remove('hidden');
+    if (clearBtn) clearBtn.classList.add('hidden');
+    const input = document.getElementById('receipt-file-input');
+    if (input) input.value = '';
+}
+
+function openGloveboxModal() {
+    if (!selectedId) return;
+    const v = getVehicle(selectedId);
+    if (!v) return;
+
+    document.getElementById('gb-year-make').textContent = `${v.year} ${v.make} ${v.model}`;
+    document.getElementById('gb-plate').textContent = v.licensePlate || 'N/A';
+    document.getElementById('gb-vin').textContent = v.vin || 'N/A';
+    document.getElementById('gb-color').textContent = v.color || 'N/A';
+
+    document.getElementById('gb-ins-provider').textContent = v.insuranceProvider || 'N/A';
+    document.getElementById('gb-ins-policy').textContent = v.insurancePolicyNumber || 'N/A';
+
+    const insPhoneLink = document.getElementById('gb-ins-phone');
+    if (v.insurancePhone) {
+        insPhoneLink.textContent = v.insurancePhone;
+        insPhoneLink.href = `tel:${v.insurancePhone.replace(/\D/g, '')}`;
+    } else {
+        insPhoneLink.textContent = 'N/A';
+        insPhoneLink.removeAttribute('href');
+    }
+
+    const emContactLink = document.getElementById('gb-emergency-contact');
+    if (v.emergencyContact) {
+        emContactLink.textContent = v.emergencyContact;
+        const phoneMatch = v.emergencyContact.match(/[\d\-\(\)\+\s]{7,}/);
+        if (phoneMatch) {
+            emContactLink.href = `tel:${phoneMatch[0].replace(/\D/g, '')}`;
+        } else {
+            emContactLink.removeAttribute('href');
+        }
+    } else {
+        emContactLink.textContent = 'N/A';
+        emContactLink.removeAttribute('href');
+    }
+
+    // Bind Image Cards
+    const dlImg = document.getElementById('gb-dl-img');
+    const dlPl = document.getElementById('gb-dl-placeholder');
+    const dlCard = document.getElementById('gb-dl-card');
+    if (v.dlImage) {
+        dlImg.src = v.dlImage;
+        dlImg.classList.remove('hidden');
+        dlPl.classList.add('hidden');
+        dlCard.style.cursor = 'pointer';
+        dlCard.onclick = () => viewDoc(v.dlImage);
+    } else {
+        dlImg.classList.add('hidden');
+        dlPl.classList.remove('hidden');
+        dlCard.style.cursor = 'default';
+        dlCard.onclick = null;
+    }
+
+    const insImg = document.getElementById('gb-ins-img');
+    const insPl = document.getElementById('gb-ins-placeholder');
+    const insCard = document.getElementById('gb-ins-card');
+    if (v.insImage) {
+        insImg.src = v.insImage;
+        insImg.classList.remove('hidden');
+        insPl.classList.add('hidden');
+        insCard.style.cursor = 'pointer';
+        insCard.onclick = () => viewDoc(v.insImage);
+    } else {
+        insImg.classList.add('hidden');
+        insPl.classList.remove('hidden');
+        insCard.style.cursor = 'default';
+        insCard.onclick = null;
+    }
+
+    const regImg = document.getElementById('gb-reg-img');
+    const regPl = document.getElementById('gb-reg-placeholder');
+    const regCard = document.getElementById('gb-reg-card');
+    if (v.regImage) {
+        regImg.src = v.regImage;
+        regImg.classList.remove('hidden');
+        regPl.classList.add('hidden');
+        regCard.style.cursor = 'pointer';
+        regCard.onclick = () => viewDoc(v.regImage);
+    } else {
+        regImg.classList.add('hidden');
+        regPl.classList.remove('hidden');
+        regCard.style.cursor = 'default';
+        regCard.onclick = null;
+    }
+
+    const modal = document.getElementById('glovebox-modal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+
+function closeGloveboxModal() {
+    const modal = document.getElementById('glovebox-modal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+}
+
+function viewDoc(base64) {
+    if (!base64) return;
+    const lightbox = document.getElementById('doc-lightbox');
+    const img = document.getElementById('lightbox-img');
+    if (lightbox && img) {
+        img.src = base64;
+        lightbox.classList.remove('hidden');
+        lightbox.classList.add('flex');
+    }
+}
+
+function closeDocLightbox() {
+    const lightbox = document.getElementById('doc-lightbox');
+    if (lightbox) {
+        lightbox.classList.add('hidden');
+        lightbox.classList.remove('flex');
+    }
 }
 
 // ── AI Enrich ─────────────────────────────────────────────
@@ -1618,13 +2074,15 @@ function updateApiKeyDot() {
 }
 
 // Close modals on backdrop click
-['settingsModal','vehicle-modal','log-modal','mileage-modal'].forEach(id => {
+['settingsModal','vehicle-modal','log-modal','mileage-modal','glovebox-modal','doc-lightbox'].forEach(id => {
     document.getElementById(id)?.addEventListener('click', function(e) {
         if (e.target === this) {
             if (id === 'settingsModal') closeSettingsModal();
             else if (id === 'vehicle-modal') closeAddModal();
             else if (id === 'log-modal') closeLogModal();
             else if (id === 'mileage-modal') closeMileageModal();
+            else if (id === 'glovebox-modal') closeGloveboxModal();
+            else if (id === 'doc-lightbox') closeDocLightbox();
         }
     });
 });
