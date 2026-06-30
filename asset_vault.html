@@ -145,6 +145,9 @@
             <button onclick="saveToGoogleDrive()" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-750 hover:border-slate-755 text-xs font-bold rounded-xl transition flex items-center gap-1.5" title="Backup database directly to Google Drive">
                 <i class="fa-brands fa-google-drive text-emerald-400"></i> Google Drive Save
             </button>
+            <button id="enrich-all-btn" onclick="enrichAllAssets()" class="px-3.5 py-2 bg-slate-800 hover:bg-violet-700/40 text-violet-300 hover:text-violet-200 border border-violet-700/50 hover:border-violet-500 text-xs font-bold rounded-xl transition flex items-center gap-1.5" title="AI Enrich All: Update care guides, parts, and tips for every asset using Gemini">
+                <i class="fa-solid fa-wand-magic-sparkles text-violet-400"></i> Enrich All
+            </button>
             <button onclick="openAddModal()" class="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-slate-950 text-sm font-bold rounded-xl shadow-lg shadow-emerald-500/10 transition flex items-center gap-2">
                 <i class="fa-solid fa-plus text-sm"></i> Add Asset
             </button>
@@ -2285,6 +2288,102 @@ ${schemaHint}`;
                     btn2.disabled = false;
                     btn2.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles text-violet-400/70"></i> Enrich`;
                 }
+            }
+        }
+
+        // AI Enrich All: Sequentially enrich every asset with delays to avoid rate limits
+        async function enrichAllAssets() {
+            if (!apiKey && !openrouterApiKey) {
+                showNotification("API Key Required", "Click the ⚙ Settings button in the header to add a free Gemini or OpenRouter API key.", "amber");
+                openSettingsModal();
+                return;
+            }
+
+            const assets = [...assetData];
+            if (assets.length === 0) {
+                showNotification("No Assets", "Add some assets first before enriching.", "amber");
+                return;
+            }
+
+            const enrichAllBtn = document.getElementById('enrich-all-btn');
+            if (enrichAllBtn) {
+                enrichAllBtn.disabled = true;
+                enrichAllBtn.innerHTML = `<i class="fa-solid fa-spinner animate-spin text-violet-400"></i> Enriching All...`;
+            }
+
+            let successCount = 0, failCount = 0;
+            showNotification("Enrich All Started", `Enriching ${assets.length} asset(s) one at a time. This may take a few minutes...`, "indigo");
+
+            const schemaHint = `Return ONLY a raw JSON object (no markdown fences, no commentary) matching exactly this shape: {"youtubeGuides": [{"label": string, "query": string}], "parts": string[], "manualUrl": string (prefer a matching manualslib.com page if one exists, otherwise the manufacturer's official manual page), "imageUrl": string, "tips": string}.`;
+            const systemText = "You are a home appliance and power tool maintenance expert. Provide accurate, model-specific care information. YouTube search queries must include the specific model number to avoid dead links. Verify real manufacturer URLs.";
+
+            for (let i = 0; i < assets.length; i++) {
+                const asset = assets[i];
+
+                const btn = document.getElementById(`enrich-btn-${asset.id}`);
+                if (btn) {
+                    btn.disabled = true;
+                    btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin text-violet-400"></i> Enriching...`;
+                }
+
+                const promptText = `Research specific maintenance and care information for this home asset:
+Name: ${asset.name}
+Model Number: ${asset.model || 'unknown'}
+Category: ${asset.category}
+
+Find accurate, model-specific information. Return:
+1. 2-4 YouTube search queries that will find real tutorials specifically for this model number
+2. Specific replacement parts and consumables for this exact model, including part numbers where known
+3. The official manufacturer support or manual URL for this specific model
+4. Practical care tips, maintenance schedule, and storage advice tailored to this product
+
+${schemaHint}`;
+
+                try {
+                    const result = await callAIWithFallback(promptText, systemText, true, null, null);
+                    const enrichData = result.data;
+                    const index = assetData.findIndex(item => item.id === asset.id);
+
+                    if (index !== -1) {
+                        if (enrichData.youtubeGuides?.length > 0) assetData[index].youtubeGuides = enrichData.youtubeGuides;
+                        if (enrichData.parts?.length > 0) {
+                            const existingNames = new Set((assetData[index].parts || []).map(p => (typeof p === 'object' ? p.name : p).toLowerCase().trim()));
+                            const newParts = enrichData.parts
+                                .filter(p => !existingNames.has(p.toLowerCase().trim()))
+                                .map(p => ({ name: p, url: `https://www.google.com/search?q=${encodeURIComponent(p + ' ' + (asset.model || asset.name))}` }));
+                            assetData[index].parts = [...(assetData[index].parts || []), ...newParts];
+                        }
+                        if (enrichData.manualUrl) assetData[index].manualUrl = enrichData.manualUrl;
+                        if (enrichData.tips) assetData[index].tips = enrichData.tips;
+                        const hasLocalPhoto = (assetData[index].imageUrl || '').startsWith('data:');
+                        if (enrichData.imageUrl && !hasLocalPhoto) assetData[index].imageUrl = enrichData.imageUrl;
+                    }
+
+                    successCount++;
+                    saveData();
+
+                } catch (err) {
+                    failCount++;
+                    console.error(`Enrich All failed for ${asset.name}:`, err);
+                }
+
+                renderAll();
+
+                // 5-second gap between calls to stay under Gemini free-tier rate limits
+                if (i < assets.length - 1) {
+                    await new Promise(resolve => setTimeout(resolve, 5000));
+                }
+            }
+
+            if (enrichAllBtn) {
+                enrichAllBtn.disabled = false;
+                enrichAllBtn.innerHTML = `<i class="fa-solid fa-wand-magic-sparkles"></i> Enrich All`;
+            }
+
+            if (failCount === 0) {
+                showNotification("Enrich All Complete!", `Successfully enriched all ${successCount} asset(s).`, "emerald");
+            } else {
+                showNotification("Enrich All Finished", `${successCount} succeeded, ${failCount} failed. Check browser console for details.`, "amber");
             }
         }
 
