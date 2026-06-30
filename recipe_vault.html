@@ -1,0 +1,1290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recipe Vault — Thorpe Tech</title>
+    <!-- Google Analytics 4 -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-BG8QPL6TX6"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-BG8QPL6TX6');
+    </script>
+    <!-- Google Identity Services client -->
+    <script src="https://accounts.google.com/gsi/client" defer></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        ::-webkit-scrollbar { width: 7px; height: 7px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        .card-hover { transition: transform 0.15s ease, box-shadow 0.15s ease; }
+        .card-hover:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+        .tab-active { border-bottom: 2px solid #f59e0b; color: #e2e8f0; }
+        .tab-inactive { border-bottom: 2px solid transparent; color: #94a3b8; }
+        @keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+        .fade-in { animation: fadeIn 0.2s ease forwards; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col overflow-x-hidden">
+
+<!-- ═══════════ HEADER ═══════════ -->
+<header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-40 px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+    <div class="flex items-center space-x-3.5 self-start md:self-auto">
+        <div class="h-11 w-11 rounded-xl bg-gradient-to-tr from-amber-500 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/20">
+            <i class="fa-solid fa-utensils text-slate-950 text-xl"></i>
+        </div>
+        <div>
+            <div class="flex items-center gap-2">
+                <h1 class="font-extrabold text-xl leading-tight bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">Recipe Vault</h1>
+                <span class="text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full select-none">v1.0.0</span>
+            </div>
+            <p class="text-[11px] text-slate-500 hidden md:block">Your recipes, synced to your Google Drive</p>
+        </div>
+    </div>
+    <div class="flex items-center gap-2 flex-wrap justify-end">
+        <a href="index.html" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 border border-slate-750 text-xs font-semibold rounded-xl transition flex items-center gap-1.5">
+            <i class="fa-solid fa-house text-slate-500"></i> Home
+        </a>
+        <span id="sync-status-pill" onclick="retrySync()" class="hidden px-2.5 py-1.5 rounded-xl text-[10px] font-bold border transition-colors duration-300 select-none cursor-pointer"></span>
+        <button id="signin-btn" onclick="signInWithGoogle()" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-750 text-xs font-bold rounded-xl transition flex items-center gap-1.5" title="Sign in to sync recipes to your Google Drive">
+            <i class="fa-brands fa-google-drive text-amber-400"></i> <span id="signin-btn-label">Sign In</span>
+        </button>
+        <button onclick="openAddModal()" class="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 text-sm font-bold rounded-xl shadow-lg shadow-amber-500/20 transition flex items-center gap-2">
+            <i class="fa-solid fa-plus text-sm"></i> Add Recipe
+        </button>
+        <button id="settings-btn" onclick="openSettingsModal()" class="relative h-9 w-9 bg-slate-800 hover:bg-slate-700 text-slate-400 border border-slate-750 rounded-xl transition flex items-center justify-center" title="Settings">
+            <i class="fa-solid fa-gear text-base"></i>
+            <span id="api-key-dot" class="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-amber-400 border border-slate-900 hidden"></span>
+        </button>
+        <button onclick="openWelcomeModal()" class="h-9 w-9 bg-slate-800 hover:bg-slate-700 text-slate-400 border border-slate-750 rounded-xl transition flex items-center justify-center" title="How Recipe Vault Works">
+            <i class="fa-solid fa-circle-question text-base"></i>
+        </button>
+    </div>
+</header>
+
+<!-- ═══════════ FILTER BAR ═══════════ -->
+<div class="bg-slate-900/50 border-b border-slate-800 px-6 py-3">
+    <div class="max-w-[1750px] mx-auto flex flex-wrap items-center gap-3">
+        <div class="relative flex-1 min-w-[220px]">
+            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 pointer-events-none">
+                <i class="fa-solid fa-magnifying-glass text-xs"></i>
+            </span>
+            <input type="text" id="searchInput" oninput="filterRecipes()" placeholder="Search recipes, ingredients, tags..." class="w-full pl-9 pr-4 py-2 bg-slate-950 border border-slate-800 focus:border-amber-500 rounded-xl focus:outline-none focus:ring-1 focus:ring-amber-500 text-sm text-slate-200 placeholder-slate-600 transition">
+        </div>
+        <select id="categoryFilter" onchange="filterRecipes()" class="bg-slate-950 border border-slate-800 focus:border-amber-500 text-slate-300 text-sm rounded-xl py-2 px-3 focus:outline-none focus:ring-1 focus:ring-amber-500 transition">
+            <option value="All">All Categories</option>
+            <option value="Breakfast">Breakfast</option>
+            <option value="Lunch">Lunch</option>
+            <option value="Dinner">Dinner</option>
+            <option value="Dessert">Dessert</option>
+            <option value="Snack">Snack</option>
+            <option value="Drink">Drink</option>
+            <option value="Other">Other</option>
+        </select>
+        <span class="text-xs text-slate-500" id="recipeCountLabel"></span>
+    </div>
+</div>
+
+<!-- ═══════════ MAIN GRID ═══════════ -->
+<main class="flex-1 p-6 max-w-[1750px] mx-auto w-full">
+    <div id="recipesContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5"></div>
+</main>
+
+<!-- ═══════════ ADD / EDIT RECIPE MODAL ═══════════ -->
+<div id="recipeModal" class="fixed inset-0 z-[800] hidden items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto relative">
+        <div class="sticky top-0 bg-slate-900/95 backdrop-blur border-b border-slate-800 px-6 py-4 flex items-center justify-between z-10">
+            <h3 id="recipeModalTitle" class="font-bold text-lg text-white">Add Recipe</h3>
+            <button onclick="closeRecipeModal()" class="text-slate-500 hover:text-slate-300 transition">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+        </div>
+
+        <div class="px-6 pt-4 flex gap-6 border-b border-slate-850">
+            <button id="tabManual" type="button" onclick="switchModalTab('manual')" class="pb-3 text-sm font-bold text-amber-400 border-b-2 border-amber-400 transition flex items-center gap-1.5">
+                <i class="fa-solid fa-pen"></i> Manual Entry
+            </button>
+            <button id="tabAI" type="button" onclick="switchModalTab('ai')" class="pb-3 text-sm font-semibold text-slate-400 hover:text-slate-200 transition flex items-center gap-1.5 border-b-2 border-transparent">
+                <i class="fa-solid fa-wand-magic-sparkles text-amber-400"></i> AI Assist
+            </button>
+        </div>
+
+        <div class="p-6 relative">
+            <!-- AI Assist Tab -->
+            <div id="aiTabContent" class="hidden space-y-4">
+                <div class="flex gap-2 bg-slate-950 border border-slate-800 rounded-xl p-1">
+                    <button type="button" id="aiModeTextBtn" onclick="setAiMode('text')" class="flex-1 py-2 rounded-lg text-xs font-bold bg-amber-500 text-slate-950 transition">Paste Text</button>
+                    <button type="button" id="aiModeUrlBtn" onclick="setAiMode('url')" class="flex-1 py-2 rounded-lg text-xs font-bold text-slate-400 hover:text-slate-200 transition">Paste URL</button>
+                </div>
+
+                <div id="aiTextWrap">
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Paste Recipe Text</label>
+                    <textarea id="aiRecipeTextInput" rows="6" placeholder="Paste a recipe — ingredients, steps, anything — and Gemini will organize it for you." class="w-full bg-slate-950 border border-slate-800 focus:border-amber-500 rounded-xl p-2.5 text-sm text-slate-100 placeholder-slate-700 focus:outline-none transition resize-none"></textarea>
+                </div>
+
+                <div id="aiUrlWrap" class="hidden">
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Recipe URL</label>
+                    <input type="url" id="aiRecipeUrlInput" placeholder="https://example.com/grandmas-chili" class="w-full bg-slate-950 border border-slate-800 focus:border-amber-500 rounded-xl p-2.5 text-sm text-slate-100 placeholder-slate-700 focus:outline-none transition">
+                    <p class="text-[11px] text-amber-400/80 mt-2 leading-relaxed">
+                        <i class="fa-solid fa-triangle-exclamation mr-1"></i>
+                        Best-effort: works well on simple, text-heavy recipe pages. For pages this can't reach (paywalled or JS-heavy sites), copy the recipe text and use "Paste Text" instead.
+                    </p>
+                </div>
+
+                <button type="button" onclick="generateRecipeWithAI(aiMode)" class="w-full py-3 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-400 hover:to-orange-400 text-slate-950 font-bold rounded-xl shadow-lg shadow-amber-500/20 transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> Generate with AI
+                </button>
+                <p class="text-[11px] text-slate-500 leading-relaxed">AI results land in the Manual Entry tab for you to review and edit before saving — nothing is saved automatically.</p>
+            </div>
+
+            <!-- Manual Entry Tab -->
+            <form id="recipeForm" onsubmit="submitRecipeForm(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Recipe Title</label>
+                    <input type="text" id="formTitle" required placeholder="Grandma's Chili" class="w-full bg-slate-950 border border-slate-800 focus:border-amber-500 rounded-xl p-2.5 text-sm text-slate-100 placeholder-slate-700 focus:outline-none transition">
+                </div>
+
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Prep (min)</label>
+                        <input type="number" min="0" id="formPrepTime" placeholder="15" class="w-full bg-slate-950 border border-slate-800 focus:border-amber-500 rounded-xl p-2.5 text-sm text-slate-100 placeholder-slate-700 focus:outline-none transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Cook (min)</label>
+                        <input type="number" min="0" id="formCookTime" placeholder="90" class="w-full bg-slate-950 border border-slate-800 focus:border-amber-500 rounded-xl p-2.5 text-sm text-slate-100 placeholder-slate-700 focus:outline-none transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Servings</label>
+                        <input type="number" min="0" id="formServings" placeholder="6" class="w-full bg-slate-950 border border-slate-800 focus:border-amber-500 rounded-xl p-2.5 text-sm text-slate-100 placeholder-slate-700 focus:outline-none transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Category</label>
+                        <select id="formCategory" class="w-full bg-slate-950 border border-slate-800 focus:border-amber-500 rounded-xl p-2.5 text-sm text-slate-100 focus:outline-none transition">
+                            <option value="Breakfast">Breakfast</option>
+                            <option value="Lunch">Lunch</option>
+                            <option value="Dinner" selected>Dinner</option>
+                            <option value="Dessert">Dessert</option>
+                            <option value="Snack">Snack</option>
+                            <option value="Drink">Drink</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Photo</label>
+                    <div class="flex items-center gap-3">
+                        <input type="file" id="formPhotoFile" accept="image/*" onchange="handleRecipePhotoUpload(this)" class="hidden">
+                        <label for="formPhotoFile" class="cursor-pointer flex items-center justify-center gap-2 bg-slate-950 border border-slate-800 hover:border-slate-700 hover:bg-slate-900 text-xs text-slate-300 font-semibold py-2.5 px-4 rounded-xl transition duration-150 flex-1">
+                            <i class="fa-solid fa-camera text-amber-400"></i>
+                            <span id="formPhotoUploadText">Select Photo</span>
+                        </label>
+                        <button type="button" id="btnRemovePhoto" onclick="removeRecipePhoto()" class="hidden h-10 w-10 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-xl hover:bg-rose-500/20 transition flex items-center justify-center" title="Remove photo">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+                    <div id="photoThumbnailContainer" class="hidden mt-2.5 bg-slate-950/60 p-2.5 rounded-xl border border-slate-800 flex items-center gap-3">
+                        <img id="photoThumbnailPreview" class="h-12 w-12 rounded-lg object-cover border border-slate-800 shadow">
+                        <span class="text-[11px] text-slate-400 font-mono" id="photoThumbnailSize">Compressed</span>
+                    </div>
+                </div>
+
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400">Ingredients</label>
+                        <button type="button" onclick="addIngredientRow()" class="text-[11px] font-bold text-amber-400 hover:text-amber-300 transition"><i class="fa-solid fa-plus"></i> Add Ingredient</button>
+                    </div>
+                    <div id="ingredientsContainer" class="space-y-2"></div>
+                </div>
+
+                <div>
+                    <div class="flex items-center justify-between mb-1.5">
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400">Instructions</label>
+                        <button type="button" onclick="addInstructionRow()" class="text-[11px] font-bold text-amber-400 hover:text-amber-300 transition"><i class="fa-solid fa-plus"></i> Add Step</button>
+                    </div>
+                    <div id="instructionsContainer" class="space-y-2"></div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Tags</label>
+                    <input type="text" id="formTagInput" placeholder="Type a tag and press Enter..." onkeydown="handleTagInputKeydown(event)" class="w-full bg-slate-950 border border-slate-800 focus:border-amber-500 rounded-xl p-2.5 text-sm text-slate-100 placeholder-slate-700 focus:outline-none transition">
+                    <div id="tagChipsContainer" class="flex flex-wrap gap-1.5 mt-2"></div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Notes</label>
+                    <textarea id="formNotes" rows="2" placeholder="Substitutions, family tips, leftovers advice..." class="w-full bg-slate-950 border border-slate-800 focus:border-amber-500 rounded-xl p-2.5 text-sm text-slate-100 placeholder-slate-700 focus:outline-none transition resize-none"></textarea>
+                </div>
+
+                <div class="pt-3 border-t border-slate-800/80 flex justify-end gap-3">
+                    <button type="button" onclick="closeRecipeModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl transition">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold rounded-xl transition">
+                        Save Recipe
+                    </button>
+                </div>
+            </form>
+
+            <!-- AI Magic Progress Loading Overlay -->
+            <div id="aiLoadingOverlay" class="hidden absolute inset-0 bg-slate-950/95 backdrop-blur-md rounded-2xl flex flex-col items-center justify-center p-6 z-50">
+                <div class="relative w-24 h-24 mb-6">
+                    <div class="absolute inset-0 rounded-full border-4 border-t-amber-400 border-r-orange-400 border-b-amber-500 border-l-transparent animate-spin"></div>
+                    <div class="absolute inset-2 bg-slate-900 rounded-full flex items-center justify-center">
+                        <i class="fa-solid fa-wand-magic-sparkles text-2xl text-amber-400 animate-pulse"></i>
+                    </div>
+                </div>
+                <h4 class="text-base font-bold text-slate-100 mb-1.5" id="aiLoadingStatus">AI Processing...</h4>
+                <p class="text-xs text-slate-400 text-center max-w-sm" id="aiLoadingSubtext">Gemini is analyzing your recipe...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════ RECIPE DETAIL MODAL ═══════════ -->
+<div id="detailModal" class="fixed inset-0 z-[800] hidden items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto relative">
+        <button onclick="closeRecipeDetail()" class="absolute top-4 right-4 h-9 w-9 bg-slate-800/90 hover:bg-slate-700 text-slate-300 rounded-xl transition flex items-center justify-center z-10">
+            <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+        <div id="detailPhotoWrap" class="hidden h-56 w-full overflow-hidden rounded-t-3xl bg-slate-950">
+            <img id="detailPhoto" class="w-full h-full object-cover">
+        </div>
+        <div class="p-6">
+            <div class="flex items-center gap-2 mb-2">
+                <span id="detailCategoryPill" class="text-[10px] font-bold bg-amber-500/10 border border-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full uppercase tracking-wider"></span>
+            </div>
+            <h2 id="detailTitle" class="text-2xl font-extrabold text-white mb-3"></h2>
+            <div class="flex flex-wrap gap-4 mb-5 text-xs text-slate-400">
+                <span><i class="fa-solid fa-clock text-amber-400 mr-1"></i> Prep: <span id="detailPrepTime"></span> min</span>
+                <span><i class="fa-solid fa-fire-burner text-amber-400 mr-1"></i> Cook: <span id="detailCookTime"></span> min</span>
+                <span><i class="fa-solid fa-utensils text-amber-400 mr-1"></i> Serves <span id="detailServings"></span></span>
+            </div>
+
+            <h4 class="text-sm font-bold text-amber-400 uppercase tracking-wider mb-2">Ingredients</h4>
+            <ul id="detailIngredients" class="list-disc list-inside space-y-1 text-sm text-slate-200 mb-5"></ul>
+
+            <h4 class="text-sm font-bold text-amber-400 uppercase tracking-wider mb-2">Instructions</h4>
+            <ol id="detailInstructions" class="list-decimal list-inside space-y-2 text-sm text-slate-200 mb-5"></ol>
+
+            <div id="detailNotesWrap" class="hidden mb-5">
+                <h4 class="text-sm font-bold text-amber-400 uppercase tracking-wider mb-2">Notes</h4>
+                <p id="detailNotes" class="text-sm text-slate-300 leading-relaxed"></p>
+            </div>
+
+            <div id="detailTagsContainer" class="flex flex-wrap gap-1.5 mb-5"></div>
+
+            <div class="pt-3 border-t border-slate-800/80 flex justify-end gap-3">
+                <button id="detailDeleteBtn" class="px-4 py-2 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 text-xs font-bold rounded-xl transition">
+                    <i class="fa-solid fa-trash-can"></i> Delete
+                </button>
+                <button id="detailEditBtn" class="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold rounded-xl transition">
+                    <i class="fa-solid fa-pen"></i> Edit
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════ DELETE CONFIRM MODAL ═══════════ -->
+<div id="deleteConfirmModal" class="fixed inset-0 z-[900] hidden items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-sm p-6">
+        <h3 class="font-bold text-white text-base mb-2">Delete this recipe?</h3>
+        <p class="text-xs text-slate-400 mb-5">This removes it from this device and, if signed in, from your Drive sync on next save. This can't be undone.</p>
+        <div class="flex justify-end gap-3">
+            <button onclick="closeDeleteConfirm()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl transition">Cancel</button>
+            <button onclick="confirmDeleteRecipe()" class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-xl transition">Delete</button>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════ SETTINGS MODAL (Gemini API Key) ═══════════ -->
+<div id="settingsModal" class="fixed inset-0 z-[900] hidden items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-md p-6 relative">
+        <button onclick="closeSettingsModal()" class="absolute top-4 right-4 text-slate-500 hover:text-slate-300 transition">
+            <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+        <div class="flex items-center gap-3 mb-5">
+            <div class="h-10 w-10 rounded-xl bg-gradient-to-tr from-amber-500 to-orange-500 flex items-center justify-center shadow-lg">
+                <i class="fa-solid fa-gear text-slate-950 text-base"></i>
+            </div>
+            <div>
+                <h3 class="font-bold text-white text-base leading-tight">Settings</h3>
+                <p class="text-[11px] text-slate-400">Gemini AI configuration</p>
+            </div>
+        </div>
+
+        <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 mb-4">
+            <div class="flex items-center gap-2 mb-3">
+                <i class="fa-solid fa-key text-amber-400 text-sm"></i>
+                <span class="text-xs font-bold text-slate-200 uppercase tracking-wider">Gemini API Key</span>
+                <span class="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-1.5 py-0.5 rounded-full font-semibold">FREE</span>
+            </div>
+            <p class="text-[11px] text-slate-400 mb-3 leading-relaxed">Required for the AI Assist recipe import feature. Google's free tier gives you plenty of usage with no credit card needed.</p>
+            <div class="flex gap-2 mb-3">
+                <input type="password" id="settingsApiKeyInput" placeholder="Paste your Gemini API key here..."
+                    class="flex-1 bg-slate-900 border border-slate-700 focus:border-amber-500 rounded-lg px-3 py-2 text-sm text-slate-200 placeholder-slate-600 focus:outline-none transition font-mono">
+                <button onclick="toggleApiKeyVisibility()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 border border-slate-700 rounded-lg transition text-xs" title="Show/hide key">
+                    <i id="apiKeyEyeIcon" class="fa-solid fa-eye"></i>
+                </button>
+            </div>
+            <div class="flex gap-2">
+                <a href="https://aistudio.google.com/apikey" target="_blank"
+                    class="flex-1 text-center px-3 py-2 bg-slate-800 hover:bg-slate-700 text-amber-400 hover:text-amber-300 border border-slate-700 text-xs font-semibold rounded-lg transition flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i> Get Free Key at AI Studio
+                </a>
+                <button onclick="saveApiKey()" class="flex-1 px-3 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold rounded-lg transition flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-floppy-disk"></i> Save Key
+                </button>
+            </div>
+            <div id="apiKeyStatus" class="mt-2.5 hidden">
+                <p id="apiKeyStatusText" class="text-[11px] text-center font-medium"></p>
+            </div>
+        </div>
+
+        <div class="bg-amber-500/5 border border-amber-500/20 rounded-xl p-3">
+            <p class="text-[11px] text-amber-300 leading-relaxed">
+                <i class="fa-solid fa-shield-halved mr-1"></i>
+                <strong>Privacy:</strong> Your API key is stored only in this browser's localStorage. It never leaves your device and is never sent to any server other than Google's Gemini API directly.
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════ WELCOME MODAL ═══════════ -->
+<div id="welcomeModal" class="fixed inset-0 z-[900] hidden items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-lg p-6 relative">
+        <button onclick="closeWelcomeModal()" class="absolute top-4 right-4 text-slate-500 hover:text-slate-300 transition">
+            <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+        <div class="flex items-center gap-3 mb-4">
+            <div class="h-11 w-11 rounded-xl bg-gradient-to-tr from-amber-500 to-orange-500 flex items-center justify-center shadow-lg shadow-amber-500/20">
+                <i class="fa-solid fa-utensils text-slate-950 text-xl"></i>
+            </div>
+            <h3 class="font-bold text-white text-lg">Welcome to Recipe Vault</h3>
+        </div>
+        <ul class="space-y-3 text-sm text-slate-300 mb-5">
+            <li class="flex gap-2.5"><i class="fa-solid fa-circle-check text-amber-400 mt-0.5"></i><span><strong>Works offline first.</strong> Every recipe saves instantly to this browser, even if you never sign in.</span></li>
+            <li class="flex gap-2.5"><i class="fa-solid fa-circle-check text-amber-400 mt-0.5"></i><span><strong>Sign in to sync.</strong> Click "Sign In" to create a private recipe database in your own Google Drive — it auto-loads on any device, any time you sign back in.</span></li>
+            <li class="flex gap-2.5"><i class="fa-solid fa-circle-check text-amber-400 mt-0.5"></i><span><strong>AI Assist.</strong> Paste a recipe (text or a link) and Gemini will fill out the form for you — review before saving.</span></li>
+        </ul>
+        <button onclick="closeWelcomeModal(true)" class="w-full py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 text-sm font-bold rounded-xl transition">Got it</button>
+    </div>
+</div>
+
+<!-- ═══════════ TOAST ═══════════ -->
+<div id="toast" class="fixed bottom-6 right-6 bg-slate-900 border border-slate-800 text-slate-100 px-4 py-3.5 rounded-2xl shadow-2xl shadow-amber-500/5 transition-all duration-300 translate-y-24 opacity-0 pointer-events-none z-50 flex items-center gap-3">
+    <div id="toast-icon-bg" class="h-8 w-8 rounded-lg flex items-center justify-center">
+        <i id="toast-icon" class="fa-solid"></i>
+    </div>
+    <div>
+        <span id="toast-message" class="text-sm font-semibold block leading-tight text-white">Notification title</span>
+        <span id="toast-subtext" class="text-xs text-slate-400">Notification details</span>
+    </div>
+</div>
+
+<!-- ═══════════ MAIN APP SCRIPT ═══════════ -->
+<script>
+    // ── Config ──────────────────────────────────────────────────
+    const googleClientId = '386561707147-fkqqbg1qeb7prudclclmcbg26ctcpgkb.apps.googleusercontent.com';
+    const DRIVE_FILE_NAME = 'Recipe_Vault_Database.json';
+    const TOMBSTONE_PURGE_DAYS = 90;
+
+    // ── State ───────────────────────────────────────────────────
+    let recipesCache = [];
+    let apiKey = localStorage.getItem('rv_gemini_api_key') || "";
+    let driveFileId = localStorage.getItem('rv_drive_file_id') || null;
+    let googleTokenClient = null;
+    let accessToken = null;
+    let tokenExpiresAt = 0;
+    let isSignedIn = false;
+    let isSyncing = false;
+    let currentEditId = null;
+    let aiMode = 'text';
+    let formIngredients = [];
+    let formInstructions = [];
+    let formTags = [];
+    let formPhotoDataUrl = '';
+    let formSourceUrl = '';
+    let pendingDeleteId = null;
+
+    // ── Local persistence ──────────────────────────────────────
+    function loadLocalRecipes() {
+        try {
+            recipesCache = JSON.parse(localStorage.getItem('rv_recipes') || '[]');
+        } catch (e) {
+            recipesCache = [];
+        }
+        purgeOldTombstones();
+    }
+
+    function purgeOldTombstones() {
+        const cutoff = Date.now() - (TOMBSTONE_PURGE_DAYS * 24 * 60 * 60 * 1000);
+        const before = recipesCache.length;
+        recipesCache = recipesCache.filter(r => !(r.deleted && new Date(r.updatedAt).getTime() < cutoff));
+        if (recipesCache.length !== before) {
+            localStorage.setItem('rv_recipes', JSON.stringify(recipesCache));
+        }
+    }
+
+    function getLocalRecipes() { return recipesCache; }
+
+    function setLocalRecipes(arr) {
+        recipesCache = arr;
+        localStorage.setItem('rv_recipes', JSON.stringify(recipesCache));
+    }
+
+    function upsertLocal(recipe) {
+        const idx = recipesCache.findIndex(r => r.id === recipe.id);
+        if (idx >= 0) recipesCache[idx] = recipe; else recipesCache.push(recipe);
+        localStorage.setItem('rv_recipes', JSON.stringify(recipesCache));
+    }
+
+    async function persistRecipe(recipe) {
+        recipe.updatedAt = new Date().toISOString();
+        upsertLocal(recipe);
+        renderRecipeGrid();
+
+        if (isSignedIn && accessToken) {
+            updateSyncStatusPill('syncing');
+            try {
+                await pushToDrive(accessToken, getLocalRecipes());
+                updateSyncStatusPill('synced');
+            } catch (err) {
+                updateSyncStatusPill('error');
+                showToast("Drive Save Pending", "Saved locally. Will retry Drive sync.", "amber");
+            }
+        }
+    }
+
+    // ── Rendering ───────────────────────────────────────────────
+    function visibleRecipes() {
+        return recipesCache.filter(r => !r.deleted);
+    }
+
+    function formatTimeBadge(mins) {
+        if (!mins) return '0m';
+        if (mins < 60) return `${mins}m`;
+        const h = Math.floor(mins / 60), m = mins % 60;
+        return m ? `${h}h ${m}m` : `${h}h`;
+    }
+
+    function recipeCardHtml(r) {
+        const photo = r.photo
+            ? `<img src="${r.photo}" class="w-full h-full object-cover">`
+            : `<div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-800 to-slate-900"><i class="fa-solid fa-utensils text-slate-700 text-3xl"></i></div>`;
+        const tagChips = (r.tags || []).slice(0, 3).map(t => `<span class="text-[9px] font-semibold bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded">${escapeHtml(t)}</span>`).join('');
+        return `
+        <div class="bg-slate-900 border border-slate-800/80 hover:border-amber-500/40 rounded-2xl overflow-hidden card-hover fade-in cursor-pointer" onclick="openRecipeDetail('${r.id}')">
+            <div class="h-36 w-full overflow-hidden">${photo}</div>
+            <div class="p-4">
+                <div class="flex items-center justify-between mb-1.5">
+                    <span class="text-[9px] font-bold bg-amber-500/10 border border-amber-500/20 text-amber-400 px-2 py-0.5 rounded-full uppercase tracking-wider">${escapeHtml(r.category || 'Other')}</span>
+                </div>
+                <h3 class="font-bold text-sm text-white leading-tight mb-2 truncate">${escapeHtml(r.title)}</h3>
+                <div class="flex items-center gap-3 text-[10px] text-slate-500 mb-2">
+                    <span><i class="fa-solid fa-clock text-amber-400/70 mr-1"></i>${formatTimeBadge((r.prepTimeMinutes||0)+(r.cookTimeMinutes||0))}</span>
+                    <span><i class="fa-solid fa-user-group text-amber-400/70 mr-1"></i>${r.servings || '—'}</span>
+                </div>
+                <div class="flex flex-wrap gap-1">${tagChips}</div>
+            </div>
+        </div>`;
+    }
+
+    function renderRecipeGrid() {
+        const container = document.getElementById('recipesContainer');
+        const searchValue = (document.getElementById('searchInput').value || '').toLowerCase();
+        const categoryValue = document.getElementById('categoryFilter').value;
+
+        const filtered = visibleRecipes().filter(r => {
+            const haystack = [r.title, ...(r.ingredients||[]), ...(r.tags||[])].join(' ').toLowerCase();
+            const matchesSearch = haystack.includes(searchValue);
+            const matchesCategory = categoryValue === 'All' || r.category === categoryValue;
+            return matchesSearch && matchesCategory;
+        }).sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt));
+
+        document.getElementById('recipeCountLabel').innerText = `${filtered.length} recipe${filtered.length === 1 ? '' : 's'}`;
+
+        if (filtered.length === 0) {
+            container.innerHTML = `
+                <div class="col-span-full text-center py-16 bg-slate-900/40 border border-slate-900 rounded-2xl">
+                    <i class="fa-solid fa-utensils text-slate-700 text-4xl mb-3 block"></i>
+                    <p class="text-slate-500 text-sm font-medium">No recipes yet. Click "Add Recipe" to get started.</p>
+                </div>`;
+            return;
+        }
+        container.innerHTML = filtered.map(recipeCardHtml).join('');
+    }
+
+    function filterRecipes() { renderRecipeGrid(); }
+
+    function escapeHtml(str) {
+        const div = document.createElement('div');
+        div.innerText = str == null ? '' : String(str);
+        return div.innerHTML;
+    }
+
+    // ── Add / Edit Modal ───────────────────────────────────────
+    function openAddModal() {
+        currentEditId = null;
+        document.getElementById('recipeModalTitle').innerText = 'Add Recipe';
+        document.getElementById('recipeForm').reset();
+        formIngredients = [''];
+        formInstructions = [''];
+        formTags = [];
+        formPhotoDataUrl = '';
+        formSourceUrl = '';
+        renderIngredientRows();
+        renderInstructionRows();
+        renderTagChips();
+        hidePhotoPreview();
+        switchModalTab('manual');
+        const modal = document.getElementById('recipeModal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+
+    function openEditModal(id) {
+        const r = recipesCache.find(x => x.id === id);
+        if (!r) return;
+        currentEditId = id;
+        document.getElementById('recipeModalTitle').innerText = 'Edit Recipe';
+        document.getElementById('formTitle').value = r.title || '';
+        document.getElementById('formPrepTime').value = r.prepTimeMinutes || '';
+        document.getElementById('formCookTime').value = r.cookTimeMinutes || '';
+        document.getElementById('formServings').value = r.servings || '';
+        document.getElementById('formCategory').value = r.category || 'Dinner';
+        document.getElementById('formNotes').value = r.notes || '';
+        formIngredients = r.ingredients && r.ingredients.length ? [...r.ingredients] : [''];
+        formInstructions = r.instructions && r.instructions.length ? [...r.instructions] : [''];
+        formTags = [...(r.tags || [])];
+        formPhotoDataUrl = r.photo || '';
+        formSourceUrl = r.sourceUrl || '';
+        renderIngredientRows();
+        renderInstructionRows();
+        renderTagChips();
+        if (formPhotoDataUrl) showPhotoPreview(formPhotoDataUrl); else hidePhotoPreview();
+        switchModalTab('manual');
+        const modal = document.getElementById('recipeModal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+
+    function closeRecipeModal() {
+        const modal = document.getElementById('recipeModal');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+
+    function switchModalTab(tabType) {
+        const tabManual = document.getElementById('tabManual');
+        const tabAI = document.getElementById('tabAI');
+        const manualForm = document.getElementById('recipeForm');
+        const aiContent = document.getElementById('aiTabContent');
+
+        if (tabType === 'ai') {
+            tabManual.className = "pb-3 text-sm font-semibold text-slate-400 hover:text-slate-200 transition flex items-center gap-1.5 border-b-2 border-transparent";
+            tabAI.className = "pb-3 text-sm font-bold text-amber-400 border-b-2 border-amber-400 transition flex items-center gap-1.5";
+            manualForm.classList.add('hidden');
+            aiContent.classList.remove('hidden');
+        } else {
+            tabAI.className = "pb-3 text-sm font-semibold text-slate-400 hover:text-slate-200 transition flex items-center gap-1.5 border-b-2 border-transparent";
+            tabManual.className = "pb-3 text-sm font-bold text-amber-400 border-b-2 border-amber-400 transition flex items-center gap-1.5";
+            aiContent.classList.add('hidden');
+            manualForm.classList.remove('hidden');
+        }
+    }
+
+    function setAiMode(mode) {
+        aiMode = mode;
+        const textBtn = document.getElementById('aiModeTextBtn');
+        const urlBtn = document.getElementById('aiModeUrlBtn');
+        const textWrap = document.getElementById('aiTextWrap');
+        const urlWrap = document.getElementById('aiUrlWrap');
+        if (mode === 'url') {
+            urlBtn.className = "flex-1 py-2 rounded-lg text-xs font-bold bg-amber-500 text-slate-950 transition";
+            textBtn.className = "flex-1 py-2 rounded-lg text-xs font-bold text-slate-400 hover:text-slate-200 transition";
+            urlWrap.classList.remove('hidden');
+            textWrap.classList.add('hidden');
+        } else {
+            textBtn.className = "flex-1 py-2 rounded-lg text-xs font-bold bg-amber-500 text-slate-950 transition";
+            urlBtn.className = "flex-1 py-2 rounded-lg text-xs font-bold text-slate-400 hover:text-slate-200 transition";
+            textWrap.classList.remove('hidden');
+            urlWrap.classList.add('hidden');
+        }
+    }
+
+    // ── Ingredients / Instructions / Tags editors ──────────────
+    function renderIngredientRows() {
+        const container = document.getElementById('ingredientsContainer');
+        container.innerHTML = formIngredients.map((val, idx) => `
+            <div class="flex items-center gap-2">
+                <input type="text" value="${escapeHtml(val)}" oninput="formIngredients[${idx}] = this.value" placeholder="2 cups flour" class="flex-1 bg-slate-950 border border-slate-800 focus:border-amber-500 rounded-lg p-2 text-sm text-slate-100 placeholder-slate-700 focus:outline-none transition">
+                <button type="button" onclick="removeIngredientRow(${idx})" class="h-8 w-8 bg-slate-800 hover:bg-rose-500/20 text-slate-500 hover:text-rose-400 rounded-lg transition flex items-center justify-center"><i class="fa-solid fa-trash-can text-xs"></i></button>
+            </div>`).join('');
+    }
+
+    function addIngredientRow() {
+        formIngredients.push('');
+        renderIngredientRows();
+        const inputs = document.querySelectorAll('#ingredientsContainer input');
+        if (inputs.length) inputs[inputs.length - 1].focus();
+    }
+
+    function removeIngredientRow(idx) {
+        formIngredients.splice(idx, 1);
+        if (formIngredients.length === 0) formIngredients = [''];
+        renderIngredientRows();
+    }
+
+    function renderInstructionRows() {
+        const container = document.getElementById('instructionsContainer');
+        container.innerHTML = formInstructions.map((val, idx) => `
+            <div class="flex items-start gap-2">
+                <span class="h-8 w-8 flex-shrink-0 flex items-center justify-center bg-slate-800 text-amber-400 text-xs font-bold rounded-lg mt-0.5">${idx + 1}</span>
+                <textarea rows="1" oninput="formInstructions[${idx}] = this.value" placeholder="Brown the beef in a large pot over medium heat." class="flex-1 bg-slate-950 border border-slate-800 focus:border-amber-500 rounded-lg p-2 text-sm text-slate-100 placeholder-slate-700 focus:outline-none transition resize-none">${escapeHtml(val)}</textarea>
+                <button type="button" onclick="removeInstructionRow(${idx})" class="h-8 w-8 flex-shrink-0 bg-slate-800 hover:bg-rose-500/20 text-slate-500 hover:text-rose-400 rounded-lg transition flex items-center justify-center"><i class="fa-solid fa-trash-can text-xs"></i></button>
+            </div>`).join('');
+    }
+
+    function addInstructionRow() {
+        formInstructions.push('');
+        renderInstructionRows();
+        const inputs = document.querySelectorAll('#instructionsContainer textarea');
+        if (inputs.length) inputs[inputs.length - 1].focus();
+    }
+
+    function removeInstructionRow(idx) {
+        formInstructions.splice(idx, 1);
+        if (formInstructions.length === 0) formInstructions = [''];
+        renderInstructionRows();
+    }
+
+    function renderTagChips() {
+        const container = document.getElementById('tagChipsContainer');
+        container.innerHTML = formTags.map((t, idx) => `
+            <span class="inline-flex items-center gap-1.5 text-[11px] font-semibold bg-amber-500/10 border border-amber-500/20 text-amber-400 px-2 py-1 rounded-full">
+                ${escapeHtml(t)}
+                <i class="fa-solid fa-xmark cursor-pointer hover:text-amber-200" onclick="removeTag(${idx})"></i>
+            </span>`).join('');
+    }
+
+    function handleTagInputKeydown(event) {
+        if (event.key === 'Enter' || event.key === ',') {
+            event.preventDefault();
+            const input = document.getElementById('formTagInput');
+            const val = input.value.trim().replace(/,$/, '');
+            if (val && !formTags.includes(val)) {
+                formTags.push(val);
+                renderTagChips();
+            }
+            input.value = '';
+        }
+    }
+
+    function removeTag(idx) {
+        formTags.splice(idx, 1);
+        renderTagChips();
+    }
+
+    // ── Photo upload + compression ──────────────────────────────
+    function handleRecipePhotoUpload(input) {
+        const file = input.files[0];
+        if (!file) return;
+        if (!file.type.startsWith('image/')) {
+            showToast("Invalid File", "Please select a valid image file.", "rose");
+            return;
+        }
+
+        const btnText = document.getElementById('formPhotoUploadText');
+        btnText.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> Resizing...`;
+
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                const MAX_WIDTH = 800;
+                const MAX_HEIGHT = 800;
+                let width = img.width;
+                let height = img.height;
+
+                if (width > height) {
+                    if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
+                } else {
+                    if (height > MAX_HEIGHT) { width *= MAX_HEIGHT / height; height = MAX_HEIGHT; }
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+
+                const dataUrl = canvas.toDataURL('image/jpeg', 0.65);
+                formPhotoDataUrl = dataUrl;
+                showPhotoPreview(dataUrl);
+                btnText.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400"></i> Photo Loaded`;
+                showToast("Compression Complete", "Photo resized and ready.", "emerald");
+            };
+            img.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function showPhotoPreview(dataUrl) {
+        document.getElementById('photoThumbnailPreview').src = dataUrl;
+        document.getElementById('photoThumbnailContainer').classList.remove('hidden');
+        document.getElementById('btnRemovePhoto').classList.remove('hidden');
+        const sizeKb = Math.round((dataUrl.length * 3 / 4) / 1024);
+        document.getElementById('photoThumbnailSize').innerText = `Compressed (~${sizeKb} KB)`;
+    }
+
+    function hidePhotoPreview() {
+        document.getElementById('photoThumbnailContainer').classList.add('hidden');
+        document.getElementById('btnRemovePhoto').classList.add('hidden');
+        document.getElementById('formPhotoUploadText').innerText = 'Select Photo';
+    }
+
+    function removeRecipePhoto() {
+        formPhotoDataUrl = '';
+        document.getElementById('formPhotoFile').value = '';
+        hidePhotoPreview();
+    }
+
+    // ── Save / Submit ───────────────────────────────────────────
+    function submitRecipeForm(event) {
+        event.preventDefault();
+        const title = document.getElementById('formTitle').value.trim();
+        if (!title) { showToast("Title Required", "Please give your recipe a title.", "rose"); return; }
+
+        const existing = currentEditId ? recipesCache.find(r => r.id === currentEditId) : null;
+        const now = new Date().toISOString();
+
+        const recipe = {
+            id: existing ? existing.id : crypto.randomUUID(),
+            title,
+            photo: formPhotoDataUrl,
+            ingredients: formIngredients.map(s => s.trim()).filter(Boolean),
+            instructions: formInstructions.map(s => s.trim()).filter(Boolean),
+            prepTimeMinutes: parseInt(document.getElementById('formPrepTime').value) || 0,
+            cookTimeMinutes: parseInt(document.getElementById('formCookTime').value) || 0,
+            servings: parseInt(document.getElementById('formServings').value) || 0,
+            category: document.getElementById('formCategory').value,
+            tags: [...formTags],
+            sourceUrl: formSourceUrl || (existing ? (existing.sourceUrl || '') : ''),
+            notes: document.getElementById('formNotes').value.trim(),
+            createdAt: existing ? existing.createdAt : now,
+            updatedAt: now,
+            deleted: false
+        };
+
+        persistRecipe(recipe);
+        closeRecipeModal();
+        showToast("Recipe Saved", `"${title}" has been saved.`, "emerald");
+    }
+
+    // ── Detail view ──────────────────────────────────────────────
+    let detailViewId = null;
+
+    function openRecipeDetail(id) {
+        const r = recipesCache.find(x => x.id === id);
+        if (!r) return;
+        detailViewId = id;
+
+        const photoWrap = document.getElementById('detailPhotoWrap');
+        if (r.photo) {
+            document.getElementById('detailPhoto').src = r.photo;
+            photoWrap.classList.remove('hidden');
+        } else {
+            photoWrap.classList.add('hidden');
+        }
+
+        document.getElementById('detailCategoryPill').innerText = r.category || 'Other';
+        document.getElementById('detailTitle').innerText = r.title;
+        document.getElementById('detailPrepTime').innerText = r.prepTimeMinutes || 0;
+        document.getElementById('detailCookTime').innerText = r.cookTimeMinutes || 0;
+        document.getElementById('detailServings').innerText = r.servings || '—';
+        document.getElementById('detailIngredients').innerHTML = (r.ingredients || []).map(i => `<li>${escapeHtml(i)}</li>`).join('') || '<li class="text-slate-500 list-none">No ingredients listed.</li>';
+        document.getElementById('detailInstructions').innerHTML = (r.instructions || []).map(i => `<li class="pl-1">${escapeHtml(i)}</li>`).join('') || '<li class="text-slate-500 list-none">No instructions listed.</li>';
+
+        const notesWrap = document.getElementById('detailNotesWrap');
+        if (r.notes) { document.getElementById('detailNotes').innerText = r.notes; notesWrap.classList.remove('hidden'); }
+        else { notesWrap.classList.add('hidden'); }
+
+        document.getElementById('detailTagsContainer').innerHTML = (r.tags || []).map(t => `<span class="text-[10px] font-semibold bg-slate-800 text-slate-400 px-2 py-1 rounded-full">${escapeHtml(t)}</span>`).join('');
+
+        document.getElementById('detailEditBtn').onclick = () => { closeRecipeDetail(); openEditModal(id); };
+        document.getElementById('detailDeleteBtn').onclick = () => { pendingDeleteId = id; openDeleteConfirm(); };
+
+        const modal = document.getElementById('detailModal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+
+    function closeRecipeDetail() {
+        const modal = document.getElementById('detailModal');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+
+    function openDeleteConfirm() {
+        const modal = document.getElementById('deleteConfirmModal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+
+    function closeDeleteConfirm() {
+        const modal = document.getElementById('deleteConfirmModal');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        pendingDeleteId = null;
+    }
+
+    function confirmDeleteRecipe() {
+        if (!pendingDeleteId) return;
+        const r = recipesCache.find(x => x.id === pendingDeleteId);
+        if (r) {
+            r.deleted = true;
+            persistRecipe(r);
+        }
+        closeDeleteConfirm();
+        closeRecipeDetail();
+        showToast("Recipe Deleted", "Removed from this device.", "amber");
+    }
+
+    // ── Google Drive Sync ───────────────────────────────────────
+    function updateSignInUI() {
+        const btn = document.getElementById('signin-btn');
+        const label = document.getElementById('signin-btn-label');
+        if (isSignedIn) {
+            btn.classList.add('border-emerald-500/40');
+            label.innerText = 'Drive Connected';
+        } else {
+            btn.classList.remove('border-emerald-500/40');
+            label.innerText = 'Sign In';
+        }
+    }
+
+    function updateSyncStatusPill(state) {
+        const pill = document.getElementById('sync-status-pill');
+        pill.classList.remove('hidden');
+        if (state === 'syncing') {
+            pill.className = "px-2.5 py-1.5 rounded-xl text-[10px] font-bold border transition-colors duration-300 select-none cursor-pointer bg-amber-500/10 border-amber-500/30 text-amber-400";
+            pill.innerHTML = `<i class="fa-solid fa-arrows-rotate animate-spin"></i> Syncing...`;
+        } else if (state === 'synced') {
+            pill.className = "px-2.5 py-1.5 rounded-xl text-[10px] font-bold border transition-colors duration-300 select-none cursor-pointer bg-emerald-500/10 border-emerald-500/30 text-emerald-400";
+            pill.innerHTML = `<i class="fa-solid fa-circle-check"></i> Synced`;
+        } else if (state === 'error') {
+            pill.className = "px-2.5 py-1.5 rounded-xl text-[10px] font-bold border transition-colors duration-300 select-none cursor-pointer bg-rose-500/10 border-rose-500/30 text-rose-400";
+            pill.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i> Sync Error — Retry`;
+        }
+    }
+
+    function signInWithGoogle() {
+        if (googleTokenClient === null) {
+            googleTokenClient = google.accounts.oauth2.initTokenClient({
+                client_id: googleClientId,
+                scope: 'https://www.googleapis.com/auth/drive.file',
+                callback: (tokenResponse) => {
+                    if (tokenResponse.error !== undefined) {
+                        showToast("Sign-In Failed", "OAuth authorization was rejected.", "rose");
+                        return;
+                    }
+                    accessToken = tokenResponse.access_token;
+                    tokenExpiresAt = Date.now() + ((tokenResponse.expires_in || 3600) * 1000);
+                    isSignedIn = true;
+                    updateSignInUI();
+                    syncWithDrive(accessToken);
+                },
+            });
+        }
+        googleTokenClient.requestAccessToken();
+    }
+
+    function retrySync() {
+        if (isSignedIn && accessToken) syncWithDrive(accessToken);
+    }
+
+    function mergeRecipes(local, remote) {
+        const byId = new Map();
+        for (const r of [...remote, ...local]) {
+            const existing = byId.get(r.id);
+            if (!existing || new Date(r.updatedAt) > new Date(existing.updatedAt)) {
+                byId.set(r.id, r);
+            }
+        }
+        return Array.from(byId.values());
+    }
+
+    async function driveFetch(url, token, opts = {}) {
+        const doFetch = (tok) => fetch(url, {
+            ...opts,
+            headers: { ...(opts.headers || {}), 'Authorization': `Bearer ${tok}` }
+        });
+
+        let resp = await doFetch(token);
+        if (resp.status === 401) {
+            const refreshed = await silentReauth();
+            if (refreshed) {
+                accessToken = refreshed;
+                resp = await doFetch(refreshed);
+            } else {
+                isSignedIn = false;
+                updateSignInUI();
+                showToast("Sign-In Expired", "Click Sign In to reconnect to Google Drive. Your data is safe locally.", "amber");
+                throw new Error("Re-authentication required");
+            }
+        }
+        return resp;
+    }
+
+    function silentReauth() {
+        return new Promise((resolve) => {
+            const silentClient = google.accounts.oauth2.initTokenClient({
+                client_id: googleClientId,
+                scope: 'https://www.googleapis.com/auth/drive.file',
+                prompt: '',
+                callback: (tokenResponse) => {
+                    if (tokenResponse.error) { resolve(null); return; }
+                    tokenExpiresAt = Date.now() + ((tokenResponse.expires_in || 3600) * 1000);
+                    resolve(tokenResponse.access_token);
+                },
+            });
+            silentClient.requestAccessToken();
+        });
+    }
+
+    async function ensureFreshToken() {
+        if (Date.now() > tokenExpiresAt - 300000) {
+            const refreshed = await silentReauth();
+            if (refreshed) accessToken = refreshed;
+        }
+    }
+
+    async function syncWithDrive(token) {
+        if (isSyncing) return;
+        isSyncing = true;
+        updateSyncStatusPill('syncing');
+
+        try {
+            const listResp = await driveFetch(
+                `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(`name='${DRIVE_FILE_NAME}' and trashed=false`)}&fields=files(id,modifiedTime)`,
+                token
+            );
+            const listData = await listResp.json();
+            const found = listData.files && listData.files[0];
+
+            if (found) {
+                driveFileId = found.id;
+                localStorage.setItem('rv_drive_file_id', driveFileId);
+
+                const contentResp = await driveFetch(`https://www.googleapis.com/drive/v3/files/${driveFileId}?alt=media`, token);
+                const remoteDoc = await contentResp.json();
+                const remoteRecipes = remoteDoc.recipes || [];
+
+                const merged = mergeRecipes(getLocalRecipes(), remoteRecipes);
+                setLocalRecipes(merged);
+                renderRecipeGrid();
+
+                await pushToDrive(token, merged);
+            } else {
+                driveFileId = null;
+                localStorage.removeItem('rv_drive_file_id');
+                await pushToDrive(token, getLocalRecipes());
+            }
+
+            updateSyncStatusPill('synced');
+            showToast("Synced", "Recipe Vault is up to date with Google Drive.", "emerald");
+        } catch (err) {
+            updateSyncStatusPill('error');
+            showToast("Sync Issue", "Could not sync with Drive: " + err.message, "amber");
+        } finally {
+            isSyncing = false;
+        }
+    }
+
+    async function pushToDrive(token, recipes) {
+        await ensureFreshToken();
+        const payload = JSON.stringify({
+            version: 1,
+            vaultName: "Recipe Vault",
+            lastSyncedAt: new Date().toISOString(),
+            recipes
+        }, null, 2);
+
+        if (driveFileId) {
+            const resp = await driveFetch(
+                `https://www.googleapis.com/upload/drive/v3/files/${driveFileId}?uploadType=media`,
+                accessToken,
+                { method: 'PATCH', body: payload, headers: { 'Content-Type': 'application/json' } }
+            );
+            if (!resp.ok) throw new Error("Drive update failed: " + resp.status);
+        } else {
+            const metadata = { name: DRIVE_FILE_NAME, mimeType: 'application/json' };
+            const boundary = 'foo_bar_baz_rv';
+            const body = `\r\n--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}` +
+                         `\r\n--${boundary}\r\nContent-Type: application/json\r\n\r\n${payload}\r\n--${boundary}--`;
+            const resp = await driveFetch(
+                `https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart`,
+                accessToken,
+                { method: 'POST', body, headers: { 'Content-Type': `multipart/related; boundary=${boundary}` } }
+            );
+            const data = await resp.json();
+            if (!resp.ok) throw new Error((data.error && data.error.message) || "Drive create failed");
+            driveFileId = data.id;
+            localStorage.setItem('rv_drive_file_id', driveFileId);
+        }
+    }
+
+    // ── Gemini AI Assist ─────────────────────────────────────────
+    async function fetchGeminiWithRetry(url, payload, retries = 5, delay = 1000) {
+        for (let i = 0; i < retries; i++) {
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (response.ok) return await response.json();
+            } catch (e) {
+                // Fail silently, retry next
+            }
+            await new Promise(resolve => setTimeout(resolve, delay));
+            delay *= 2;
+        }
+        throw new Error("Unable to connect with Gemini AI services after 5 sequential backoff retries.");
+    }
+
+    async function generateRecipeWithAI(mode) {
+        const overlay = document.getElementById('aiLoadingOverlay');
+        const statusLabel = document.getElementById('aiLoadingStatus');
+        const subtextLabel = document.getElementById('aiLoadingSubtext');
+
+        if (!apiKey) {
+            showToast("API Key Required", "Click the ⚙ Settings button in the header to add your free Gemini API key.", "amber");
+            openSettingsModal();
+            return;
+        }
+
+        let parts = [];
+        let sourceUrlVal = '';
+
+        if (mode === 'url') {
+            const url = document.getElementById('aiRecipeUrlInput').value.trim();
+            if (!url) { showToast("Empty URL", "Please paste a recipe URL first.", "rose"); return; }
+            sourceUrlVal = url;
+            parts.push({ text: `Find and extract the full recipe from this URL: ${url}. Use Google Search grounding to retrieve the actual page content. Extract the exact title, complete ingredient list with quantities, full numbered step-by-step instructions, prep time, cook time, and servings exactly as published on that page. Do not invent or summarize — extract verbatim where possible. If you cannot retrieve real content for this URL, set extractionConfidence to "low" rather than guessing.` });
+        } else {
+            const raw = document.getElementById('aiRecipeTextInput').value.trim();
+            if (!raw) { showToast("Empty Text", "Please paste recipe text first.", "rose"); return; }
+            parts.push({ text: `Parse the following raw recipe text (pasted by a user, possibly messy/unstructured) into a clean structured recipe. Separate it into discrete ingredients and discrete numbered steps:\n\n---\n${raw}\n---` });
+        }
+
+        if (overlay) overlay.classList.remove('hidden');
+        if (statusLabel) statusLabel.innerText = "Connecting to Gemini...";
+        if (subtextLabel) subtextLabel.innerText = "Setting up connection context with Google Generative AI servers...";
+
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+
+        const payload = {
+            contents: [{ parts: parts }],
+            systemInstruction: {
+                parts: [{ text: "You are a recipe digitization assistant. Convert recipe text or research into a clean structured recipe JSON object. Separate ingredients into individual line items with quantities, and instructions into individual discrete steps without numbering prefixes." }]
+            },
+            tools: [{ "google_search": {} }],
+            generationConfig: {
+                responseMimeType: "application/json",
+                responseSchema: {
+                    type: "OBJECT",
+                    properties: {
+                        title: { type: "STRING" },
+                        ingredients: { type: "ARRAY", items: { type: "STRING" }, description: "One ingredient with quantity per entry" },
+                        instructions: { type: "ARRAY", items: { type: "STRING" }, description: "One discrete step per entry, no numbering prefixes" },
+                        prepTimeMinutes: { type: "NUMBER" },
+                        cookTimeMinutes: { type: "NUMBER" },
+                        servings: { type: "NUMBER" },
+                        category: { type: "STRING", enum: ["Breakfast", "Lunch", "Dinner", "Dessert", "Snack", "Drink", "Other"] },
+                        tags: { type: "ARRAY", items: { type: "STRING" } },
+                        extractionConfidence: { type: "STRING", enum: ["high", "low"], description: "low if the source text/URL did not clearly contain a real recipe" }
+                    },
+                    required: ["title", "ingredients", "instructions"]
+                }
+            }
+        };
+
+        try {
+            if (statusLabel) statusLabel.innerText = "Parsing recipe...";
+            if (subtextLabel) subtextLabel.innerText = mode === 'url' ? "Searching for and reading the linked page..." : "Organizing ingredients and steps...";
+
+            const responseData = await fetchGeminiWithRetry(endpoint, payload);
+            const rawText = responseData.candidates && responseData.candidates[0] && responseData.candidates[0].content.parts[0].text;
+            if (!rawText) throw new Error("Empty content received from Generative Model.");
+
+            const recipeObj = JSON.parse(rawText);
+
+            if (recipeObj.title) document.getElementById('formTitle').value = recipeObj.title;
+            if (recipeObj.prepTimeMinutes) document.getElementById('formPrepTime').value = recipeObj.prepTimeMinutes;
+            if (recipeObj.cookTimeMinutes) document.getElementById('formCookTime').value = recipeObj.cookTimeMinutes;
+            if (recipeObj.servings) document.getElementById('formServings').value = recipeObj.servings;
+            if (recipeObj.category) document.getElementById('formCategory').value = recipeObj.category;
+            if (recipeObj.ingredients && recipeObj.ingredients.length) { formIngredients = recipeObj.ingredients; renderIngredientRows(); }
+            if (recipeObj.instructions && recipeObj.instructions.length) { formInstructions = recipeObj.instructions; renderInstructionRows(); }
+            if (recipeObj.tags && recipeObj.tags.length) { formTags = recipeObj.tags; renderTagChips(); }
+            if (sourceUrlVal) formSourceUrl = sourceUrlVal;
+
+            if (overlay) overlay.classList.add('hidden');
+            switchModalTab('manual');
+
+            const lowConfidence = recipeObj.extractionConfidence === 'low' || !recipeObj.ingredients || !recipeObj.ingredients.length || !recipeObj.instructions || !recipeObj.instructions.length;
+            if (lowConfidence) {
+                showToast("Partial Result", "AI couldn't fully extract this recipe. Please review and complete the fields manually.", "amber");
+            } else {
+                showToast("AI Magic Success!", `Pre-filled "${recipeObj.title || 'your recipe'}" — review before saving.`, "emerald");
+            }
+        } catch (err) {
+            if (overlay) overlay.classList.add('hidden');
+            showToast("AI Generation Failed", "Gemini couldn't parse the recipe. Please check your network or enter manually.", "rose");
+        }
+    }
+
+    // ── Settings Modal (Gemini API Key) ──────────────────────
+    function openSettingsModal() {
+        const modal = document.getElementById('settingsModal');
+        const input = document.getElementById('settingsApiKeyInput');
+        if (input) { input.value = apiKey || ''; input.type = 'password'; }
+        const eye = document.getElementById('apiKeyEyeIcon');
+        if (eye) { eye.classList.remove('fa-eye-slash'); eye.classList.add('fa-eye'); }
+        const statusEl = document.getElementById('apiKeyStatus');
+        if (statusEl) statusEl.classList.add('hidden');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+
+    function closeSettingsModal() {
+        const modal = document.getElementById('settingsModal');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+
+    function toggleApiKeyVisibility() {
+        const input = document.getElementById('settingsApiKeyInput');
+        const icon = document.getElementById('apiKeyEyeIcon');
+        if (!input) return;
+        if (input.type === 'password') {
+            input.type = 'text';
+            icon.classList.remove('fa-eye'); icon.classList.add('fa-eye-slash');
+        } else {
+            input.type = 'password';
+            icon.classList.remove('fa-eye-slash'); icon.classList.add('fa-eye');
+        }
+    }
+
+    function saveApiKey() {
+        const input = document.getElementById('settingsApiKeyInput');
+        const statusEl = document.getElementById('apiKeyStatus');
+        const statusText = document.getElementById('apiKeyStatusText');
+        const newKey = (input ? input.value.trim() : '');
+
+        if (!newKey) {
+            apiKey = '';
+            localStorage.removeItem('rv_gemini_api_key');
+            updateApiKeyDot();
+            statusText.textContent = 'API key cleared.';
+            statusText.className = 'text-[11px] text-center font-medium text-slate-400';
+            statusEl.classList.remove('hidden');
+            return;
+        }
+
+        if (newKey.length < 20) {
+            statusText.textContent = "That doesn't look like a valid API key.";
+            statusText.className = 'text-[11px] text-center font-medium text-rose-400';
+            statusEl.classList.remove('hidden');
+            return;
+        }
+
+        apiKey = newKey;
+        localStorage.setItem('rv_gemini_api_key', newKey);
+        updateApiKeyDot();
+        statusText.textContent = '✓ API key saved — AI Assist is ready!';
+        statusText.className = 'text-[11px] text-center font-medium text-emerald-400';
+        statusEl.classList.remove('hidden');
+        setTimeout(() => closeSettingsModal(), 1200);
+    }
+
+    function updateApiKeyDot() {
+        const dot = document.getElementById('api-key-dot');
+        if (!dot) return;
+        if (!apiKey) dot.classList.remove('hidden'); else dot.classList.add('hidden');
+    }
+
+    document.getElementById('settingsModal')?.addEventListener('click', function(e) { if (e.target === this) closeSettingsModal(); });
+    document.getElementById('recipeModal')?.addEventListener('click', function(e) { if (e.target === this) closeRecipeModal(); });
+    document.getElementById('detailModal')?.addEventListener('click', function(e) { if (e.target === this) closeRecipeDetail(); });
+    document.getElementById('welcomeModal')?.addEventListener('click', function(e) { if (e.target === this) closeWelcomeModal(); });
+
+    // ── Welcome Modal ─────────────────────────────────────────
+    function openWelcomeModal() {
+        const modal = document.getElementById('welcomeModal');
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+
+    function closeWelcomeModal(dismissPermanently) {
+        const modal = document.getElementById('welcomeModal');
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        if (dismissPermanently) localStorage.setItem('rv_welcome_dismissed', 'true');
+    }
+
+    // ── Toast ─────────────────────────────────────────────────
+    function showToast(title, subtext, color = "emerald") {
+        const toast = document.getElementById('toast');
+        const iconBg = document.getElementById('toast-icon-bg');
+        const icon = document.getElementById('toast-icon');
+        const mainText = document.getElementById('toast-message');
+        const descText = document.getElementById('toast-subtext');
+        if (!toast) return;
+
+        if (color === "rose") {
+            iconBg.className = "h-8 w-8 rounded-lg flex items-center justify-center bg-rose-500/10 text-rose-400 border border-rose-500/20";
+            icon.className = "fa-solid fa-circle-exclamation";
+            toast.style.boxShadow = "0 20px 25px -5px rgb(244 63 94 / 0.1)";
+        } else if (color === "amber") {
+            iconBg.className = "h-8 w-8 rounded-lg flex items-center justify-center bg-amber-500/10 text-amber-400 border border-amber-500/20";
+            icon.className = "fa-solid fa-triangle-exclamation";
+            toast.style.boxShadow = "0 20px 25px -5px rgb(245 158 11 / 0.1)";
+        } else {
+            iconBg.className = "h-8 w-8 rounded-lg flex items-center justify-center bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
+            icon.className = "fa-solid fa-circle-check";
+            toast.style.boxShadow = "0 20px 25px -5px rgb(16 185 129 / 0.1)";
+        }
+
+        mainText.innerText = title;
+        descText.innerText = subtext;
+
+        toast.classList.remove('translate-y-24', 'opacity-0', 'pointer-events-none');
+        toast.classList.add('translate-y-0', 'opacity-100');
+
+        setTimeout(() => {
+            toast.classList.remove('translate-y-0', 'opacity-100');
+            toast.classList.add('translate-y-24', 'opacity-0', 'pointer-events-none');
+        }, 3500);
+    }
+
+    // ── Init ──────────────────────────────────────────────────
+    window.addEventListener('DOMContentLoaded', () => {
+        loadLocalRecipes();
+        renderRecipeGrid();
+        updateApiKeyDot();
+        updateSignInUI();
+        if (!localStorage.getItem('rv_welcome_dismissed')) openWelcomeModal();
+    });
+</script>
+</body>
+</html>
