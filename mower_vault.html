@@ -528,7 +528,7 @@
                 <label class="block text-slate-300 font-semibold mb-1">Backup Provider — OpenRouter <span class="text-[10px] font-normal text-slate-500">(optional)</span></label>
                 <input type="password" id="settings-openrouter-key" placeholder="sk-or-v1-..." class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-emerald-500/40 mb-2">
                 <label class="block text-slate-400 text-[10px] font-semibold uppercase tracking-wider mb-1">Model ID</label>
-                <input type="text" id="settings-openrouter-model" placeholder="google/gemma-4-31b-it:free" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-emerald-500/40">
+                <input type="text" id="settings-openrouter-model" placeholder="meta-llama/llama-3.3-8b-instruct:free" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-emerald-500/40">
                 <span class="text-[10px] text-slate-500 mt-1 block">Used automatically if Gemini fails or isn't configured. Get a free key from <a href="https://openrouter.ai/keys" target="_blank" class="text-emerald-400 hover:underline">OpenRouter</a> — model ID is editable so a future retirement doesn't break this again.</span>
                 <button onclick="testOpenRouterKey()" id="testOpenRouterKeyBtn" type="button" class="w-full mt-2 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-[11px] font-bold rounded-lg transition flex items-center justify-center gap-1.5">
                     <i class="fa-solid fa-vial"></i> Test Key
@@ -1228,37 +1228,68 @@
 
     // ── AI Providers: Gemini (primary) + OpenRouter (automatic backup) ──
     async function callGeminiJSON(promptText, geminiKey, useSearch) {
-        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${geminiKey}`;
-        const payload = {
-            contents: [{ parts: [{ text: promptText }] }],
-            systemInstruction: { parts: [{ text: 'Always return ONLY raw JSON — no markdown fences, no commentary.' }] },
-            generationConfig: { temperature: 0.3 }
-        };
-        // Note: Gemini's strict JSON schema/MIME mode can't be combined with Google Search
-        // grounding (restricted to Gemini 3-series models), so plain-instruction JSON +
-        // fence-stripped parsing is used here instead — works with or without search enabled.
-        if (useSearch) payload.tools = [{ googleSearch: {} }];
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiKey}`;
+        const parts = [{ text: promptText }];
 
-        let attempts = 0, delay = 800;
-        while (attempts < 4) {
-            const response = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-            if (response.status === 429 || response.status >= 500) {
-                attempts++;
-                if (attempts >= 4) throw new Error(`Gemini error: HTTP ${response.status} after retries`);
-                await new Promise(r => setTimeout(r, delay));
-                delay *= 2;
-                continue;
+        const getPayload = (searchEnabled) => {
+            const payload = {
+                contents: [{ parts }],
+                systemInstruction: { parts: [{ text: 'Always return ONLY raw JSON — no markdown fences, no commentary.' }] },
+                generationConfig: { temperature: 0.3 }
+            };
+            if (searchEnabled) payload.tools = [{ googleSearch: {} }];
+            return payload;
+        };
+
+        let currentUseSearch = useSearch;
+        const retryDelays = [2000, 5000, 10000];
+
+        for (let attempt = 0; attempt <= retryDelays.length; attempt++) {
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(getPayload(currentUseSearch))
+                });
+
+                if (response.status === 429 || response.status >= 500) {
+                    if (currentUseSearch) {
+                        console.warn("Gemini request failed/rate-limited with search grounding. Retrying immediately WITHOUT search...");
+                        currentUseSearch = false;
+                        continue;
+                    }
+
+                    if (attempt >= retryDelays.length) {
+                        let detail = '';
+                        try { const errBody = await response.json(); detail = errBody.error?.message || ''; } catch (e) {}
+                        throw new Error(`Gemini error: HTTP ${response.status} after retries${detail ? ' — ' + detail : ''}`);
+                    }
+
+                    console.warn(`Gemini HTTP ${response.status}. Waiting ${retryDelays[attempt] / 1000}s before retry ${attempt + 1}/${retryDelays.length}...`);
+                    await new Promise(r => setTimeout(r, retryDelays[attempt]));
+                    continue;
+                }
+
+                if (!response.ok) {
+                    let detail = '';
+                    try { const errBody = await response.json(); detail = errBody.error?.message || ''; } catch (e) {}
+                    throw new Error(`Gemini error: HTTP ${response.status}${detail ? ' — ' + detail : ''}`);
+                }
+
+                const data = await response.json();
+                let raw = (data.candidates && data.candidates[0] && data.candidates[0].content.parts[0].text) || '';
+                raw = raw.replace(/```json\s*/gi, '').replace(/```\s*/gi, '').trim();
+                if (!raw) throw new Error("Gemini returned an empty response.");
+                return JSON.parse(raw);
+            } catch (err) {
+                if (currentUseSearch) {
+                    console.warn("Gemini request threw error with search grounding. Retrying immediately WITHOUT search...", err);
+                    currentUseSearch = false;
+                    continue;
+                }
+                if (attempt >= retryDelays.length) throw err;
+                await new Promise(r => setTimeout(r, retryDelays[attempt]));
             }
-            if (!response.ok) {
-                let detail = '';
-                try { const errBody = await response.json(); detail = errBody.error && errBody.error.message; } catch (e) {}
-                throw new Error(`Gemini error: HTTP ${response.status}${detail ? ' — ' + detail : ''}`);
-            }
-            const data = await response.json();
-            let raw = (data.candidates && data.candidates[0] && data.candidates[0].content.parts[0].text) || '';
-            raw = raw.replace(/```json\s*/gi, '').replace(/```\s*/gi, '').trim();
-            if (!raw) throw new Error("Gemini returned an empty response.");
-            return JSON.parse(raw);
         }
         throw new Error("Gemini error: exhausted retries");
     }
@@ -1291,7 +1322,7 @@
     async function callAIWithFallback(promptText, useSearch) {
         const geminiKey = localStorage.getItem('thorpetech_gemini_api_key') || '';
         const orKey = localStorage.getItem('thorpetech_openrouter_api_key') || '';
-        const orModel = localStorage.getItem('thorpetech_openrouter_model') || 'google/gemma-4-31b-it:free';
+        const orModel = localStorage.getItem('thorpetech_openrouter_model') || 'meta-llama/llama-3.3-8b-instruct:free';
 
         let geminiError = null;
         if (geminiKey) {
@@ -1477,7 +1508,7 @@ Return ONLY the raw JSON object. Do not include markdown formatting, backticks, 
         statusEl.classList.remove('hidden');
 
         try {
-            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${testKey}`;
+            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${testKey}`;
             const response = await fetch(endpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -1507,7 +1538,7 @@ Return ONLY the raw JSON object. Do not include markdown formatting, backticks, 
         const btn = document.getElementById('testOpenRouterKeyBtn');
         const statusEl = document.getElementById('openrouter-test-status');
         const testKey = input?.value.trim() || '';
-        const testModel = (modelInput?.value.trim() || '') || 'google/gemma-4-31b-it:free';
+        const testModel = (modelInput?.value.trim() || '') || 'meta-llama/llama-3.3-8b-instruct:free';
 
         if (!testKey) {
             statusEl.textContent = 'Paste a key first.';
@@ -1555,7 +1586,7 @@ Return ONLY the raw JSON object. Do not include markdown formatting, backticks, 
         const key = localStorage.getItem('thorpetech_gemini_api_key') || '';
         document.getElementById('settings-key').value = key;
         document.getElementById('settings-openrouter-key').value = localStorage.getItem('thorpetech_openrouter_api_key') || '';
-        document.getElementById('settings-openrouter-model').value = localStorage.getItem('thorpetech_openrouter_model') || 'google/gemma-4-31b-it:free';
+        document.getElementById('settings-openrouter-model').value = localStorage.getItem('thorpetech_openrouter_model') || 'meta-llama/llama-3.3-8b-instruct:free';
         document.getElementById('gemini-test-status')?.classList.add('hidden');
         document.getElementById('openrouter-test-status')?.classList.add('hidden');
         updateApiKeyDot();
@@ -1574,7 +1605,7 @@ Return ONLY the raw JSON object. Do not include markdown formatting, backticks, 
         }
 
         const orKey = document.getElementById('settings-openrouter-key').value.trim();
-        const orModel = document.getElementById('settings-openrouter-model').value.trim() || 'google/gemma-4-31b-it:free';
+        const orModel = document.getElementById('settings-openrouter-model').value.trim() || 'meta-llama/llama-3.3-8b-instruct:free';
         localStorage.setItem('thorpetech_openrouter_model', orModel);
         if (orKey) {
             localStorage.setItem('thorpetech_openrouter_api_key', orKey);

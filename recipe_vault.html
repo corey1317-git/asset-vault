@@ -366,7 +366,7 @@
                 </button>
             </div>
             <label class="block text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Model ID</label>
-            <input type="text" id="settingsOpenRouterModelInput" placeholder="google/gemma-4-31b-it:free"
+            <input type="text" id="settingsOpenRouterModelInput" placeholder="meta-llama/llama-3.3-8b-instruct:free"
                 class="w-full bg-slate-900 border border-slate-700 focus:border-amber-500 rounded-lg px-3 py-2 text-sm text-slate-200 placeholder-slate-600 focus:outline-none transition font-mono mb-3">
             <p class="text-[10px] text-slate-500 mb-3 leading-relaxed">Editable so a future model retirement doesn't break this again — swap in any model ID from <a href="https://openrouter.ai/models?max_price=0" target="_blank" class="text-amber-400 hover:text-amber-300">openrouter.ai's free model list</a>.</p>
             <div class="flex gap-2 mb-2">
@@ -438,7 +438,7 @@
     let recipesCache = [];
     let apiKey = localStorage.getItem('rv_gemini_api_key') || "";
     let openrouterApiKey = localStorage.getItem('rv_openrouter_api_key') || "";
-    let openrouterModel = localStorage.getItem('rv_openrouter_model') || 'google/gemma-4-31b-it:free';
+    let openrouterModel = localStorage.getItem('rv_openrouter_model') || 'meta-llama/llama-3.3-8b-instruct:free';
     let driveFileId = localStorage.getItem('rv_drive_file_id') || null;
     let googleTokenClient = null;
     let accessToken = null;
@@ -1088,34 +1088,68 @@
     // so schema mode silently broke this feature. Markdown-fence-stripped JSON.parse is more
     // broadly compatible across both providers and whatever model the user configures.
     async function callGeminiJSON(promptText, useSearch) {
-        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`;
-        const payload = {
-            contents: [{ parts: [{ text: promptText }] }],
-            systemInstruction: { parts: [{ text: "You are a recipe digitization assistant. Always return ONLY raw JSON — no markdown fences, no commentary." }] },
-            generationConfig: { temperature: 0.3 }
-        };
-        if (useSearch) payload.tools = [{ "google_search": {} }];
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+        const parts = [{ text: promptText }];
 
-        let attempts = 0, delay = 800;
-        while (attempts < 4) {
-            const response = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-            if (response.status === 429 || response.status >= 500) {
-                attempts++;
-                if (attempts >= 4) throw new Error(`Gemini error: HTTP ${response.status} after retries`);
-                await new Promise(r => setTimeout(r, delay));
-                delay *= 2;
-                continue;
+        const getPayload = (searchEnabled) => {
+            const payload = {
+                contents: [{ parts }],
+                systemInstruction: { parts: [{ text: "You are a recipe digitization assistant. Always return ONLY raw JSON — no markdown fences, no commentary." }] },
+                generationConfig: { temperature: 0.3 }
+            };
+            if (searchEnabled) payload.tools = [{ "google_search": {} }];
+            return payload;
+        };
+
+        let currentUseSearch = useSearch;
+        const retryDelays = [2000, 5000, 10000];
+
+        for (let attempt = 0; attempt <= retryDelays.length; attempt++) {
+            try {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(getPayload(currentUseSearch))
+                });
+
+                if (response.status === 429 || response.status >= 500) {
+                    if (currentUseSearch) {
+                        console.warn("Gemini request failed/rate-limited with search grounding. Retrying immediately WITHOUT search...");
+                        currentUseSearch = false;
+                        continue;
+                    }
+
+                    if (attempt >= retryDelays.length) {
+                        let detail = '';
+                        try { const errBody = await response.json(); detail = errBody.error?.message || ''; } catch (e) {}
+                        throw new Error(`Gemini error: HTTP ${response.status} after retries${detail ? ' — ' + detail : ''}`);
+                    }
+
+                    console.warn(`Gemini HTTP ${response.status}. Waiting ${retryDelays[attempt] / 1000}s before retry ${attempt + 1}/${retryDelays.length}...`);
+                    await new Promise(r => setTimeout(r, retryDelays[attempt]));
+                    continue;
+                }
+
+                if (!response.ok) {
+                    let detail = '';
+                    try { const errBody = await response.json(); detail = errBody.error?.message || ''; } catch (e) {}
+                    throw new Error(`Gemini error: HTTP ${response.status}${detail ? ' — ' + detail : ''}`);
+                }
+
+                const data = await response.json();
+                let raw = (data.candidates && data.candidates[0] && data.candidates[0].content.parts[0].text) || '';
+                raw = raw.replace(/```json\s*/gi, '').replace(/```\s*/gi, '').trim();
+                if (!raw) throw new Error("Gemini returned an empty response.");
+                return JSON.parse(raw);
+            } catch (err) {
+                if (currentUseSearch) {
+                    console.warn("Gemini request threw error with search grounding. Retrying immediately WITHOUT search...", err);
+                    currentUseSearch = false;
+                    continue;
+                }
+                if (attempt >= retryDelays.length) throw err;
+                await new Promise(r => setTimeout(r, retryDelays[attempt]));
             }
-            if (!response.ok) {
-                let detail = '';
-                try { const errBody = await response.json(); detail = errBody.error && errBody.error.message; } catch (e) {}
-                throw new Error(`Gemini error: HTTP ${response.status}${detail ? ' — ' + detail : ''}`);
-            }
-            const data = await response.json();
-            let raw = (data.candidates && data.candidates[0] && data.candidates[0].content.parts[0].text) || '';
-            raw = raw.replace(/```json\s*/gi, '').replace(/```\s*/gi, '').trim();
-            if (!raw) throw new Error("Gemini returned an empty response.");
-            return JSON.parse(raw);
         }
         throw new Error("Gemini error: exhausted retries");
     }
@@ -1276,7 +1310,7 @@
         statusEl.classList.remove('hidden');
 
         try {
-            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${testKey}`;
+            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${testKey}`;
             const response = await fetch(endpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -1307,7 +1341,7 @@
         const statusEl = document.getElementById('openRouterKeyStatus');
         const statusText = document.getElementById('openRouterKeyStatusText');
         const testKey = (input ? input.value.trim() : '');
-        const testModel = (modelInput ? modelInput.value.trim() : '') || 'google/gemma-4-31b-it:free';
+        const testModel = (modelInput ? modelInput.value.trim() : '') || 'meta-llama/llama-3.3-8b-instruct:free';
 
         if (!testKey) {
             statusText.textContent = 'Paste a key first.';
@@ -1411,7 +1445,7 @@
         const statusEl = document.getElementById('openRouterKeyStatus');
         const statusText = document.getElementById('openRouterKeyStatusText');
         const newKey = (input ? input.value.trim() : '');
-        const newModel = (modelInput ? modelInput.value.trim() : '') || 'google/gemma-4-31b-it:free';
+        const newModel = (modelInput ? modelInput.value.trim() : '') || 'meta-llama/llama-3.3-8b-instruct:free';
 
         openrouterModel = newModel;
         localStorage.setItem('rv_openrouter_model', newModel);

@@ -2016,43 +2016,74 @@
 
         // ── AI Providers: Gemini (primary) + OpenRouter (automatic backup) ──
         // Plain-JSON-instruction prompting (not responseSchema) is used deliberately: combining
-        // Uses gemini-2.0-flash — stable, free-tier compatible, supports Google Search grounding.
+        // Uses gemini-2.0-flash — stable, free-tier compatible.
         // JSON is returned as raw text and stripped of markdown fences for broad compatibility.
         async function callGeminiJSON(promptText, systemText, useSearch, imageBase64, imageMime) {
             const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
             const parts = [{ text: promptText }];
             if (imageBase64) parts.push({ inlineData: { mimeType: imageMime, data: imageBase64 } });
-            const payload = {
-                contents: [{ parts }],
-                systemInstruction: { parts: [{ text: systemText + " Always return ONLY raw JSON — no markdown fences, no commentary." }] },
-                generationConfig: { temperature: 0.3 }
-            };
-            if (useSearch) payload.tools = [{ "google_search": {} }];
 
-            // Retry with generous back-off for 429 rate limits (5s, 10s, 20s, 40s, 60s)
-            const retryDelays = [5000, 10000, 20000, 40000, 60000];
+            const getPayload = (searchEnabled) => {
+                const payload = {
+                    contents: [{ parts }],
+                    systemInstruction: { parts: [{ text: systemText + " Always return ONLY raw JSON — no markdown fences, no commentary." }] },
+                    generationConfig: { temperature: 0.3 }
+                };
+                if (searchEnabled) payload.tools = [{ "google_search": {} }];
+                return payload;
+            };
+
+            let currentUseSearch = useSearch;
+            const retryDelays = [2000, 5000, 10000];
+            
             for (let attempt = 0; attempt <= retryDelays.length; attempt++) {
-                const response = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-                if (response.status === 429 || response.status >= 500) {
-                    if (attempt >= retryDelays.length) {
+                try {
+                    const response = await fetch(endpoint, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(getPayload(currentUseSearch))
+                    });
+
+                    if (response.status === 429 || response.status >= 500) {
+                        // If it failed with search grounding, try immediately without search grounding
+                        // since standard text model rate limits are much higher and requests are much faster.
+                        if (currentUseSearch) {
+                            console.warn("Gemini request failed/rate-limited with search grounding. Retrying immediately WITHOUT search...");
+                            currentUseSearch = false;
+                            continue;
+                        }
+
+                        if (attempt >= retryDelays.length) {
+                            let detail = '';
+                            try { const errBody = await response.json(); detail = errBody.error?.message || ''; } catch (e) {}
+                            throw new Error(`Gemini error: HTTP ${response.status} after retries${detail ? ' — ' + detail : ''}`);
+                        }
+                        
+                        console.warn(`Gemini HTTP ${response.status}. Waiting ${retryDelays[attempt] / 1000}s before retry ${attempt + 1}/${retryDelays.length}...`);
+                        await new Promise(r => setTimeout(r, retryDelays[attempt]));
+                        continue;
+                    }
+
+                    if (!response.ok) {
                         let detail = '';
                         try { const errBody = await response.json(); detail = errBody.error?.message || ''; } catch (e) {}
-                        throw new Error(`Gemini error: HTTP ${response.status} after retries${detail ? ' — ' + detail : ''}`);
+                        throw new Error(`Gemini error: HTTP ${response.status}${detail ? ' — ' + detail : ''}`);
                     }
-                    console.warn(`Gemini HTTP ${response.status}. Waiting ${retryDelays[attempt] / 1000}s before retry ${attempt + 1}/${retryDelays.length}...`);
+
+                    const data = await response.json();
+                    let raw = (data.candidates && data.candidates[0] && data.candidates[0].content.parts[0].text) || '';
+                    raw = raw.replace(/```json\s*/gi, '').replace(/```\s*/gi, '').trim();
+                    if (!raw) throw new Error("Gemini returned an empty response.");
+                    return JSON.parse(raw);
+                } catch (err) {
+                    if (currentUseSearch) {
+                        console.warn("Gemini request threw error with search grounding. Retrying immediately WITHOUT search...", err);
+                        currentUseSearch = false;
+                        continue;
+                    }
+                    if (attempt >= retryDelays.length) throw err;
                     await new Promise(r => setTimeout(r, retryDelays[attempt]));
-                    continue;
                 }
-                if (!response.ok) {
-                    let detail = '';
-                    try { const errBody = await response.json(); detail = errBody.error?.message || ''; } catch (e) {}
-                    throw new Error(`Gemini error: HTTP ${response.status}${detail ? ' — ' + detail : ''}`);
-                }
-                const data = await response.json();
-                let raw = (data.candidates && data.candidates[0] && data.candidates[0].content.parts[0].text) || '';
-                raw = raw.replace(/```json\s*/gi, '').replace(/```\s*/gi, '').trim();
-                if (!raw) throw new Error("Gemini returned an empty response.");
-                return JSON.parse(raw);
             }
             throw new Error("Gemini error: exhausted retries");
         }
@@ -2820,7 +2851,7 @@ ${schemaHint}`;
             statusEl.classList.remove('hidden');
 
             try {
-                const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${testKey}`;
+                const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${testKey}`;
                 const response = await fetch(endpoint, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
