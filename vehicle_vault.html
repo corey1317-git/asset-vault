@@ -3296,6 +3296,20 @@ async function callGeminiJSON(promptText, useSearch) {
             });
 
             if (res.status === 429 || res.status >= 500) {
+                let detail = '';
+                let isQuotaExceeded = false;
+                try {
+                    const errBody = await res.json();
+                    detail = errBody.error?.message || '';
+                    if (errBody.error?.status === 'RESOURCE_EXHAUSTED' || detail.toLowerCase().includes('quota')) {
+                        isQuotaExceeded = true;
+                    }
+                } catch (e) {}
+
+                if (isQuotaExceeded) {
+                    throw new Error(`Gemini error: Quota Exceeded (RESOURCE_EXHAUSTED) — ${detail}`);
+                }
+
                 if (currentUseSearch) {
                     console.warn("Gemini request failed/rate-limited with search grounding. Retrying immediately WITHOUT search...");
                     currentUseSearch = false;
@@ -3303,8 +3317,6 @@ async function callGeminiJSON(promptText, useSearch) {
                 }
 
                 if (attempt >= retryDelays.length) {
-                    let detail = '';
-                    try { const errBody = await res.json(); detail = errBody.error?.message || ''; } catch (e) {}
                     throw new Error(`Gemini error: HTTP ${res.status} after retries${detail ? ' — ' + detail : ''}`);
                 }
 

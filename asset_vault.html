@@ -2045,6 +2045,20 @@
                     });
 
                     if (response.status === 429 || response.status >= 500) {
+                        let detail = '';
+                        let isQuotaExceeded = false;
+                        try {
+                            const errBody = await response.json();
+                            detail = errBody.error?.message || '';
+                            if (errBody.error?.status === 'RESOURCE_EXHAUSTED' || detail.toLowerCase().includes('quota')) {
+                                isQuotaExceeded = true;
+                            }
+                        } catch (e) {}
+
+                        if (isQuotaExceeded) {
+                            throw new Error(`Gemini error: Quota Exceeded (RESOURCE_EXHAUSTED) — ${detail}`);
+                        }
+
                         // If it failed with search grounding, try immediately without search grounding
                         // since standard text model rate limits are much higher and requests are much faster.
                         if (currentUseSearch) {
@@ -2054,8 +2068,6 @@
                         }
 
                         if (attempt >= retryDelays.length) {
-                            let detail = '';
-                            try { const errBody = await response.json(); detail = errBody.error?.message || ''; } catch (e) {}
                             throw new Error(`Gemini error: HTTP ${response.status} after retries${detail ? ' — ' + detail : ''}`);
                         }
                         
