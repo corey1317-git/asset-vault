@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Asset Vault & Maintenance Tracker</title>
+    <!-- Google Identity Services client -->
+    <script src="https://accounts.google.com/gsi/client" defer></script>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome for icons -->
@@ -94,6 +96,9 @@
             <button onclick="exportDatabase()" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-750 hover:border-slate-755 text-xs font-bold rounded-xl transition flex items-center gap-1.5" title="Download Local JSON Backup">
                 <i class="fa-solid fa-download text-emerald-400"></i> Save Backup
             </button>
+            <button onclick="openCloudSyncModal()" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-750 hover:border-slate-755 text-xs font-bold rounded-xl transition flex items-center gap-1.5" title="Backup/Sync to Google Drive, Dropbox, or OneDrive">
+                <i class="fa-solid fa-cloud text-indigo-400"></i> Cloud Sync
+            </button>
             <button onclick="openAddModal()" class="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-slate-950 text-sm font-bold rounded-xl shadow-lg shadow-emerald-500/10 transition flex items-center gap-2">
                 <i class="fa-solid fa-plus text-sm"></i> Add Asset
             </button>
@@ -140,10 +145,14 @@
                              <button onclick="document.getElementById('importDatabaseFile').click()" title="Import/Merge Old Backup Files" class="h-9 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 border border-slate-700 transition flex items-center gap-1.5">
                                  <i class="fa-solid fa-upload text-indigo-400"></i> Import Backup
                              </button>
-                             <!-- Export Action -->
-                             <button onclick="exportDatabase()" title="Backup Database File" class="h-9 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 border border-slate-700 transition flex items-center gap-1.5">
-                                 <i class="fa-solid fa-download text-emerald-400"></i> Save Backup
-                             </button>
+                              <!-- Export Action -->
+                              <button onclick="exportDatabase()" title="Backup Database File" class="h-9 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 border border-slate-700 transition flex items-center gap-1.5">
+                                  <i class="fa-solid fa-download text-emerald-400"></i> Save Backup
+                              </button>
+                              <!-- Cloud Sync Action -->
+                              <button onclick="openCloudSyncModal()" title="Cloud Backup Sync Options" class="h-9 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 border border-slate-700 transition flex items-center gap-1.5">
+                                  <i class="fa-solid fa-cloud text-indigo-400"></i> Cloud Sync
+                              </button>
                         </div>
                     </div>
                     <div class="h-10 w-10 rounded-xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20 text-emerald-400">
@@ -733,6 +742,11 @@
         // Set up the API Key config as empty string (provided by environment)
         const apiKey = "";
 
+        // Developer cloud API configurations (specify standard OAuth 2.0 app client IDs here)
+        const googleClientId = "";   // e.g. "123456-abc.apps.googleusercontent.com"
+        const dropboxClientId = "";  // e.g. "dropbox_app_key"
+        const onedriveClientId = ""; // e.g. "microsoft_app_client_id"
+
         // Core Database Initial state
         const initialAssetData = [
             {
@@ -866,6 +880,7 @@
         window.addEventListener('DOMContentLoaded', () => {
             renderAll();
             checkWelcomeSplash();
+            handleOAuthRedirectCallback();
         });
 
         // Trigger updates across UI elements
@@ -2126,6 +2141,238 @@
                 localStorage.setItem('vault_hide_welcome', 'true');
             }
         }
+
+        // Cloud Backup Hub Actions
+        let googleTokenClient = null;
+        
+        function openCloudSyncModal() {
+            document.getElementById('gdriveClientIdInput').value = googleClientId || localStorage.getItem('gdrive_client_id') || '';
+            document.getElementById('dropboxClientIdInput').value = dropboxClientId || localStorage.getItem('dropbox_client_id') || '';
+            document.getElementById('onedriveClientIdInput').value = onedriveClientId || localStorage.getItem('onedrive_client_id') || '';
+            
+            const modal = document.getElementById('cloudSyncModal');
+            if (modal) modal.classList.remove('hidden');
+        }
+
+        function closeCloudSyncModal() {
+            const modal = document.getElementById('cloudSyncModal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        // 1. Google Drive Integration
+        function saveToGoogleDrive() {
+            const clientVal = googleClientId || document.getElementById('gdriveClientIdInput').value.trim();
+            if (!clientVal) {
+                showNotification("Config Required", "Please enter a Google OAuth Client ID to backup to Google Drive.", "amber");
+                return;
+            }
+            
+            localStorage.setItem('gdrive_client_id', clientVal);
+            
+            if (googleTokenClient === null) {
+                googleTokenClient = google.accounts.oauth2.initTokenClient({
+                    client_id: clientVal,
+                    scope: 'https://www.googleapis.com/auth/drive.file',
+                    callback: (tokenResponse) => {
+                        if (tokenResponse.error !== undefined) {
+                            showNotification("Auth Failed", "OAuth authorization was rejected.", "rose");
+                            return;
+                        }
+                        uploadToGoogleDrive(tokenResponse.access_token);
+                    },
+                });
+            }
+            googleTokenClient.requestAccessToken();
+        }
+
+        async function uploadToGoogleDrive(token) {
+            showNotification("Uploading...", "Pushing backup file to your Google Drive...", "indigo");
+            
+            const metadata = {
+                name: `Asset_Vault_Backup_${new Date().toISOString().slice(0,10)}.json`,
+                mimeType: 'application/json'
+            };
+            
+            const fileData = {
+                metadata: {
+                    vaultName: "House Vault",
+                    exportTimestamp: new Date().toISOString(),
+                    version: "1.3.0"
+                },
+                assets: assetData,
+                tasks: careTasks
+            };
+            
+            const fileContent = JSON.stringify(fileData, null, 2);
+            const boundary = 'foo_bar_baz';
+            const delimiter = `\r\n--${boundary}\r\n`;
+            const closeDelimiter = `\r\n--${boundary}--`;
+            
+            const multipartRequestBody =
+                delimiter +
+                'Content-Type: application/json; charset=UTF-8\r\n\r\n' +
+                JSON.stringify(metadata) +
+                delimiter +
+                'Content-Type: application/json\r\n\r\n' +
+                fileContent +
+                closeDelimiter;
+                
+            try {
+                const response = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': `multipart/related; boundary=${boundary}`,
+                        'Content-Length': multipartRequestBody.length
+                    },
+                    body: multipartRequestBody
+                });
+                
+                if (response.ok) {
+                    showNotification("Upload Complete", "Successfully backed up to your Google Drive!", "emerald");
+                    closeCloudSyncModal();
+                } else {
+                    const errData = await response.json();
+                    throw new Error(errData.error?.message || "Response failed");
+                }
+            } catch (err) {
+                showNotification("Drive Error", "Could not complete upload: " + err.message, "rose");
+            }
+        }
+
+        // 2. Dropbox Integration
+        function saveToDropbox() {
+            const clientVal = dropboxClientId || document.getElementById('dropboxClientIdInput').value.trim();
+            if (!clientVal) {
+                showNotification("Config Required", "Please enter a Dropbox App Key to backup to Dropbox.", "amber");
+                return;
+            }
+            localStorage.setItem('dropbox_client_id', clientVal);
+            
+            const backupState = {
+                assets: assetData,
+                tasks: careTasks
+            };
+            localStorage.setItem('cloud_backup_pending_payload', JSON.stringify(backupState));
+            
+            const redirectUri = `${window.location.origin}${window.location.pathname}`;
+            const authUrl = `https://www.dropbox.com/oauth2/authorize?client_id=${clientVal}&response_type=token&redirect_uri=${encodeURIComponent(redirectUri)}&state=dropbox`;
+            window.location.href = authUrl;
+        }
+
+        async function uploadToDropbox(token) {
+            showNotification("Uploading...", "Pushing backup file to your Dropbox...", "indigo");
+            
+            const payloadStr = localStorage.getItem('cloud_backup_pending_payload');
+            if (!payloadStr) {
+                showNotification("Backup Failed", "No pending backup payload found.", "rose");
+                return;
+            }
+            
+            const filename = `/Asset_Vault_Backup_${new Date().toISOString().slice(0,10)}.json`;
+            
+            try {
+                const response = await fetch('https://content.dropboxapi.com/2/files/upload', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Dropbox-API-Arg': JSON.stringify({
+                            path: filename,
+                            mode: 'overwrite',
+                            autorename: false,
+                            mute: false,
+                            strict_conflict: false
+                        }),
+                        'Content-Type': 'application/octet-stream'
+                    },
+                    body: payloadStr
+                });
+                
+                if (response.ok) {
+                    showNotification("Upload Complete", "Successfully backed up to Dropbox!", "emerald");
+                    localStorage.removeItem('cloud_backup_pending_payload');
+                } else {
+                    const errData = await response.json();
+                    throw new Error(errData.error_summary || "Upload failed");
+                }
+            } catch (err) {
+                showNotification("Dropbox Error", "Could not complete upload: " + err.message, "rose");
+            }
+        }
+
+        // 3. OneDrive Integration
+        function saveToOneDrive() {
+            const clientVal = onedriveClientId || document.getElementById('onedriveClientIdInput').value.trim();
+            if (!clientVal) {
+                showNotification("Config Required", "Please enter a Microsoft Client ID to backup to OneDrive.", "amber");
+                return;
+            }
+            localStorage.setItem('onedrive_client_id', clientVal);
+            
+            const backupState = {
+                assets: assetData,
+                tasks: careTasks
+            };
+            localStorage.setItem('cloud_backup_pending_payload', JSON.stringify(backupState));
+            
+            const redirectUri = `${window.location.origin}${window.location.pathname}`;
+            const authUrl = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${clientVal}&response_type=token&redirect_uri=${encodeURIComponent(redirectUri)}&scope=files.readwrite&state=onedrive`;
+            window.location.href = authUrl;
+        }
+
+        async function uploadToOneDrive(token) {
+            showNotification("Uploading...", "Pushing backup file to your OneDrive...", "indigo");
+            
+            const payloadStr = localStorage.getItem('cloud_backup_pending_payload');
+            if (!payloadStr) {
+                showNotification("Backup Failed", "No pending backup payload found.", "rose");
+                return;
+            }
+            
+            const filename = `Asset_Vault_Backup_${new Date().toISOString().slice(0,10)}.json`;
+            const uploadUrl = `https://graph.microsoft.com/v1.0/me/drive/root:/${filename}:/content`;
+            
+            try {
+                const response = await fetch(uploadUrl, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: payloadStr
+                });
+                
+                if (response.ok) {
+                    showNotification("Upload Complete", "Successfully backed up to Microsoft OneDrive!", "emerald");
+                    localStorage.removeItem('cloud_backup_pending_payload');
+                } else {
+                    const errData = await response.json();
+                    throw new Error(errData.error?.message || "Upload failed");
+                }
+            } catch (err) {
+                showNotification("OneDrive Error", "Could not complete upload: " + err.message, "rose");
+            }
+        }
+
+        // 4. URL OAuth Callback Hash Listener
+        function handleOAuthRedirectCallback() {
+            const hash = window.location.hash;
+            if (!hash) return;
+            
+            const params = new URLSearchParams(hash.substring(1));
+            const token = params.get('access_token');
+            const state = params.get('state');
+            
+            if (token) {
+                history.replaceState("", document.title, window.location.pathname + window.location.search);
+                
+                if (state === 'dropbox') {
+                    uploadToDropbox(token);
+                } else if (state === 'onedrive') {
+                    uploadToOneDrive(token);
+                }
+            }
+        }
     </script>
     
     <!-- Welcome Splash Guide Onboarding Modal -->
@@ -2184,6 +2431,97 @@
                 
                 <button onclick="closeWelcomeSplash()" class="px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-slate-950 text-xs font-bold rounded-xl shadow-lg shadow-emerald-500/10 transition">
                     Got it, Let's Start!
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cloud Sync Hub Modal -->
+    <div id="cloudSyncModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden transition-opacity duration-200" onclick="closeCloudSyncModal()">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-xl w-full p-6 md:p-8 shadow-2xl relative max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
+            <button onclick="closeCloudSyncModal()" class="absolute top-5 right-5 text-slate-400 hover:text-slate-200 transition">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            
+            <div class="flex items-center gap-4 mb-6">
+                <div class="h-12 w-12 rounded-xl bg-gradient-to-tr from-indigo-500 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-500/10 flex-shrink-0">
+                    <i class="fa-solid fa-cloud-arrow-up text-white text-xl animate-pulse"></i>
+                </div>
+                <div>
+                    <h3 class="font-extrabold text-lg text-white tracking-tight">Cloud Backup Hub</h3>
+                    <p class="text-xs text-slate-400">Sync database backups directly to your personal cloud accounts.</p>
+                </div>
+            </div>
+
+            <div class="space-y-4">
+                <!-- Google Drive Card -->
+                <div class="bg-slate-950/50 border border-slate-850 p-4 rounded-2xl flex flex-col gap-3">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2.5">
+                            <i class="fa-brands fa-google-drive text-emerald-400 text-xl"></i>
+                            <span class="text-sm font-bold text-slate-200">Google Drive</span>
+                        </div>
+                        <span class="text-[9px] font-bold bg-emerald-500/10 text-emerald-400 px-1.5 py-0.5 rounded uppercase tracking-wider">Popup Auth</span>
+                    </div>
+                    <p class="text-[11px] text-slate-400 leading-normal">Secured to your Google Account. Backs up file to your root folders with app-created files scope.</p>
+                    <div class="flex flex-col sm:flex-row gap-2.5 items-end">
+                        <div class="flex-1 w-full">
+                            <label class="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Developer Client ID</label>
+                            <input type="text" id="gdriveClientIdInput" placeholder="Enter google client ID..." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 transition">
+                        </div>
+                        <button onclick="saveToGoogleDrive()" class="h-9 px-4 bg-emerald-500 hover:bg-emerald-600 text-slate-950 text-xs font-bold rounded-lg transition whitespace-nowrap shadow flex items-center justify-center gap-1.5 w-full sm:w-auto">
+                            <i class="fa-brands fa-google-drive"></i> Backup to Drive
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Dropbox Card -->
+                <div class="bg-slate-950/50 border border-slate-850 p-4 rounded-2xl flex flex-col gap-3">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2.5">
+                            <i class="fa-brands fa-dropbox text-blue-400 text-xl"></i>
+                            <span class="text-sm font-bold text-slate-200">Dropbox</span>
+                        </div>
+                        <span class="text-[9px] font-bold bg-blue-500/10 text-blue-400 px-1.5 py-0.5 rounded uppercase tracking-wider">Redirect Grant</span>
+                    </div>
+                    <p class="text-[11px] text-slate-400 leading-normal">Connects to Dropbox and saves a JSON database copy under your main account app directories.</p>
+                    <div class="flex flex-col sm:flex-row gap-2.5 items-end">
+                        <div class="flex-1 w-full">
+                            <label class="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Developer App Key</label>
+                            <input type="text" id="dropboxClientIdInput" placeholder="Enter dropbox app key..." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-200 focus:outline-none focus:border-blue-500 transition">
+                        </div>
+                        <button onclick="saveToDropbox()" class="h-9 px-4 bg-blue-500 hover:bg-blue-600 text-white text-xs font-bold rounded-lg transition whitespace-nowrap shadow flex items-center justify-center gap-1.5 w-full sm:w-auto">
+                            <i class="fa-brands fa-dropbox"></i> Backup to Dropbox
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Microsoft OneDrive Card -->
+                <div class="bg-slate-950/50 border border-slate-850 p-4 rounded-2xl flex flex-col gap-3">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2.5">
+                            <i class="fa-brands fa-windows text-indigo-400 text-xl"></i>
+                            <span class="text-sm font-bold text-slate-200">OneDrive</span>
+                        </div>
+                        <span class="text-[9px] font-bold bg-indigo-500/10 text-indigo-400 px-1.5 py-0.5 rounded uppercase tracking-wider">Redirect Grant</span>
+                    </div>
+                    <p class="text-[11px] text-slate-400 leading-normal">Backs up to Microsoft OneDrive using Microsoft Graph REST APIs. Requires standard App registration ID.</p>
+                    <div class="flex flex-col sm:flex-row gap-2.5 items-end">
+                        <div class="flex-1 w-full">
+                            <label class="block text-[10px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Microsoft App Client ID</label>
+                            <input type="text" id="onedriveClientIdInput" placeholder="Enter Microsoft App ID..." class="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 transition">
+                        </div>
+                        <button onclick="saveToOneDrive()" class="h-9 px-4 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-bold rounded-lg transition whitespace-nowrap shadow flex items-center justify-center gap-1.5 w-full sm:w-auto">
+                            <i class="fa-brands fa-windows"></i> Backup to OneDrive
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="pt-5 border-t border-slate-850 flex justify-between items-center mt-5 text-[10px] text-slate-500">
+                <span>All OAuth processing is strictly client-side.</span>
+                <button onclick="closeCloudSyncModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-lg transition text-[11px]">
+                    Close
                 </button>
             </div>
         </div>
