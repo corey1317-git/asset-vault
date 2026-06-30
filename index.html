@@ -198,7 +198,7 @@
             </div>
             
             <!-- Replace YOUR_FORMSPREE_ID with your Formspree form ID to receive emails privately -->
-            <form action="https://formspree.io/f/YOUR_FORMSPREE_ID" method="POST" class="space-y-4" onsubmit="handleFeedbackSubmit(event)">
+            <form action="https://formspree.io/f/mgojlwbo" method="POST" class="space-y-4" onsubmit="handleFeedbackSubmit(event)">
                 <div>
                     <label class="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Your Name</label>
                     <input type="text" name="name" required placeholder="John Doe" class="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl p-2.5 text-xs text-slate-100 placeholder-slate-700 focus:outline-none transition">
@@ -252,7 +252,7 @@
             const button = form.querySelector('button[type="submit"]');
             const originalText = button.innerText;
             
-            if (form.action.includes("YOUR_FORMSPREE_ID")) {
+            if (form.action.includes("YOUR_FORMSPREE_ID") || form.action.includes("mgojlwbo") === false) {
                 showToast("Configuration Needed", "Please configure your unique Formspree ID inside the index.html file to submit this form.", "amber");
                 return;
             }
