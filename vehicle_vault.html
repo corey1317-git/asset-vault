@@ -1412,8 +1412,14 @@ if (vehicles.length === 0) {
             }
             if (!v.dlImage || v.dlImage.includes('imgflip') || v.dlImage.includes('Mclovin-Drivers-License')) {
                 v.dlImage = "https://themysteryshack.com/cdn/shop/products/shopify-wm-mclovin-bothsides_grande.jpg?v=1584244202";
-                v.insImage = "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=600&q=80";
-                v.regImage = "https://images.unsplash.com/photo-1586075010923-2dd4570fb338?w=600&q=80";
+                updated = true;
+            }
+            if (!v.insImage || v.insImage.includes('unsplash.com') || v.insImage === "") {
+                v.insImage = "mock_insurance.jpg";
+                updated = true;
+            }
+            if (!v.regImage || v.regImage.includes('unsplash.com') || v.regImage === "") {
+                v.regImage = "mock_registration.jpg";
                 updated = true;
             }
         }
@@ -1454,8 +1460,8 @@ function getSampleVehicle() {
         registrationExpiry: regExp.toISOString().split('T')[0],
         imageUrl: "https://i.ytimg.com/vi/1-v2CFwH0Q4/maxresdefault.jpg",
         dlImage: "https://themysteryshack.com/cdn/shop/products/shopify-wm-mclovin-bothsides_grande.jpg?v=1584244202",
-        insImage: "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=600&q=80",
-        regImage: "https://images.unsplash.com/photo-1586075010923-2dd4570fb338?w=600&q=80",
+        insImage: "mock_insurance.jpg",
+        regImage: "mock_registration.jpg",
         maintenanceLogs: [
             {
                 date: "2026-05-15",
