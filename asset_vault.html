@@ -2333,7 +2333,7 @@
             localStorage.setItem('cloud_backup_pending_payload', JSON.stringify(backupState));
             
             const redirectUri = `${window.location.origin}${window.location.pathname}`;
-            const authUrl = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${clientVal}&response_type=token&redirect_uri=${encodeURIComponent(redirectUri)}&scope=files.readwrite&state=onedrive`;
+            const authUrl = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${clientVal}&response_type=token&redirect_uri=${encodeURIComponent(redirectUri)}&scope=files.readwrite&state=onedrive&prompt=select_account`;
             window.location.href = authUrl;
         }
 
