@@ -45,7 +45,7 @@
         <div>
             <div class="flex items-center gap-2">
                 <h1 class="font-extrabold text-xl leading-tight bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">Vehicle Vault</h1>
-                <span class="text-[10px] font-bold bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 px-2 py-0.5 rounded-full">v1.0.0</span>
+                <span class="text-[10px] font-bold bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 px-2 py-0.5 rounded-full">v1.1.0</span>
             </div>
             <p class="text-[11px] text-slate-500 hidden md:block">Maintenance tracker &amp; service scheduler</p>
         </div>
@@ -299,11 +299,16 @@
             <div class="grid grid-cols-3 gap-3">
                 <div>
                     <label class="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Make</label>
-                    <input id="f-make" type="text" placeholder="Ford" class="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-xl p-2.5 text-sm placeholder-slate-700 focus:outline-none transition">
+                    <select id="f-make" onchange="onMakeChange()" class="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-xl p-2.5 text-sm text-slate-200 focus:outline-none transition">
+                        <option value="">Select Make...</option>
+                    </select>
                 </div>
                 <div>
                     <label class="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Model</label>
-                    <input id="f-model" type="text" placeholder="F-150" class="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-xl p-2.5 text-sm placeholder-slate-700 focus:outline-none transition">
+                    <select id="f-model-select" onchange="onModelSelectChange()" class="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-xl p-2.5 text-sm text-slate-200 focus:outline-none transition hidden">
+                        <option value="">Select Model...</option>
+                    </select>
+                    <input id="f-model-text" type="text" placeholder="Enter model..." class="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-xl p-2.5 text-sm placeholder-slate-700 focus:outline-none transition">
                 </div>
                 <div>
                     <label class="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Trim</label>
@@ -542,6 +547,161 @@ const DEFAULT_INTERVALS = [
     { id: 'battery',      name: 'Battery Check',         mileageInterval: 50000, monthInterval: 36 },
 ];
 
+// ── StartMyCar Make/Model Database (scraped June 2026) ────
+// Format: 'Display Name': { slug: 'url-slug', models: [['Display','url-slug'], ...] }
+// Empty models array = free-text model input fallback
+const SMC_DB = {
+  'Abarth':        { slug: 'abarth',        models: [] },
+  'Acura':         { slug: 'acura',         models: [['ILX','ilx'],['Integra','integra'],['MDX','mdx'],['NSX','nsx'],['RDX','rdx'],['RL','rl'],['RLX','rlx'],['RSX','rsx'],['TL','tl'],['TLX','tlx'],['TSX','tsx'],['ZDX','zdx']] },
+  'Alfa Romeo':    { slug: 'alfa-romeo',    models: [] },
+  'Aston Martin':  { slug: 'aston-martin',  models: [] },
+  'Audi':          { slug: 'audi',          models: [['A1','a1'],['A2','a2'],['A3','a3'],['A4','a4'],['A5','a5'],['A6','a6'],['A7','a7'],['A8','a8'],['Q2','q2'],['Q3','q3'],['Q4','q4'],['Q4 e-tron','q4-e-tron'],['Q5','q5'],['Q5 e','q5-e'],['Q6 e-tron','q6-e-tron'],['Q7','q7'],['Q8','q8'],['Q8 e-tron','q8-e-tron'],['R8','r8'],['RS3','rs3'],['RS4','rs4'],['RS5','rs5'],['RS6','rs6'],['RS7','rs7'],['S1','s1'],['S3','s3'],['S4','s4'],['S5','s5'],['S6','s6'],['S7','s7'],['S8','s8'],['SQ2','sq2'],['SQ5','sq5'],['SQ7','sq7'],['SQ8','sq8'],['TT','tt'],['TT RS','tt-rs'],['TTS','tts'],['e-tron','e-tron']] },
+  'Austin':        { slug: 'austin',        models: [] },
+  'BMW':           { slug: 'bmw',           models: [['1 Series','1-series'],['2 Series','2-series'],['3 Series','3-series'],['4 Series','4-series'],['5 Series','5-series'],['6 Series','6-series'],['7 Series','7-series'],['8 Series','8-series'],['i3','i3'],['i4','i4'],['i5','i5'],['i7','i7'],['i8','i8'],['iX','ix'],['M2','m2'],['M3','m3'],['M4','m4'],['M5','m5'],['M6','m6'],['M8','m8'],['X1','x1'],['X2','x2'],['X3','x3'],['X3 M','x3-m'],['X4','x4'],['X4 M','x4-m'],['X5','x5'],['X5 M','x5-m'],['X6','x6'],['X6 M','x6-m'],['X7','x7'],['XM','xm'],['Z3','z3'],['Z4','z4'],['Z8','z8']] },
+  'Buick':         { slug: 'buick',         models: [['Cascada','cascada'],['Century','century'],['Enclave','enclave'],['Encore','encore'],['Encore GX','encore-gx'],['Envision','envision'],['LaCrosse','lacrosse'],['LeSabre','lesabre'],['Lucerne','lucerne'],['Park Avenue','park-avenue'],['Rainier','rainier'],['Regal','regal'],['Rendezvous','rendezvous'],['Riviera','riviera'],['Terraza','terraza'],['Verano','verano']] },
+  'Cadillac':      { slug: 'cadillac',      models: [['ATS','ats'],['CT4','ct4'],['CT5','ct5'],['CT6','ct6'],['CTS','cts'],['DeVille','deville'],['DTS','dts'],['Eldorado','eldorado'],['Escalade','escalade'],['Lyriq','lyriq'],['SRX','srx'],['STS','sts'],['XT4','xt4'],['XT5','xt5'],['XT6','xt6'],['XTS','xts']] },
+  'Chery':         { slug: 'chery',         models: [] },
+  'Chevrolet':     { slug: 'chevrolet',     models: [['Astro','astro'],['Avalanche','avalanche'],['Aveo','aveo'],['Blazer','blazer'],['Bolt EUV','bolt-euv'],['Bolt EV','bolt-ev'],['Camaro','camaro'],['Caprice','caprice'],['Captiva','captiva'],['Cavalier','cavalier'],['City Express','city-express'],['Cobalt','cobalt'],['Colorado','colorado'],['Corvette','corvette'],['Cruze','cruze'],['Equinox','equinox'],['Express','express'],['Express 1500','express-1500'],['Express 2500','express-2500'],['Express 3500','express-3500'],['HHR','hhr'],['Impala','impala'],['Malibu','malibu'],['Malibu Hybrid','malibu-hybrid'],['Monte Carlo','monte-carlo'],['S10','s10'],['Silverado','silverado'],['Silverado 1500','silverado-1500'],['Silverado 2500','silverado-2500'],['Silverado 3500','silverado-3500'],['Silverado EV','silverado-ev'],['Sonic','sonic'],['Spark','spark'],['SS','ss'],['Suburban','suburban'],['Tahoe','tahoe'],['Trailblazer','trailblazer'],['Traverse','traverse'],['Trax','trax'],['Uplander','uplander'],['Venture','venture'],['Volt','volt']] },
+  'Chrysler':      { slug: 'chrysler',      models: [['200','200'],['300','300'],['Aspen','aspen'],['Concorde','concorde'],['Crossfire','crossfire'],['LHS','lhs'],['Pacifica','pacifica'],['PT Cruiser','pt-cruiser'],['Sebring','sebring'],['Town & Country','town-and-country'],['Voyager','voyager']] },
+  'Citroën':       { slug: 'citroen',       models: [] },
+  'Dacia':         { slug: 'dacia',         models: [] },
+  'Daewoo':        { slug: 'daewoo',        models: [] },
+  'Daihatsu':      { slug: 'daihatsu',      models: [] },
+  'Dodge':         { slug: 'dodge',         models: [['Avenger','avenger'],['Caliber','caliber'],['Caravan','caravan'],['Challenger','challenger'],['Charger','charger'],['Dakota','dakota'],['Dart','dart'],['Durango','durango'],['Grand Caravan','grand-caravan'],['Hornet','hornet'],['Intrepid','intrepid'],['Journey','journey'],['Magnum','magnum'],['Neon','neon'],['Nitro','nitro'],['Ram 1500','ram-1500'],['Ram 2500','ram-2500'],['Ram 3500','ram-3500'],['Viper','viper']] },
+  'Ferrari':       { slug: 'ferrari',       models: [] },
+  'Fiat':          { slug: 'fiat',          models: [] },
+  'Ford':          { slug: 'ford',          models: [['Aerostar','aerostar'],['Bronco','bronco'],['Bronco Sport','bronco-sport'],['C-MAX','c-max'],['C-MAX Hybrid','c-max-hybrid'],['Contour','contour'],['Crown Victoria','crown-victoria'],['E-150','e-150'],['E-250','e-250'],['E-350','e-350'],['EcoSport','ecosport'],['Edge','edge'],['Escape','escape'],['Escape Hybrid','escape-hybrid'],['Escape PHEV','escape-phev'],['Excursion','excursion'],['Expedition','expedition'],['Explorer','explorer'],['Explorer Sport Trac','explorer-sport-trac'],['F-100','f-100'],['F-150','f-150'],['F-250','f-250'],['F-350','f-350'],['F-450','f-450'],['F-550','f-550'],['Fiesta','fiesta'],['Flex','flex'],['Focus','focus'],['Freestar','freestar'],['Fusion','fusion'],['Fusion Hybrid','fusion-hybrid'],['Maverick','maverick'],['Mustang','mustang'],['Mustang Mach-E','mustang-mach-e'],['Puma','puma'],['Ranger','ranger'],['Taurus','taurus'],['Thunderbird','thunderbird'],['Transit','transit'],['Transit 150','transit-150'],['Transit Connect','transit-connect'],['Windstar','windstar']] },
+  'Geely':         { slug: 'geely',         models: [] },
+  'Genesis':       { slug: 'genesis',       models: [['G70','g70'],['G80','g80'],['G90','g90'],['GV70','gv70'],['GV80','gv80']] },
+  'GMC':           { slug: 'gmc',           models: [['Acadia','acadia'],['Canyon','canyon'],['Envoy','envoy'],['Envoy XL','envoy-xl'],['Jimmy','jimmy'],['Safari','safari'],['Savana','savana'],['Savana 1500','savana-1500'],['Savana 2500','savana-2500'],['Savana 3500','savana-3500'],['Sierra','sierra'],['Sierra 1500','sierra-1500'],['Sierra 2500','sierra-2500'],['Sierra 3500','sierra-3500'],['Sierra EV','sierra-ev'],['Sonoma','sonoma'],['Suburban','suburban'],['Terrain','terrain'],['Yukon','yukon'],['Yukon Hybrid','yukon-hybrid']] },
+  'Great Wall':    { slug: 'great-wall',    models: [] },
+  'Haval':         { slug: 'haval',         models: [] },
+  'Holden':        { slug: 'holden',        models: [] },
+  'Honda':         { slug: 'honda',         models: [['Accord','accord'],['Accord Hybrid','accord-hybrid'],['City','city'],['Civic','civic'],['Civic Hybrid','civic-hybrid'],['CR-V','cr-v'],['CR-V Hybrid','cr-v-hybrid'],['CR-Z','cr-z'],['Crosstour','crosstour'],['Element','element'],['Fit','fit'],['HR-V','hr-v'],['Insight','insight'],['Odyssey','odyssey'],['Passport','passport'],['Pilot','pilot'],['Prelude','prelude'],['Prologue','prologue'],['Ridgeline','ridgeline'],['S2000','s2000']] },
+  'HSV':           { slug: 'hsv',           models: [] },
+  'Hummer':        { slug: 'hummer',        models: [] },
+  'Hyundai':       { slug: 'hyundai',       models: [['Accent','accent'],['Azera','azera'],['Elantra','elantra'],['Elantra HEV','elantra-hev'],['Entourage','entourage'],['Ioniq','ioniq'],['IONIQ 5','ioniq-5'],['IONIQ 6','ioniq-6'],['Kona','kona'],['Kona EV','kona-ev'],['Palisade','palisade'],['Santa Cruz','santa-cruz'],['Santa Fe','santa-fe'],['Santa Fe HEV','santa-fe-hev'],['Sonata','sonata'],['Sonata Hybrid','sonata-hybrid'],['Tucson','tucson'],['Tucson Hybrid','tucson-hybrid'],['Veloster','veloster'],['Venue','venue'],['Veracruz','veracruz']] },
+  'Infiniti':      { slug: 'infiniti',      models: [['EX35','ex35'],['FX35','fx35'],['FX50','fx50'],['G35','g35'],['G37','g37'],['JX35','jx35'],['M35','m35'],['M37','m37'],['Q45','q45'],['Q50','q50'],['Q60','q60'],['Q70','q70'],['QX30','qx30'],['QX50','qx50'],['QX55','qx55'],['QX60','qx60'],['QX70','qx70'],['QX80','qx80']] },
+  'Isuzu':         { slug: 'isuzu',         models: [] },
+  'JAC':           { slug: 'jac',           models: [] },
+  'Jaguar':        { slug: 'jaguar',        models: [['E-Pace','e-pace'],['F-Pace','f-pace'],['F-Type','f-type'],['I-Pace','i-pace'],['S-Type','s-type'],['X-Type','x-type'],['XE','xe'],['XF','xf'],['XJ','xj'],['XK','xk']] },
+  'Jeep':          { slug: 'jeep',          models: [['Cherokee','cherokee'],['Commander','commander'],['Compass','compass'],['Gladiator','gladiator'],['Grand Cherokee','grand-cherokee'],['Grand Wagoneer','grand-wagoneer'],['Liberty','liberty'],['Patriot','patriot'],['Renegade','renegade'],['Wagoneer','wagoneer'],['Wrangler','wrangler']] },
+  'Kia':           { slug: 'kia',           models: [['Carnival','carnival'],['Cerato','cerato'],['EV6','ev6'],['EV9','ev9'],['Forte','forte'],['K5','k5'],['Niro','niro'],['Niro Hybrid','niro-hybrid'],['Optima','optima'],['Picanto','picanto'],['Rio','rio'],['Sedona','sedona'],['Seltos','seltos'],['Sorento','sorento'],['Sorento Hybrid','sorento-hybrid'],['Soul','soul'],['Spectra','spectra'],['Sportage','sportage'],['Stinger','stinger'],['Telluride','telluride']] },
+  'Lancia':        { slug: 'lancia',        models: [] },
+  'Land Rover':    { slug: 'land-rover',    models: [['Defender','defender'],['Discovery','discovery'],['Discovery Sport','discovery-sport'],['Freelander','freelander'],['Range Rover','range-rover'],['Range Rover Evoque','range-rover-evoque'],['Range Rover Sport','range-rover-sport'],['Range Rover Velar','range-rover-velar']] },
+  'Lexus':         { slug: 'lexus',         models: [['CT 200H','ct-200h'],['ES','es'],['ES 250','es-250'],['ES 300h','es-300h'],['ES 330','es-330'],['ES 350','es-350'],['GS 300','gs-300'],['GS 350','gs-350'],['GS F','gs-f'],['GX','gx'],['GX 460','gx-460'],['GX 470','gx-470'],['IS','is'],['IS 250','is-250'],['IS 300','is-300'],['IS 350','is-350'],['IS F','is-f'],['LC 500','lc-500'],['LS 400','ls-400'],['LS 430','ls-430'],['LS 460','ls-460'],['LS 500','ls-500'],['LX','lx'],['LX 470','lx-470'],['LX 570','lx-570'],['NX 200t','nx-200t'],['NX 300','nx-300'],['NX 300h','nx-300h'],['RC 300','rc-300'],['RC 350','rc-350'],['RX 300','rx-300'],['RX 330','rx-330'],['RX 350','rx-350'],['RX 400h','rx-400h'],['RX 450h','rx-450h'],['RZ','rz'],['TX','tx'],['UX 200','ux-200'],['UX 250h','ux-250h']] },
+  'Lincoln':       { slug: 'lincoln',       models: [['Aviator','aviator'],['Continental','continental'],['Corsair','corsair'],['LS','ls'],['Mark LT','mark-lt'],['MKC','mkc'],['MKT','mkt'],['MKX','mkx'],['MKZ','mkz'],['Nautilus','nautilus'],['Navigator','navigator'],['Town Car','town-car']] },
+  'Mahindra':      { slug: 'mahindra',      models: [] },
+  'Maserati':      { slug: 'maserati',      models: [] },
+  'Mazda':         { slug: 'mazda',         models: [['CX-3','cx-3'],['CX-30','cx-30'],['CX-5','cx-5'],['CX-50','cx-50'],['CX-7','cx-7'],['CX-9','cx-9'],['CX-90','cx-90'],['Mazda2','2'],['Mazda3','3'],['Mazda6','6'],['MX-5 Miata','mx-5'],['MX-30','mx-30'],['RX-7','rx-7'],['RX-8','rx-8'],['Tribute','tribute']] },
+  'Mercedes-Benz': { slug: 'mercedes-benz', models: [['A Class','a-class'],['B Class','b-class'],['C Class','c-class'],['CLA','cla'],['CLE','cle'],['CLS-Class','cls-class'],['E Class','e-class'],['EQA','eqa'],['EQB','eqb'],['EQC','eqc'],['EQE','eqe'],['EQS','eqs'],['G Class','g-class'],['GLA','gla'],['GLB','glb'],['GLC','glc'],['GLE','gle'],['GLK-Class','glk-class'],['GLS','gls'],['M Class','m-class'],['Metris','metris'],['ML-Class','ml-class'],['ML350','ml350'],['S Class','s-class'],['SL-Class','sl-class'],['SLC-Class','slc-class'],['SLK-Class','slk-class'],['Sprinter','sprinter'],['V Class','v-class']] },
+  'Mercury':       { slug: 'mercury',       models: [['Grand Marquis','grand-marquis'],['Mariner','mariner'],['Milan','milan'],['Monterey','monterey'],['Mountaineer','mountaineer'],['Sable','sable'],['Villager','villager']] },
+  'MG':            { slug: 'mg',            models: [] },
+  'Mini':          { slug: 'mini',          models: [['Clubman','clubman'],['Convertible','convertible'],['Cooper','cooper'],['Countryman','countryman'],['Hardtop','hardtop'],['Paceman','paceman']] },
+  'Mitsubishi':    { slug: 'mitsubishi',    models: [['3000GT','3000gt'],['Eclipse','eclipse'],['Eclipse Cross','eclipse-cross'],['Galant','galant'],['Lancer','lancer'],['Mirage','mirage'],['Montero','montero'],['Outlander','outlander'],['Outlander PHEV','outlander-phev'],['Outlander Sport','outlander-sport']] },
+  'Nissan':        { slug: 'nissan',        models: [['200SX','200sx'],['350Z','350z'],['370Z','370z'],['Altima','altima'],['Armada','armada'],['Ariya','ariya'],['Cube','cube'],['Frontier','frontier'],['GT-R','gt-r'],['Juke','juke'],['Kicks','kicks'],['Leaf','leaf'],['Maxima','maxima'],['Murano','murano'],['NV','nv'],['NV200','nv200'],['Pathfinder','pathfinder'],['Qashqai','qashqai'],['Quest','quest'],['Rogue','rogue'],['Sentra','sentra'],['Titan','titan'],['Versa','versa'],['Xterra','xterra']] },
+  'Oldsmobile':    { slug: 'oldsmobile',    models: [['Alero','alero'],['Aurora','aurora'],['Bravada','bravada'],['Cutlass','cutlass'],['Intrigue','intrigue'],['Silhouette','silhouette']] },
+  'Opel':          { slug: 'opel',          models: [] },
+  'Peugeot':       { slug: 'peugeot',       models: [] },
+  'Pontiac':       { slug: 'pontiac',       models: [['Aztek','aztek'],['Bonneville','bonneville'],['Firebird','firebird'],['G6','g6'],['G8','g8'],['Grand Am','grand-am'],['Grand Prix','grand-prix'],['Montana','montana'],['Solstice','solstice'],['Torrent','torrent'],['Vibe','vibe']] },
+  'Porsche':       { slug: 'porsche',       models: [['718 Boxster','718-boxster'],['718 Cayman','718-cayman'],['911','911'],['Boxster','boxster'],['Cayenne','cayenne'],['Cayman','cayman'],['Macan','macan'],['Panamera','panamera'],['Taycan','taycan']] },
+  'Proton':        { slug: 'proton',        models: [] },
+  'RAM':           { slug: 'ram',           models: [['1500','1500'],['2500','2500'],['3500','3500'],['ProMaster','promaster'],['ProMaster City','promaster-city']] },
+  'Renault':       { slug: 'renault',       models: [] },
+  'Rover':         { slug: 'rover',         models: [] },
+  'Saab':          { slug: 'saab',          models: [['9-3','9-3'],['9-5','9-5'],['9-7X','9-7x']] },
+  'Saturn':        { slug: 'saturn',        models: [['Aura','aura'],['Ion','ion'],['Outlook','outlook'],['Sky','sky'],['Vue','vue']] },
+  'Scion':         { slug: 'scion',         models: [['FR-S','fr-s'],['iM','im'],['tC','tc'],['xA','xa'],['xB','xb'],['xD','xd']] },
+  'Seat':          { slug: 'seat',          models: [] },
+  'Skoda':         { slug: 'skoda',         models: [] },
+  'Smart':         { slug: 'smart',         models: [] },
+  'SsangYong':     { slug: 'ssangyong',     models: [] },
+  'Subaru':        { slug: 'subaru',        models: [['Ascent','ascent'],['Baja','baja'],['BRZ','brz'],['Crosstrek','crosstrek'],['Crosstrek Hybrid','crosstrek-hybrid'],['Forester','forester'],['Impreza','impreza'],['Legacy','legacy'],['Outback','outback'],['Solterra','solterra'],['Tribeca','tribeca'],['WRX','wrx'],['XV Crosstrek','xv-crosstrek']] },
+  'Suzuki':        { slug: 'suzuki',        models: [] },
+  'Tata':          { slug: 'tata',          models: [] },
+  'Tesla':         { slug: 'tesla',         models: [['Cybertruck','cybertruck'],['Model 3','model-3'],['Model S','model-s'],['Model X','model-x'],['Model Y','model-y']] },
+  'Toyota':        { slug: 'toyota',        models: [['4Runner','4runner'],['86','86'],['Avalon','avalon'],['Avalon Hybrid','avalon-hybrid'],['bZ4X','bz4x'],['C-HR','c-hr'],['Camry','camry'],['Camry Hybrid','camry-hybrid'],['Celica','celica'],['Corolla','corolla'],['Corolla Cross','corolla-cross'],['Corolla Hybrid','corolla-hybrid'],['Echo','echo'],['FJ Cruiser','fj-cruiser'],['Grand Highlander','grand-highlander'],['Highlander','highlander'],['Highlander Hybrid','highlander-hybrid'],['Land Cruiser','land-cruiser'],['Matrix','matrix'],['Mirai','mirai'],['MR2','mr2'],['Prius','prius'],['Prius c','prius-c'],['Prius Plug-in','prius-plug-in'],['Prius Prime','prius-prime'],['Prius v','prius-v'],['RAV4','rav4'],['RAV4 EV','rav4-ev'],['RAV4 Hybrid','rav4-hybrid'],['RAV4 Prime','rav4-prime'],['Sequoia','sequoia'],['Sienna','sienna'],['Sienna Hybrid','sienna-hybrid'],['Supra','supra'],['Tacoma','tacoma'],['Tundra','tundra'],['Venza','venza'],['Yaris','yaris']] },
+  'Triumph':       { slug: 'triumph',       models: [] },
+  'Vauxhall':      { slug: 'vauxhall',      models: [] },
+  'Volkswagen':    { slug: 'volkswagen',    models: [['Atlas','atlas'],['Atlas Cross Sport','atlas-cross-sport'],['Beetle','beetle'],['CC','cc'],['Golf','golf'],['Golf GTI','golf-gti'],['Golf R','golf-r'],['ID.4','id.4'],['Jetta','jetta'],['New Beetle','new-beetle'],['Passat','passat'],['Rabbit','rabbit'],['Routan','routan'],['Tiguan','tiguan'],['Touareg','touareg']] },
+  'Volvo':         { slug: 'volvo',         models: [['C30','c30'],['C40','c40'],['C70','c70'],['S60','s60'],['S90','s90'],['V60','v60'],['V90','v90'],['XC40','xc40'],['XC60','xc60'],['XC70','xc70'],['XC90','xc90']] },
+};
+
+// ── SMC Dropdown Helpers ──────────────────────────────────
+function populateMakeSelect() {
+    const sel = document.getElementById('f-make');
+    Object.keys(SMC_DB).forEach(make => {
+        const opt = document.createElement('option');
+        opt.value = make;
+        opt.textContent = make;
+        sel.appendChild(opt);
+    });
+}
+
+function onMakeChange() {
+    const makeName = document.getElementById('f-make').value;
+    const modelSel = document.getElementById('f-model-select');
+    const modelText = document.getElementById('f-model-text');
+
+    if (!makeName || !SMC_DB[makeName] || SMC_DB[makeName].models.length === 0) {
+        // No model list — show free text
+        modelSel.classList.add('hidden');
+        modelText.classList.remove('hidden');
+        modelText.value = '';
+        return;
+    }
+
+    // Populate model dropdown
+    modelSel.innerHTML = '<option value="">Select Model...</option>';
+    SMC_DB[makeName].models.forEach(([label]) => {
+        const opt = document.createElement('option');
+        opt.value = label;
+        opt.textContent = label;
+        modelSel.appendChild(opt);
+    });
+    // Add "Other..." option for custom entry
+    const other = document.createElement('option');
+    other.value = '__other__';
+    other.textContent = 'Other (type below)...';
+    modelSel.appendChild(other);
+
+    modelSel.classList.remove('hidden');
+    modelText.classList.add('hidden');
+    modelText.value = '';
+    modelSel.value = '';
+}
+
+function onModelSelectChange() {
+    const modelSel = document.getElementById('f-model-select');
+    const modelText = document.getElementById('f-model-text');
+    if (modelSel.value === '__other__') {
+        modelText.classList.remove('hidden');
+        modelText.value = '';
+        modelText.focus();
+    } else {
+        modelText.classList.add('hidden');
+        modelText.value = '';
+    }
+}
+
+function getModelValue() {
+    const modelSel = document.getElementById('f-model-select');
+    const modelText = document.getElementById('f-model-text');
+    if (!modelSel.classList.contains('hidden') && modelSel.value && modelSel.value !== '__other__') {
+        return modelSel.value;
+    }
+    return modelText.value.trim();
+}
+
+function getSmcSlugs(makeName, modelName) {
+    const entry = SMC_DB[makeName];
+    if (!entry) return { makeSlug: makeName.toLowerCase().replace(/\s+/g,'-'), modelSlug: modelName.toLowerCase().replace(/\s+/g,'-') };
+    const makeSlug = entry.slug;
+    const modelEntry = entry.models.find(([label]) => label === modelName);
+    const modelSlug = modelEntry ? modelEntry[1] : modelName.toLowerCase().replace(/\s+/g,'-');
+    return { makeSlug, modelSlug };
+}
+
 // ── Persistence ───────────────────────────────────────────
 function save() {
     localStorage.setItem('vehicle_vault_data', JSON.stringify(vehicles));
@@ -553,6 +713,7 @@ function getVehicle(id) {
 
 // ── Init ──────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', () => {
+    populateMakeSelect();
     renderAll();
     updateApiKeyDot();
     // Default today's date in log modal
@@ -846,8 +1007,9 @@ function renderGuides(v) {
     // StartMyCar link
     const smcEl = document.getElementById('guides-startmycar');
     if (v.make && v.model) {
-        const makeSlug = v.make.toLowerCase().replace(/\s+/g, '-');
-        const modelSlug = v.model.toLowerCase().replace(/\s+/g, '-');
+        const { makeSlug, modelSlug } = v.makeSlug && v.modelSlug
+            ? { makeSlug: v.makeSlug, modelSlug: v.modelSlug }
+            : getSmcSlugs(v.make, v.model);
         smcEl.innerHTML = `
         <div class="mb-2">
             <div class="text-[10px] uppercase tracking-wider text-slate-500 font-semibold mb-1.5">Community Issues</div>
@@ -997,8 +1159,29 @@ function openEditModal() {
     document.getElementById('save-btn-text').textContent = 'Save Changes';
     document.getElementById('f-nickname').value = v.nickname || '';
     document.getElementById('f-year').value = v.year || '';
-    document.getElementById('f-make').value = v.make || '';
-    document.getElementById('f-model').value = v.model || '';
+    // Restore make dropdown
+    const makeSel = document.getElementById('f-make');
+    makeSel.value = v.make || '';
+    // Trigger model population then set model value
+    if (v.make && SMC_DB[v.make] && SMC_DB[v.make].models.length > 0) {
+        onMakeChange();
+        const modelSel = document.getElementById('f-model-select');
+        const modelText = document.getElementById('f-model-text');
+        // Try to match in dropdown
+        const match = SMC_DB[v.make].models.find(([label]) => label === v.model);
+        if (match) {
+            modelSel.value = v.model;
+        } else {
+            modelSel.value = '__other__';
+            modelText.classList.remove('hidden');
+            modelText.value = v.model || '';
+        }
+    } else {
+        // No models list — just set text input
+        document.getElementById('f-model-select').classList.add('hidden');
+        document.getElementById('f-model-text').classList.remove('hidden');
+        document.getElementById('f-model-text').value = v.model || '';
+    }
     document.getElementById('f-trim').value = v.trim || '';
     document.getElementById('f-color').value = v.color || '';
     document.getElementById('f-vin').value = v.vin || '';
@@ -1040,24 +1223,30 @@ function closeAddModal() {
 }
 
 function clearFormFields() {
-    ['f-nickname','f-year','f-make','f-model','f-trim','f-color','f-vin','f-plate',
+    ['f-nickname','f-year','f-trim','f-color','f-vin','f-plate',
      'f-mileage','f-purchase-date','f-ins-provider','f-ins-policy','f-ins-expiry',
      'f-reg-expiry','f-price','f-purchased-from'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.value = '';
     });
+    document.getElementById('f-make').value = '';
+    document.getElementById('f-model-select').innerHTML = '<option value="">Select Model...</option>';
+    document.getElementById('f-model-select').classList.add('hidden');
+    document.getElementById('f-model-text').value = '';
+    document.getElementById('f-model-text').classList.remove('hidden');
     document.getElementById('img-preview').classList.add('hidden');
     document.getElementById('img-preview-placeholder').classList.remove('hidden');
     document.getElementById('clear-img-btn').classList.add('hidden');
 }
 
 function saveVehicle() {
-    const make = document.getElementById('f-make').value.trim();
-    const model = document.getElementById('f-model').value.trim();
+    const make = document.getElementById('f-make').value;
+    const model = getModelValue();
     if (!make || !model) {
         showToast('Missing Info', 'Make and Model are required.', 'amber');
         return;
     }
+    const { makeSlug, modelSlug } = getSmcSlugs(make, model);
 
     if (editingId) {
         const v = getVehicle(editingId);
@@ -1065,6 +1254,7 @@ function saveVehicle() {
         v.nickname = document.getElementById('f-nickname').value.trim() || `${document.getElementById('f-year').value} ${make} ${model}`;
         v.year = parseInt(document.getElementById('f-year').value) || v.year;
         v.make = make; v.model = model;
+        v.makeSlug = makeSlug; v.modelSlug = modelSlug;
         v.trim = document.getElementById('f-trim').value.trim();
         v.color = document.getElementById('f-color').value.trim();
         v.vin = document.getElementById('f-vin').value.trim().toUpperCase();
@@ -1083,7 +1273,7 @@ function saveVehicle() {
         const nick = document.getElementById('f-nickname').value.trim() || `${year} ${make} ${model}`;
         const newV = {
             id: Date.now(),
-            nickname: nick, year, make, model,
+            nickname: nick, year, make, model, makeSlug, modelSlug,
             trim: document.getElementById('f-trim').value.trim(),
             color: document.getElementById('f-color').value.trim(),
             vin: document.getElementById('f-vin').value.trim().toUpperCase(),
