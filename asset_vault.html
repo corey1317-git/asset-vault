@@ -448,7 +448,12 @@
                     </div>
                     <div>
                         <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Manual & Guide Web Link</label>
-                        <input type="url" id="formManualUrl" placeholder="https://egopowerplus.com/..." class="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500 rounded-xl p-2.5 text-sm text-slate-100 placeholder-slate-700 focus:outline-none transition">
+                        <div class="flex gap-2">
+                            <input type="url" id="formManualUrl" placeholder="https://egopowerplus.com/..." class="flex-1 bg-slate-950 border border-slate-800 focus:border-emerald-500 rounded-xl p-2.5 text-sm text-slate-100 placeholder-slate-700 focus:outline-none transition">
+                            <button type="button" onclick="searchManualsLib()" title="Search ManualsLib.com for this item" class="px-3 bg-slate-900 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 rounded-xl text-emerald-400 transition flex-shrink-0">
+                                <i class="fa-solid fa-magnifying-glass text-xs"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -1449,6 +1454,19 @@
         }
 
         // Custom Product Photo local resizing/aspect ratio compressor (Smart Image Correction)
+        // Opens a Google search scoped to manualslib.com — ManualsLib's own search is JS-driven
+        // with no stable public URL pattern, so a site-restricted search is the reliable approach.
+        function searchManualsLib() {
+            const name = document.getElementById('formName')?.value.trim() || '';
+            const model = document.getElementById('formModel')?.value.trim() || '';
+            if (!name && !model) {
+                showNotification("Missing Info", "Enter a product name or model first.", "amber");
+                return;
+            }
+            const query = `site:manualslib.com ${name} ${model} manual`.trim();
+            window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank');
+        }
+
         function handleProductPhotoUpload(input) {
             const file = input.files[0];
             if (!file) return;
@@ -2096,7 +2114,7 @@
             if (statusLabel) statusLabel.innerText = "Connecting to AI...";
             if (subtextLabel) subtextLabel.innerText = apiKey ? "Trying Gemini first..." : "Using OpenRouter backup...";
 
-            const schemaHint = `Return ONLY a raw JSON object (no markdown fences, no commentary) matching exactly this shape: {"name": string, "category": one of ["Yard Tools","Electronics","Appliances","Home Utilities"], "model": string, "serial": string (use "REPLACE_WITH_YOUR_SERIAL" if not found), "serial2": string, "price": number, "purchaseDate": "YYYY-MM-DD", "warrantyEndDate": "YYYY-MM-DD" or empty, "purchasedFrom": string, "manualUrl": string, "imageUrl": string, "parts": string[], "tips": string}.`;
+            const schemaHint = `Return ONLY a raw JSON object (no markdown fences, no commentary) matching exactly this shape: {"name": string, "category": one of ["Yard Tools","Electronics","Appliances","Home Utilities"], "model": string, "serial": string (use "REPLACE_WITH_YOUR_SERIAL" if not found), "serial2": string, "price": number, "purchaseDate": "YYYY-MM-DD", "warrantyEndDate": "YYYY-MM-DD" or empty, "purchasedFrom": string, "manualUrl": string (prefer a matching manualslib.com page if one exists, otherwise the manufacturer's official manual page), "imageUrl": string, "parts": string[], "tips": string}.`;
             let promptText = '';
             let imageBase64 = null, imageMime = null;
 
@@ -2197,7 +2215,7 @@
 
             showNotification("AI Researching...", `Fetching care data for ${asset.name}...`, "indigo");
 
-            const schemaHint = `Return ONLY a raw JSON object (no markdown fences, no commentary) matching exactly this shape: {"youtubeGuides": [{"label": string, "query": string}], "parts": string[], "manualUrl": string, "imageUrl": string, "tips": string}.`;
+            const schemaHint = `Return ONLY a raw JSON object (no markdown fences, no commentary) matching exactly this shape: {"youtubeGuides": [{"label": string, "query": string}], "parts": string[], "manualUrl": string (prefer a matching manualslib.com page if one exists, otherwise the manufacturer's official manual page), "imageUrl": string, "tips": string}.`;
             const promptText = `Research specific maintenance and care information for this home asset:
 Name: ${asset.name}
 Model Number: ${asset.model || 'unknown'}

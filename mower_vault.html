@@ -266,6 +266,14 @@
 
                                 <span class="text-slate-500">Image URL:</span>
                                 <input type="text" id="spec-imageUrl" onchange="saveSpecField('imageUrl', this.value)" placeholder="Pasted or AI stock photo URL" class="col-span-2 bg-slate-900/60 border border-slate-800 rounded px-2 py-1 text-slate-100 focus:outline-none focus:border-emerald-500/30">
+
+                                <span class="text-slate-500">Manual:</span>
+                                <div class="col-span-2 flex gap-1.5">
+                                    <input type="text" id="spec-manualUrl" onchange="saveSpecField('manualUrl', this.value)" placeholder="Service/owner's manual link" class="flex-1 bg-slate-900/60 border border-slate-800 rounded px-2 py-1 text-slate-100 focus:outline-none focus:border-emerald-500/30">
+                                    <button type="button" onclick="searchManualsLib()" title="Search ManualsLib.com for this make/model" class="px-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded text-emerald-400 transition flex-shrink-0">
+                                        <i class="fa-solid fa-magnifying-glass text-[10px]"></i>
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
@@ -943,7 +951,8 @@
             document.getElementById('spec-deckBelt').value = m.deckBelt || '';
             document.getElementById('spec-driveBelt').value = m.driveBelt || '';
             document.getElementById('spec-imageUrl').value = m.imageUrl || '';
-        } 
+            document.getElementById('spec-manualUrl').value = m.manualUrl || '';
+        }
         else if (currentTab === 'ledger') {
             document.getElementById('ledger-buyDate').value = m.buyDate || '';
             document.getElementById('ledger-buyPrice').value = m.buyPrice || 0;
@@ -1082,6 +1091,19 @@
         }
     }
 
+    // Opens a Google search scoped to manualslib.com — ManualsLib's own search is JS-driven
+    // with no stable public URL pattern, so a site-restricted search is the reliable approach.
+    function searchManualsLib() {
+        const make = document.getElementById('spec-make')?.value.trim() || '';
+        const model = document.getElementById('spec-model')?.value.trim() || '';
+        if (!make && !model) {
+            showToast("Missing Info", "Enter a make and model first.", "amber");
+            return;
+        }
+        const query = `site:manualslib.com ${make} ${model} manual`.trim();
+        window.open(`https://www.google.com/search?q=${encodeURIComponent(query)}`, '_blank');
+    }
+
     // ── Log Entries ───────────────────────────────────────────
     function toggleChecklist(field, checked) {
         if (!selectedId) return;
@@ -1205,12 +1227,17 @@
     }
 
     // ── AI Providers: Gemini (primary) + OpenRouter (automatic backup) ──
-    async function callGeminiJSON(promptText, geminiKey) {
+    async function callGeminiJSON(promptText, geminiKey, useSearch) {
         const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${geminiKey}`;
         const payload = {
             contents: [{ parts: [{ text: promptText }] }],
-            generationConfig: { responseMimeType: 'application/json', temperature: 0.3 }
+            systemInstruction: { parts: [{ text: 'Always return ONLY raw JSON — no markdown fences, no commentary.' }] },
+            generationConfig: { temperature: 0.3 }
         };
+        // Note: Gemini's strict JSON schema/MIME mode can't be combined with Google Search
+        // grounding (restricted to Gemini 3-series models), so plain-instruction JSON +
+        // fence-stripped parsing is used here instead — works with or without search enabled.
+        if (useSearch) payload.tools = [{ googleSearch: {} }];
 
         let attempts = 0, delay = 800;
         while (attempts < 4) {
@@ -1261,14 +1288,14 @@
         return JSON.parse(raw);
     }
 
-    async function callAIWithFallback(promptText) {
+    async function callAIWithFallback(promptText, useSearch) {
         const geminiKey = localStorage.getItem('thorpetech_gemini_api_key') || '';
         const orKey = localStorage.getItem('thorpetech_openrouter_api_key') || '';
         const orModel = localStorage.getItem('thorpetech_openrouter_model') || 'google/gemma-4-31b-it:free';
 
         let geminiError = null;
         if (geminiKey) {
-            try { return { data: await callGeminiJSON(promptText, geminiKey), provider: 'Gemini', fellBack: false }; }
+            try { return { data: await callGeminiJSON(promptText, geminiKey, useSearch), provider: 'Gemini', fellBack: false }; }
             catch (err) { geminiError = err; }
         }
         if (orKey) {
@@ -1321,6 +1348,7 @@ Return a raw JSON object containing these exact fields:
   "deckBelt": "Deck belt OEM part number",
   "driveBelt": "Motion drive belt OEM part number",
   "imageUrl": "A verified public image URL of this exact model riding mower. Empty string if not found.",
+  "manualUrl": "A direct link to this exact model's owner's or service manual, preferring manualslib.com if a matching page exists there, otherwise the manufacturer's official manual page. Empty string if not found.",
   "youtubeGuides": [{"label": string, "query": string}]
 }
 
@@ -1329,7 +1357,7 @@ Return ONLY the raw JSON object. Do not include markdown formatting, backticks, 
 `;
 
         try {
-            const result = await callAIWithFallback(promptText);
+            const result = await callAIWithFallback(promptText, true);
             const parsed = result.data;
 
             if (parsed.engine) v.engine = parsed.engine;
@@ -1343,6 +1371,7 @@ Return ONLY the raw JSON object. Do not include markdown formatting, backticks, 
             // Only update image URL if we don't have a local uploaded base64 custom photo
             const hasLocalPhoto = v.imageUrl && v.imageUrl.startsWith('data:image');
             if (parsed.imageUrl && !hasLocalPhoto) v.imageUrl = parsed.imageUrl;
+            if (parsed.manualUrl) v.manualUrl = parsed.manualUrl;
             if (parsed.youtubeGuides) v.youtubeGuides = parsed.youtubeGuides;
 
             saveData();
