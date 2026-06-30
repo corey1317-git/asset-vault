@@ -1,0 +1,2 @@
+# Ignore local database backups containing sensitive user asset logs
+*.json

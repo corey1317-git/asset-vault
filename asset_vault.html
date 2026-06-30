@@ -1,0 +1,1948 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asset Vault & Maintenance Tracker</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+        }
+        /* Elegant smooth scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+
+        /* Specialized CSS Print Styles for Insurance Binder */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #insuranceBinderPrintout, #insuranceBinderPrintout * {
+                visibility: visible;
+            }
+            #insuranceBinderPrintout {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                color: #000000 !important;
+                background: #ffffff !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col overflow-x-hidden">
+
+    <!-- Header Section -->
+    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-40 px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+        <!-- Logo and Location Subtitle -->
+        <div class="flex items-center space-x-3.5 self-start md:self-auto">
+            <div class="h-11 w-11 rounded-xl bg-gradient-to-tr from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg shadow-emerald-500/10">
+                <i class="fa-solid fa-house-laptop text-slate-950 text-xl"></i>
+            </div>
+            <div>
+                <div class="flex items-center gap-2">
+                    <h1 class="font-extrabold text-xl leading-tight bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">Asset Vault</h1>
+                    <span onclick="openChangelog()" class="cursor-pointer text-[10px] font-bold bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full flex items-center gap-1 transition select-none">
+                        v6.1.0 <i class="fa-solid fa-code-branch text-[9px]"></i>
+                    </span>
+                </div>
+                <p class="text-xs text-emerald-400 font-medium tracking-wide flex items-center gap-1">
+                    <i class="fa-solid fa-location-dot"></i> 123 Main Street, Anytown, USA
+                </p>
+            </div>
+        </div>
+
+        <!-- Filter Controls -->
+        <div class="flex flex-wrap items-center gap-3 w-full md:w-auto">
+            <div class="relative flex-1 md:w-72">
+                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400 pointer-events-none">
+                    <i class="fa-solid fa-magnifying-glass text-xs"></i>
+                </span>
+                <input type="text" id="searchInput" oninput="filterAssets()" placeholder="Search assets, models, serials..." class="w-full pl-9 pr-4 py-2 bg-slate-950 border border-slate-800 focus:border-emerald-500 rounded-xl focus:outline-none focus:ring-1 focus:ring-emerald-500 text-sm text-slate-200 placeholder-slate-600 transition">
+            </div>
+            <select id="categoryFilter" onchange="filterAssets()" class="bg-slate-950 border border-slate-800 focus:border-emerald-500 text-slate-300 text-sm rounded-xl py-2 px-3 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition">
+                <option value="All">All Categories</option>
+                <option value="Yard Tools">Yard Tools</option>
+                <option value="Electronics">Electronics</option>
+                <option value="Appliances">Appliances</option>
+                <option value="Home Utilities">Home Utilities</option>
+            </select>
+            <button onclick="openAddModal()" class="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-slate-950 text-sm font-bold rounded-xl shadow-lg shadow-emerald-500/10 transition flex items-center gap-2">
+                <i class="fa-solid fa-plus text-sm"></i> Add Asset
+            </button>
+        </div>
+    </header>
+
+    <!-- Main Workspace Layout with expanded 1750px grid container -->
+    <main class="flex-1 p-6 max-w-[1750px] mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Left Column: Asset Vault Grid (9 Cols) -->
+        <section class="lg:col-span-9 flex flex-col space-y-6">
+            
+            <!-- Dashboard Stats Summary Card Row -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="bg-slate-900 border border-slate-800/80 p-5 rounded-2xl shadow-xl flex items-center justify-between">
+                    <div>
+                        <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Total Valuation</p>
+                        <h3 id="statTotalValue" class="text-2xl font-bold text-white mt-1">$0.00</h3>
+                    </div>
+                    <div class="h-10 w-10 rounded-xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20 text-emerald-400">
+                        <i class="fa-solid fa-shield-halved text-lg"></i>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900 border border-slate-800/80 p-5 rounded-2xl shadow-xl flex items-center justify-between">
+                    <div>
+                        <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Tracked Assets</p>
+                        <h3 id="statTotalCount" class="text-2xl font-bold text-white mt-1">0 Items</h3>
+                    </div>
+                    <div class="h-10 w-10 rounded-xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 text-indigo-400">
+                        <i class="fa-solid fa-boxes-stacked text-lg"></i>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900 border border-slate-800/80 p-5 rounded-2xl shadow-xl flex items-center justify-between">
+                    <div>
+                        <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Database Tools</p>
+                        <div class="flex items-center gap-2 mt-2">
+                            <!-- Import Database Action -->
+                            <input type="file" id="importDatabaseFile" accept=".json" onchange="importDatabase(this)" class="hidden">
+                            <button onclick="document.getElementById('importDatabaseFile').click()" title="Import/Merge Old Backup Files" class="h-9 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 border border-slate-700 transition flex items-center gap-1.5">
+                                <i class="fa-solid fa-upload text-indigo-400"></i> Sync Backup
+                            </button>
+                            <!-- Export Action -->
+                            <button onclick="exportDatabase()" title="Backup Database File" class="h-9 w-9 rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center border border-slate-700 text-slate-300 transition">
+                                <i class="fa-solid fa-download"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="h-10 w-10 rounded-xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20 text-emerald-400">
+                        <i class="fa-solid fa-database text-lg"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Asset Cards Dynamic Container -->
+            <div id="assetsContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 xl:grid-cols-4 gap-5">
+                <!-- Javascript builds items dynamically here -->
+            </div>
+
+        </section>
+
+        <!-- Right Column: Interactive Utilities, Allocations & Maintenance (3 Cols) -->
+        <section class="lg:col-span-3 flex flex-col space-y-6">
+            
+            <!-- Category Value Distribution Chart Card -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+                <h3 class="font-bold text-slate-200 text-sm mb-1.5 flex items-center gap-2">
+                    <i class="fa-solid fa-chart-pie text-indigo-400"></i> Valuation Distribution
+                </h3>
+                <p class="text-xs text-slate-400 mb-4">Total capital division split across registered profiles</p>
+                
+                <div id="categoryChartContainer" class="space-y-3 mb-5">
+                    <!-- Progress bars injected dynamically -->
+                </div>
+
+                <!-- Generate PDF Insurance Claim Binder -->
+                <button onclick="generateInsuranceBinder()" class="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-slate-950 text-xs font-bold rounded-xl shadow-lg shadow-emerald-500/5 transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-file-shield text-base"></i> Export Insurance Binder (PDF)
+                </button>
+            </div>
+
+            <!-- Local Storage Footprint / Quota Guage Card -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+                <h3 class="font-bold text-slate-200 text-sm mb-1.5 flex items-center gap-2">
+                    <i class="fa-solid fa-hard-drive text-indigo-400"></i> Local Storage Footprint
+                </h3>
+                <p class="text-xs text-slate-400 mb-3">Amount of browser sandbox storage occupied by compressed files</p>
+                
+                <div class="space-y-1">
+                    <div class="flex justify-between items-center text-xs">
+                        <span class="text-slate-400 font-semibold" id="quotaTextLabel">Reading Usage...</span>
+                        <span class="text-slate-500 font-mono text-[10px]">Max 5.0 MB Limit</span>
+                    </div>
+                    <div class="w-full bg-slate-950/40 h-2 rounded-full overflow-hidden border border-slate-800">
+                        <div id="quotaProgressIndicator" class="bg-indigo-500 h-full rounded-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dynamic Property Maintenance Tasks Board -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col">
+                <div class="flex justify-between items-center pb-3 mb-3 border-b border-slate-800/80">
+                    <div>
+                        <h3 class="font-bold text-slate-200 text-sm flex items-center gap-2">
+                            <i class="fa-solid fa-calendar-check text-amber-400"></i> Maintenance Planner
+                        </h3>
+                        <p class="text-xs text-slate-400">Crucial equipment care tasks</p>
+                    </div>
+                    <button onclick="openAddTaskModal()" class="p-1.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/20 rounded-lg text-xs font-semibold transition flex items-center gap-1">
+                        <i class="fa-solid fa-plus"></i> New Care
+                    </button>
+                </div>
+
+                <!-- Active Roadmap Tasks Container -->
+                <div id="tasksContainer" class="space-y-3 max-h-[350px] overflow-y-auto pr-1">
+                    <!-- Dynamic Checklist Injected Here -->
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- Modal Form: Add or Edit Asset with Built-in AI Creator Tab -->
+    <div id="assetFormModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden transition-opacity duration-200">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-2xl w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto">
+            <button onclick="closeAssetModal()" class="absolute top-4 right-4 text-slate-500 hover:text-slate-300 transition">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            
+            <!-- Modal Title & Icon Header Zone -->
+            <div class="flex items-center gap-3 mb-5 border-b border-slate-800 pb-4">
+                <div class="h-10 w-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/20">
+                    <i class="fa-solid fa-pen-to-square text-lg"></i>
+                </div>
+                <div>
+                    <h3 id="modalTitle" class="font-bold text-lg text-slate-100">Add New Asset</h3>
+                    <p class="text-xs text-slate-400">Register device inside the home inventory vault</p>
+                </div>
+            </div>
+
+            <!-- Modal Tabs Selection (Manual vs AI Creator) -->
+            <div class="flex border-b border-slate-800 mb-5 gap-6">
+                <button type="button" id="tabManual" onclick="switchModalTab('manual')" class="pb-3 text-sm font-bold text-emerald-400 border-b-2 border-emerald-400 transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-keyboard"></i> Manual Entry
+                </button>
+                <button type="button" id="tabAI" onclick="switchModalTab('ai')" class="pb-3 text-sm font-semibold text-slate-400 hover:text-slate-200 transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-wand-magic-sparkles text-indigo-400 animate-pulse"></i> AI Creator Portal
+                </button>
+            </div>
+
+            <!-- TAB 1: AI Magic Creator Tab Content -->
+            <div id="aiTabContent" class="hidden space-y-5 pb-2">
+                <div class="p-4 rounded-xl bg-gradient-to-r from-indigo-950/40 to-slate-900 border border-indigo-900/40">
+                    <h4 class="text-sm font-bold text-slate-100 flex items-center gap-2">
+                        <i class="fa-solid fa-wand-magic text-indigo-400"></i> Cosmic Gemini Generator
+                    </h4>
+                    <p class="text-xs text-slate-400 mt-1 leading-relaxed">
+                        Generate comprehensive item metrics instantly! Either describe your item in natural language OR drop an image of the physical transaction receipt below.
+                    </p>
+                </div>
+
+                <!-- Input Entry Method A: Text prompt -->
+                <div class="space-y-1.5">
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400">Option 1: Describe the Product</label>
+                    <div class="flex gap-2">
+                        <input type="text" id="aiProductPrompt" placeholder="Bought a Traeger Ironwood Grill at Home Depot last week for $1499..." class="flex-1 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl p-2.5 text-sm placeholder-slate-700 focus:outline-none transition">
+                        <button type="button" onclick="generateAssetWithAI('text')" class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-bolt"></i> Generate
+                        </button>
+                    </div>
+                </div>
+
+                <div class="relative flex py-2 items-center">
+                    <div class="flex-grow border-t border-slate-800"></div>
+                    <span class="flex-shrink mx-4 text-slate-500 text-[10px] font-bold uppercase tracking-widest">OR</span>
+                    <div class="flex-grow border-t border-slate-800"></div>
+                </div>
+
+                <!-- Input Entry Method B: Receipt Scanner upload and parse zone -->
+                <div class="space-y-2">
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400">Option 2: Multimodal Receipt scanner</label>
+                    <div class="flex items-center justify-center w-full">
+                        <label for="aiReceiptUpload" class="flex flex-col items-center justify-center w-full h-36 border-2 border-dashed border-slate-800 hover:border-indigo-500/50 bg-slate-950/40 hover:bg-slate-950 rounded-2xl cursor-pointer transition">
+                            <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                <i class="fa-solid fa-receipt text-3xl text-indigo-400/80 mb-3 animate-bounce"></i>
+                                <p class="text-xs text-slate-300 font-bold" id="aiScanStatusLabel">Click to select receipt image</p>
+                                <p class="text-[10px] text-slate-500 mt-1">Supports PNG, JPG, or PDF captures</p>
+                            </div>
+                            <input id="aiReceiptUpload" type="file" accept="image/*" onchange="loadReceiptForAI(this)" class="hidden" />
+                        </label>
+                    </div>
+                    
+                    <div id="aiReceiptPreviewBox" class="hidden p-3 bg-slate-950/60 rounded-xl border border-slate-800 flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <img id="aiReceiptThumb" class="h-12 w-12 rounded object-cover border border-slate-800">
+                            <div>
+                                <span class="text-xs font-bold text-slate-300 block">Receipt Image Staged</span>
+                                <span class="text-[9px] text-slate-500" id="aiReceiptSizeText">Compressed</span>
+                            </div>
+                        </div>
+                        <button type="button" onclick="triggerReceiptScan()" class="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-slate-950 text-xs font-bold rounded-xl transition flex items-center gap-1">
+                            <i class="fa-solid fa-circle-notch animate-pulse"></i> AI Scan Receipt
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: Asset Registry Form (Manual / Verified Review Form) -->
+            <form id="assetRegistryForm" onsubmit="saveAsset(event)" class="space-y-4">
+                <input type="hidden" id="editAssetId">
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Asset Name *</label>
+                        <input type="text" id="formName" required placeholder="EGO Power+ Trimmer" class="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500 rounded-xl p-2.5 text-sm text-slate-100 placeholder-slate-700 focus:outline-none transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Category *</label>
+                        <select id="formCategory" required class="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500 rounded-xl p-2.5 text-sm text-slate-300 focus:outline-none transition">
+                            <option value="Yard Tools">Yard Tools</option>
+                            <option value="Electronics">Electronics</option>
+                            <option value="Appliances">Appliances</option>
+                            <option value="Home Utilities">Home Utilities</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Model Number</label>
+                        <input type="text" id="formModel" placeholder="LM2135SP" class="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500 rounded-xl p-2.5 text-sm text-slate-100 placeholder-slate-700 focus:outline-none transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Serial Number *</label>
+                        <input type="text" id="formSerial" required placeholder="NLM1424519648X" class="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500 rounded-xl p-2.5 text-sm text-slate-100 placeholder-slate-700 focus:outline-none transition">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Purchase Cost ($) *</label>
+                        <input type="number" step="0.01" id="formPrice" required placeholder="299.99" class="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500 rounded-xl p-2.5 text-sm text-slate-100 placeholder-slate-700 focus:outline-none transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Purchase Date</label>
+                        <input type="date" id="formPurchaseDate" class="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500 rounded-xl p-2.5 text-sm text-slate-300 focus:outline-none transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Purchased From</label>
+                        <input type="text" id="formPurchasedFrom" placeholder="Lowe's, Amazon, etc." class="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500 rounded-xl p-2.5 text-sm text-slate-100 placeholder-slate-700 focus:outline-none transition">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Secondary Serial (Charger/Battery Kit)</label>
+                        <input type="text" id="formSerial2" placeholder="NCH0224519648X" class="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500 rounded-xl p-2.5 text-sm text-slate-100 placeholder-slate-700 focus:outline-none transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Manual & Guide Web Link</label>
+                        <input type="url" id="formManualUrl" placeholder="https://egopowerplus.com/..." class="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500 rounded-xl p-2.5 text-sm text-slate-100 placeholder-slate-700 focus:outline-none transition">
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-slate-850 pt-3">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Product Stock Image Web URL</label>
+                        <input type="url" id="formImageUrl" placeholder="https://images.unsplash.com/..." class="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500 rounded-xl p-2.5 text-sm text-slate-100 placeholder-slate-700 focus:outline-none transition">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">OR: Upload Custom Product Photo (Compressed)</label>
+                        <div class="flex items-center gap-3">
+                            <input type="file" id="formProductFile" accept="image/*" onchange="handleProductPhotoUpload(this)" class="hidden">
+                            <label for="formProductFile" class="cursor-pointer flex items-center justify-center gap-2 bg-slate-950 border border-slate-800 hover:border-slate-700 hover:bg-slate-900 text-xs text-slate-300 font-semibold py-2.5 px-4 rounded-xl transition duration-150 flex-1">
+                                <i class="fa-solid fa-camera text-emerald-400"></i>
+                                <span id="productPhotoUploadText">Select Device Photo</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 border-t border-slate-850 pt-3">
+                    <div>
+                        <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Add Receipt Image (Compressed Locally)</label>
+                        <div class="flex items-center gap-3">
+                            <input type="file" id="formReceiptFile" accept="image/*" onchange="handleReceiptUpload(this)" class="hidden">
+                            <label for="formReceiptFile" class="cursor-pointer flex items-center justify-center gap-2 bg-slate-950 border border-slate-800 hover:border-slate-700 hover:bg-slate-900 text-xs text-slate-300 font-semibold py-2.5 px-4 rounded-xl transition duration-150 flex-1">
+                                <i class="fa-solid fa-cloud-arrow-up text-indigo-400"></i>
+                                <span id="receiptUploadText">Select Receipt File</span>
+                            </label>
+                            <button type="button" id="btnRemoveReceipt" onclick="removeReceiptData()" class="hidden h-10 w-10 bg-rose-500/10 border border-rose-500/20 text-rose-400 rounded-xl hover:bg-rose-500/20 transition flex items-center justify-center" title="Remove Uploaded Receipt">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                        <input type="hidden" id="formReceiptBase64">
+                    </div>
+                    <div>
+                        <!-- Compressed State Preview Placeholder -->
+                        <div id="receiptThumbnailContainer" class="hidden bg-slate-950/60 p-2.5 rounded-xl border border-slate-800 flex items-center gap-4 h-[44px]">
+                            <img id="receiptThumbnailPreview" class="h-8 w-8 rounded object-cover border border-slate-800 shadow">
+                            <div class="flex flex-col justify-center">
+                                <span class="text-[10px] font-bold text-slate-300 leading-tight">Receipt Image Loaded</span>
+                                <span class="text-[8px] text-slate-500 font-mono tracking-wide" id="receiptThumbnailSize">Compressed</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Reference Parts & Accessories (Comma-separated)</label>
+                    <input type="text" id="formParts" placeholder="AB2101D Blades, 7.5Ah Battery, Rapid Charger" class="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500 rounded-xl p-2.5 text-sm text-slate-100 placeholder-slate-700 focus:outline-none transition">
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Maintenance Advice & Usage Tips</label>
+                    <textarea id="formTips" rows="3" placeholder="Always clean grass buildup. Store vertical in off-season." class="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500 rounded-xl p-2.5 text-sm text-slate-100 placeholder-slate-700 focus:outline-none transition resize-none"></textarea>
+                </div>
+
+                <div class="pt-3 border-t border-slate-800/80 flex justify-end gap-3">
+                    <button type="button" onclick="closeAssetModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl transition">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-5 py-2 bg-emerald-500 hover:bg-emerald-600 text-slate-950 text-xs font-bold rounded-xl transition">
+                        Save Asset
+                    </button>
+                </div>
+            </form>
+
+            <!-- AI Magic Progress Loading Overlay -->
+            <div id="aiLoadingOverlay" class="hidden absolute inset-0 bg-slate-950/95 backdrop-blur-md rounded-2xl flex flex-col items-center justify-center p-6 z-50">
+                <div class="relative w-24 h-24 mb-6">
+                    <!-- Cosmic rotating ring progress -->
+                    <div class="absolute inset-0 rounded-full border-4 border-t-emerald-400 border-r-indigo-400 border-b-violet-500 border-l-transparent animate-spin"></div>
+                    <div class="absolute inset-2 bg-slate-900 rounded-full flex items-center justify-center">
+                        <i class="fa-solid fa-wand-magic-sparkles text-2xl text-emerald-400 animate-pulse"></i>
+                    </div>
+                </div>
+                <h4 class="text-base font-bold text-slate-100 mb-1.5" id="aiLoadingStatus">AI Processing...</h4>
+                <p class="text-xs text-slate-400 text-center max-w-sm" id="aiLoadingSubtext">Gemini 2.5 Flash is analyzing your staged files and fetching image dimensions.</p>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Modal Form: Add Custom Maintenance Task -->
+    <div id="taskModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden transition-opacity duration-200">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
+            <button onclick="closeAddTaskModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-200 transition">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            <div class="flex items-center gap-3 mb-4">
+                <div class="h-10 w-10 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center border border-amber-500/20">
+                    <i class="fa-solid fa-screwdriver-wrench text-lg"></i>
+                </div>
+                <h3 class="font-bold text-lg text-slate-100">Add Maintenance Task</h3>
+            </div>
+            
+            <form id="taskForm" onsubmit="saveTask(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Task Description *</label>
+                    <input type="text" id="taskDesc" required placeholder="Scrape Grass & Clean deck of LM2135SP" class="w-full bg-slate-950 border border-slate-800 focus:border-amber-500 rounded-xl p-2.5 text-sm text-slate-100 placeholder-slate-700 focus:outline-none transition">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Schedule / Due Frame</label>
+                    <input type="text" id="taskSchedule" placeholder="Monthly, Nov 2026, Every 6 months..." class="w-full bg-slate-950 border border-slate-800 focus:border-amber-500 rounded-xl p-2.5 text-sm text-slate-100 placeholder-slate-700 focus:outline-none transition">
+                </div>
+                <div class="pt-3 border-t border-slate-800/80 flex justify-end gap-3">
+                    <button type="button" onclick="closeAddTaskModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl transition">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-5 py-2 bg-amber-500 hover:bg-amber-600 text-slate-950 text-xs font-bold rounded-xl transition">
+                        Save Task
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Insurance Lightbox Modal Viewer -->
+    <div id="receiptLightbox" onclick="closeLightbox()" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center p-4 z-50 hidden transition-opacity duration-200">
+        <div class="relative max-w-4xl w-full flex flex-col items-center" onclick="event.stopPropagation()">
+            <button onclick="closeLightbox()" class="absolute -top-12 right-0 text-slate-400 hover:text-white transition flex items-center gap-1.5 font-semibold text-sm">
+                <i class="fa-solid fa-xmark text-lg"></i> Close Viewer
+            </button>
+            <div class="bg-slate-900 border border-slate-800 p-2.5 rounded-2xl shadow-2xl overflow-hidden max-h-[80vh] flex items-center justify-center">
+                <img id="lightboxImage" src="" class="max-h-[75vh] max-w-full rounded-xl object-contain">
+            </div>
+            <p id="lightboxTitle" class="mt-4 text-center text-sm font-semibold tracking-tight text-slate-200">Receipt Viewer</p>
+        </div>
+    </div>
+
+    <!-- Printable Insurance Claim Binder Modal Viewer -->
+    <div id="insuranceBinderModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center p-6 z-50 hidden transition-opacity duration-200">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-5xl w-full p-6 shadow-2xl relative max-h-[90vh] overflow-y-auto flex flex-col">
+            <button onclick="closeInsuranceBinder()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-200 transition">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 mb-4 border-b border-slate-800 gap-4">
+                <div>
+                    <h3 class="font-bold text-lg text-slate-100 flex items-center gap-2">
+                        <i class="fa-solid fa-file-shield text-emerald-400"></i> Insurance Inventory Binder
+                    </h3>
+                    <p class="text-xs text-slate-400">Print or generate a clean PDF replacement catalog for claim adjusters</p>
+                </div>
+                <button onclick="window.print()" class="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-slate-950 text-xs font-extrabold rounded-lg flex items-center gap-1.5">
+                    <i class="fa-solid fa-print"></i> Print Binder / Save PDF
+                </button>
+            </div>
+
+            <!-- This is the container extracted by window.print() -->
+            <div id="insuranceBinderPrintout" class="bg-slate-950 border border-slate-850 p-6 rounded-xl flex-1 overflow-y-auto">
+                <div class="text-center pb-6 border-b border-slate-850">
+                    <h2 class="text-xl font-bold uppercase tracking-wider text-slate-100">Property Inventory & Valuations Portfolio</h2>
+                    <p class="text-xs text-emerald-400 font-semibold tracking-wide uppercase mt-1">Insured Location: 123 Main Street, Anytown, USA</p>
+                    <p class="text-[10px] text-slate-500 font-mono tracking-wider mt-1">Generated: Monday, June 29, 2026 • Policyholder: John Doe</p>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 my-6">
+                    <div class="p-4 bg-slate-900 border border-slate-850 rounded-xl text-center">
+                        <span class="text-[10px] uppercase font-bold text-slate-500 block">Insured Capital Valuation</span>
+                        <h3 id="printValuation" class="text-xl font-extrabold text-white mt-1">$0.00</h3>
+                    </div>
+                    <div class="p-4 bg-slate-900 border border-slate-850 rounded-xl text-center">
+                        <span class="text-[10px] uppercase font-bold text-slate-500 block">Total Registered Assets</span>
+                        <h3 id="printCount" class="text-xl font-extrabold text-white mt-1">0 Items</h3>
+                    </div>
+                    <div class="p-4 bg-slate-900 border border-slate-850 rounded-xl text-center">
+                        <span class="text-[10px] uppercase font-bold text-slate-500 block">Claims Verification Ratio</span>
+                        <h3 id="printReceiptPercent" class="text-xl font-extrabold text-emerald-400 mt-1">0% Receipts</h3>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs text-slate-300">
+                        <thead class="bg-slate-900 text-slate-400 uppercase tracking-widest text-[9px] border-b border-slate-850">
+                            <tr>
+                                <th class="p-3">Asset Item & Model</th>
+                                <th class="p-3">Serial Reference</th>
+                                <th class="p-3">Vendor / Date</th>
+                                <th class="p-3">Claim Replacement Cost</th>
+                                <th class="p-3 text-right">Receipt File</th>
+                            </tr>
+                        </thead>
+                        <tbody id="insuranceTableBody">
+                            <!-- Injected dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="mt-8 pt-6 border-t border-slate-850 text-[10px] text-slate-500 text-center leading-relaxed">
+                    This document provides an official certified log of the tangible assets at the address stated above. Serial numbers and dates are validated against retailer transactions. Stored receipt files are embedded within the base data framework.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Interactive Changelog Portal Modal -->
+    <div id="changelogModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center p-6 z-50 hidden transition-opacity duration-200" onclick="closeChangelog()">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-xl w-full p-6 shadow-2xl relative max-h-[85vh] overflow-y-auto flex flex-col" onclick="event.stopPropagation()">
+            <button onclick="closeChangelog()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-200 transition">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+
+            <!-- Changelog Header -->
+            <div class="flex items-center gap-3 mb-6 pb-4 border-b border-slate-800">
+                <div class="h-10 w-10 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center border border-indigo-500/20">
+                    <i class="fa-solid fa-code-branch text-lg"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg text-slate-100">System Build Log</h3>
+                    <p class="text-xs text-slate-400">Chronological history of the Asset Vault development</p>
+                </div>
+            </div>
+
+            <!-- Timeline Elements -->
+            <div class="space-y-6 relative border-l-2 border-slate-800 ml-3 pl-6 my-2 text-xs">
+                
+                <!-- Build 7 -->
+                <div class="relative">
+                    <span class="absolute -left-[31px] top-1 bg-emerald-500 ring-4 ring-slate-950 h-3 w-3 rounded-full animate-pulse"></span>
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="font-bold text-emerald-400 text-xs">v6.1.0 (Latest Release)</span>
+                        <span class="text-[9px] text-slate-500 font-mono">June 2026</span>
+                    </div>
+                    <p class="text-slate-300 mt-1 leading-relaxed">
+                        Branding refactored to **Asset Vault**. Sourced and resolved high-res stock photo links. Squeezed in fluid **4-column aspect ratio correct cards**. Built dual offline **Product Photo Resizing Compressors** and integrated a real-time **LocalStorage Quota Space Footprint tracker**.
+                    </p>
+                </div>
+
+                <!-- Build 6 -->
+                <div class="relative">
+                    <span class="absolute -left-[31px] top-1 bg-indigo-500 ring-4 ring-slate-950 h-3 w-3 rounded-full"></span>
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="font-bold text-indigo-300 text-xs">v6.0.0 (Widescreen Launch)</span>
+                        <span class="text-[9px] text-slate-500 font-mono">June 2026</span>
+                    </div>
+                    <p class="text-slate-300 mt-1 leading-relaxed">
+                        Optimized desktop layout supporting fluid multi-column product card grids. Swapped monospace red text colors with clean dark-slate monospaced tags for serial number listings. Added this interactive System Changelog component.
+                    </p>
+                </div>
+
+                <!-- Build 5 -->
+                <div class="relative">
+                    <span class="absolute -left-[31px] top-1 bg-slate-800 ring-4 ring-slate-950 h-3 w-3 rounded-full"></span>
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="font-bold text-slate-400 text-xs">v5.0.0 — YouTube Guides & Claim PDF Binder</span>
+                        <span class="text-[9px] text-slate-500 font-mono">June 2026</span>
+                    </div>
+                    <p class="text-slate-300 mt-1 leading-relaxed">
+                        Engineered the **Insurance Claim Binder Generator** supporting custom page breaks, valuation calculations, and receipt rendering optimized for Print-to-PDF layouts. Added model-specific YouTube video links and dynamic parts replacement shopping links.
+                    </p>
+                </div>
+
+                <!-- Build 4 -->
+                <div class="relative">
+                    <span class="absolute -left-[31px] top-1 bg-slate-800 ring-4 ring-slate-950 h-3 w-3 rounded-full"></span>
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="font-bold text-slate-400 text-xs">v4.0.0 — Local File Compresso-Scanner</span>
+                        <span class="text-[9px] text-slate-500 font-mono">May 2026</span>
+                    </div>
+                    <p class="text-slate-300 mt-1 leading-relaxed">
+                        Integrated raw file uploads. Built an automated **HTML5 smart canvas compressor** that resizes receipt images to 800px and converts them to tiny offline Base64 JPEG strings, preventing localStorage overflow crashes. Added full-screen receipt zoom lightboxes.
+                    </p>
+                </div>
+
+                <!-- Build 3 -->
+                <div class="relative">
+                    <span class="absolute -left-[31px] top-1 bg-slate-800 ring-4 ring-slate-950 h-3 w-3 rounded-full"></span>
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="font-bold text-slate-400 text-xs">v3.0.0 — Multimodal AI Parsing (Gemini)</span>
+                        <span class="text-[9px] text-slate-500 font-mono">May 2026</span>
+                    </div>
+                    <p class="text-slate-300 mt-1 leading-relaxed">
+                        Configured default location settings. Integrated **Gemini 2.5 Flash Multimodal Creator** to automatically scan receipt images and parse transaction details, and matched stock product images using Google Search Grounding.
+                    </p>
+                </div>
+
+                <!-- Build 2 -->
+                <div class="relative">
+                    <span class="absolute -left-[31px] top-1 bg-slate-800 ring-4 ring-slate-950 h-3 w-3 rounded-full"></span>
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="font-bold text-slate-400 text-xs">v2.0.0 — CRUD Dashboard & Storage Sync</span>
+                        <span class="text-[9px] text-slate-500 font-mono">May 2026</span>
+                    </div>
+                    <p class="text-slate-300 mt-1 leading-relaxed">
+                        Added beautiful, custom modal dialog overlays. Programmed full create, update, and delete triggers synchronized with browser `localStorage` and configured structured JSON file backup exports.
+                    </p>
+                </div>
+
+                <!-- Build 1 -->
+                <div class="relative">
+                    <span class="absolute -left-[31px] top-1 bg-slate-800 ring-4 ring-slate-950 h-3 w-3 rounded-full"></span>
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="font-bold text-slate-400 text-xs">v1.0.0 — Centralized Database Schema</span>
+                        <span class="text-[9px] text-slate-500 font-mono">May 2026</span>
+                    </div>
+                    <p class="text-slate-300 mt-1 leading-relaxed">
+                        Structured the initial JSON schema containing your purchase logs for the EGO Power+ mower, leaf blower, string trimmer, battery packs, and electronics.
+                    </p>
+                </div>
+
+            </div>
+            
+            <div class="mt-4 pt-4 border-t border-slate-800 flex justify-end">
+                <button onclick="closeChangelog()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-bold transition">
+                    Close Changelog
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification system for error/status alerts (no alerts allowed!) -->
+    <div id="toast" class="fixed bottom-6 right-6 bg-slate-900 border border-slate-800 text-slate-100 px-4 py-3.5 rounded-2xl shadow-2xl shadow-emerald-500/5 transition-all duration-300 translate-y-24 opacity-0 pointer-events-none z-50 flex items-center gap-3">
+        <div id="toast-icon-bg" class="h-8 w-8 rounded-lg flex items-center justify-center">
+            <i id="toast-icon" class="fa-solid"></i>
+        </div>
+        <div>
+            <span id="toast-message" class="text-sm font-semibold block leading-tight text-white">Notification title</span>
+            <span id="toast-subtext" class="text-xs text-slate-400">Notification details</span>
+        </div>
+    </div>
+
+    <!-- Main JS Application Controllers -->
+    <script>
+        // Set up the API Key config as empty string (provided by environment)
+        const apiKey = "";
+
+        // Core Database Initial state
+        const initialAssetData = [
+            {
+                id: 1,
+                name: "Self-Propelled Lawn Mower",
+                category: "Yard Tools",
+                model: "MOWER-SP-56V",
+                serial: "REPLACE_WITH_YOUR_SERIAL",
+                serial2: "",
+                purchaseDate: "2025-04-20",
+                purchasedFrom: "Home Hardware",
+                price: 499.00,
+                manualUrl: "https://example.com/manuals/mower",
+                parts: [
+                    { name: "21 Inch Mower Blade", url: "https://www.google.com/search?q=21+inch+mower+blade" },
+                    { name: "56V Rechargeable Battery", url: "https://www.google.com/search?q=56V+mower+battery" }
+                ],
+                tips: "Fold flat for vertical storage. Brush off grass clippings under the deck after each use.",
+                icon: "fa-solid fa-tractor",
+                imageUrl: "https://images.unsplash.com/photo-1584473457406-6240486418e9?w=600&auto=format&fit=crop&q=80",
+                receiptImage: null
+            },
+            {
+                id: 2,
+                name: "Premium 65\" 4K Smart Television",
+                category: "Electronics",
+                model: "TV-4K-65-MOCK",
+                serial: "REPLACE_WITH_YOUR_SERIAL",
+                serial2: "",
+                purchaseDate: "2026-01-15",
+                purchasedFrom: "Electronics Depot",
+                price: 899.99,
+                manualUrl: "https://example.com/manuals/tv-4k",
+                parts: [
+                    { name: "Replacement Remote Control", url: "https://www.google.com/search?q=tv+remote+control" },
+                    { name: "Wall Mount Bracket", url: "https://www.google.com/search?q=65+inch+tv+wall+mount" }
+                ],
+                tips: "Clean screen with dry microfiber cloth only. Keep ventilation vents clear of dust.",
+                icon: "fa-solid fa-tv",
+                imageUrl: "https://images.unsplash.com/photo-1593305841991-05c297ba4575?w=600&auto=format&fit=crop&q=80",
+                receiptImage: null
+            }
+        ];
+
+        // Central maintenance tasks state
+        const initialTasks = [
+            { id: 1, desc: "Clean mower deck and inspect blade condition", schedule: "Monthly after mowing", done: false },
+            { id: 2, desc: "Wipe down television screen and clean rear vents", schedule: "Every 6 months", done: false }
+        ];
+
+        // State Store Initialization with backward compatibility check
+        let assetData = JSON.parse(localStorage.getItem('vault_assets')) || initialAssetData;
+        let careTasks = JSON.parse(localStorage.getItem('vault_tasks')) || initialTasks;
+
+        // Ensure all default initial tasks are present in careTasks if not already existing
+        initialTasks.forEach(t => {
+            let taskExists = careTasks.some(existing => existing.id === t.id);
+            if (!taskExists) {
+                careTasks.push(t);
+            }
+        });
+
+        // Dynamic guide links model lookup table - Crash Resistant!
+        function getYouTubeGuides(item) {
+            const queries = [];
+            const modelStr = (item.model || "").trim();
+            const nameStr = (item.name || "").trim();
+            
+            // Generate curated YouTube queries based on specific items
+            if (modelStr === "LM2135SP") {
+                queries.push({ label: "Replace Blades", query: "EGO LM2135SP mower replace blade" });
+                queries.push({ label: "Cleaning Deck", query: "How to clean under EGO mower deck" });
+            } else if (modelStr === "LB7650") {
+                queries.push({ label: "Vents Deep Clean", query: "EGO LB7650 clean dust intake fan" });
+            } else if (modelStr === "ST1610T") {
+                queries.push({ label: "Load Trimmer Line", query: "EGO ST1610T load powerload string trimmer" });
+            } else if (modelStr === "RV2502AE") {
+                queries.push({ label: "Base Filter Clean", query: "Shark Matrix Self-Empty RV2502AE clean filters" });
+                queries.push({ label: "Brushroll Jam", query: "Shark Matrix robot vacuum remove brushroll hair" });
+            } else if (modelStr.toLowerCase().includes("oled c3")) {
+                queries.push({ label: "Calibration", query: "LG OLED C3 best picture settings settings guide" });
+            } else if (nameStr.toLowerCase().includes("switch 2")) {
+                queries.push({ label: "Clean Fan Ports", query: "Nintendo Switch clean out fan dust" });
+            } else if (modelStr.toLowerCase().includes("buds pro 2")) {
+                queries.push({ label: "Deep Ear Tip Clean", query: "How to clean Pixel Buds Pro 2" });
+            } else if (nameStr.toLowerCase().includes("xbox")) {
+                queries.push({ label: "Dust Extraction", query: "How to blow dust out of Xbox Series X" });
+            } else {
+                // Generic fallbacks
+                queries.push({ label: "Setup Guide", query: `${nameStr} ${modelStr} setup guide` });
+                queries.push({ label: "Routine Upkeep", query: `${nameStr} ${modelStr} maintenance tips` });
+            }
+
+            return queries.map(q => `
+                <a href="https://www.youtube.com/results?search_query=${encodeURIComponent(q.query)}" target="_blank" class="flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-950 hover:bg-red-500/10 border border-slate-800 hover:border-red-500/30 text-[10px] font-semibold text-slate-300 hover:text-red-400 rounded-xl transition duration-150">
+                    <i class="fa-brands fa-youtube text-red-500 text-sm"></i> ${q.label}
+                </a>
+            `).join('');
+        }
+
+        // Active staged file store for AI scanning
+        let stagedAIReceiptBase64 = null;
+        let stagedAIReceiptMimeType = null;
+
+        // Initialize App
+        window.addEventListener('DOMContentLoaded', () => {
+            renderAll();
+        });
+
+        // Trigger updates across UI elements
+        function renderAll() {
+            saveToStorage();
+            updateStats();
+            renderCategoryAllocation();
+            filterAssets();
+            renderTasks();
+            updateStorageQuotaGauge();
+        }
+
+        // Save state to Storage
+        function saveToStorage() {
+            localStorage.setItem('vault_assets', JSON.stringify(assetData));
+            localStorage.setItem('vault_tasks', JSON.stringify(careTasks));
+        }
+
+        // Stats Updates - SAFELY DECLARED AND INJECTED
+        function updateStats() {
+            if (!assetData) return;
+            const totalValuation = assetData.reduce((sum, item) => sum + parseFloat(item.price || 0), 0);
+            
+            const valueEl = document.getElementById('statTotalValue');
+            const countEl = document.getElementById('statTotalCount');
+            
+            if (valueEl) {
+                valueEl.innerText = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(totalValuation);
+            }
+            if (countEl) {
+                countEl.innerText = `${assetData.length} Items`;
+            }
+        }
+
+        // Render Valuation Distribution Ratios
+        function renderCategoryAllocation() {
+            const container = document.getElementById('categoryChartContainer');
+            if (!container) return;
+            container.innerHTML = '';
+
+            // Compute values group by category
+            const categories = {};
+            let grandTotal = 0;
+
+            assetData.forEach(item => {
+                if (!item) return;
+                const price = parseFloat(item.price || 0);
+                categories[item.category] = (categories[item.category] || 0) + price;
+                grandTotal += price;
+            });
+
+            const categoryColors = {
+                "Yard Tools": { text: "text-emerald-400", bar: "bg-emerald-500", track: "bg-emerald-950/40" },
+                "Electronics": { text: "text-indigo-400", bar: "bg-indigo-500", track: "bg-indigo-950/40" },
+                "Appliances": { text: "text-pink-400", bar: "bg-pink-500", track: "bg-pink-950/40" },
+                "Home Utilities": { text: "text-amber-400", bar: "bg-amber-500", track: "bg-amber-950/40" }
+            };
+
+            const sortedEntries = Object.entries(categories).sort((a,b) => b[1] - a[1]);
+
+            if (sortedEntries.length === 0) {
+                container.innerHTML = `<p class="text-xs text-slate-500 text-center py-4">No allocations tracked yet</p>`;
+                return;
+            }
+
+            sortedEntries.forEach(([cat, value]) => {
+                const ratio = grandTotal > 0 ? ((value / grandTotal) * 100).toFixed(1) : 0;
+                const styling = categoryColors[cat] || { text: "text-slate-400", bar: "bg-slate-500", track: "bg-slate-900" };
+                const valueFormatted = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value);
+
+                container.insertAdjacentHTML('beforeend', `
+                    <div class="space-y-1">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="font-semibold text-slate-200 flex items-center gap-1.5">
+                                <span class="h-2 w-2 rounded-full ${styling.bar}"></span>
+                                ${cat}
+                            </span>
+                            <span class="text-slate-400 font-mono">${valueFormatted} <span class="text-[10px] text-slate-500">(${ratio}%)</span></span>
+                        </div>
+                        <div class="w-full ${styling.track} h-2 rounded-full overflow-hidden border border-slate-900">
+                            <div class="${styling.bar} h-full rounded-full" style="width: ${ratio}%"></div>
+                        </div>
+                    </div>
+                `);
+            });
+        }
+
+        // Live LocalStorage Footprint Tracker (Protects offline compression cache)
+        function updateStorageQuotaGauge() {
+            const rawData = JSON.stringify(localStorage);
+            const totalBytes = rawData.length * 2; // UTF-16 characters = 2 bytes each
+            const usedMegabytes = totalBytes / (1024 * 1024);
+            const maxQuotaMegabytes = 5.0; // Standard browser local storage cap
+            const usagePercentage = Math.min((usedMegabytes / maxQuotaMegabytes) * 100, 100).toFixed(1);
+
+            const labelEl = document.getElementById('quotaTextLabel');
+            const progressEl = document.getElementById('quotaProgressIndicator');
+
+            if (labelEl && progressEl) {
+                labelEl.innerText = `${usedMegabytes.toFixed(2)} MB Stored (${usagePercentage}%)`;
+                progressEl.style.width = `${usagePercentage}%`;
+
+                // Color Shift Alert threshold
+                if (usagePercentage > 85) {
+                    progressEl.className = "bg-rose-500 h-full rounded-full transition-all duration-300";
+                } else if (usagePercentage > 60) {
+                    progressEl.className = "bg-amber-500 h-full rounded-full transition-all duration-300";
+                } else {
+                    progressEl.className = "bg-indigo-500 h-full rounded-full transition-all duration-300";
+                }
+            }
+        }
+
+        // Merge Sync Import Controller - robust, debuggable, and silent crash proof!
+        function importDatabase(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    const importedAssets = parsed.assets || parsed;
+                    const importedTasks = parsed.maintenanceTasks || [];
+
+                    if (!Array.isArray(importedAssets)) {
+                        showNotification("Sync Failed", "Invalid backup JSON structure.", "rose");
+                        return;
+                    }
+
+                    let mergedCount = 0;
+                    importedAssets.forEach(newItem => {
+                        const existingIdx = assetData.findIndex(item => {
+                            if (!item) return false;
+                            const sameId = newItem.id && item.id === newItem.id;
+                            const sameNameAndModel = newItem.name && item.name && 
+                                item.name.toLowerCase() === newItem.name.toLowerCase() && 
+                                (item.model || "").toLowerCase() === (newItem.model || "").toLowerCase();
+                            return sameId || sameNameAndModel;
+                        });
+
+                        // Standardize parts to the object model before merging
+                        if (newItem.parts && Array.isArray(newItem.parts)) {
+                            newItem.parts = newItem.parts.map(p => {
+                                if (p && typeof p === 'object') return p;
+                                return {
+                                    name: String(p),
+                                    url: `https://www.google.com/search?q=${encodeURIComponent(String(p))}`
+                                };
+                            });
+                        }
+
+                        if (existingIdx !== -1) {
+                            // Merge and update properties
+                            assetData[existingIdx] = { ...assetData[existingIdx], ...newItem };
+                        } else {
+                            assetData.push(newItem);
+                            mergedCount++;
+                        }
+                    });
+
+                    if (Array.isArray(importedTasks)) {
+                        importedTasks.forEach(newTask => {
+                            const exists = careTasks.some(t => t.id === newTask.id || t.desc === newTask.desc);
+                            if (!exists) {
+                                careTasks.push(newTask);
+                            }
+                        });
+                    }
+
+                    renderAll(); // Will run successfully now because search queries and render logic are bulletproof!
+                    showNotification("Database Sync Completed", `Merged ${mergedCount} new assets successfully!`, "emerald");
+                } catch (err) {
+                    console.error("Database sync parser error:", err);
+                    showNotification("Sync Failed", "Error processing backup file: " + err.message, "rose");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // Handle Compress Local File Input via HTML5 Canvas
+        function handleReceiptUpload(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            if (!file.type.startsWith('image/')) {
+                showNotification("Invalid File", "Please select a valid image receipt file.", "rose");
+                return;
+            }
+
+            const uploadText = document.getElementById('receiptUploadText');
+            uploadText.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> Resizing...`;
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 800;
+                    const MAX_HEIGHT = 800;
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > height) {
+                        if (width > MAX_WIDTH) {
+                            height *= MAX_WIDTH / width;
+                            width = MAX_WIDTH;
+                        }
+                    } else {
+                        if (height > MAX_HEIGHT) {
+                            width *= MAX_HEIGHT / height;
+                            height = MAX_HEIGHT;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.65);
+                    document.getElementById('formReceiptBase64').value = dataUrl;
+                    document.getElementById('receiptThumbnailPreview').src = dataUrl;
+                    document.getElementById('receiptThumbnailContainer').classList.remove('hidden');
+                    
+                    const sizeKb = Math.round((dataUrl.length * 3 / 4) / 1024);
+                    document.getElementById('receiptThumbnailSize').innerText = `Compressed Base64 (~${sizeKb} KB)`;
+                    document.getElementById('btnRemoveReceipt').classList.remove('hidden');
+                    uploadText.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400"></i> Receipt Loaded`;
+
+                    showNotification("Compression Complete", `Successfully reduced receipt size to ~${sizeKb} KB!`, "emerald");
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Custom Product Photo local resizing/aspect ratio compressor (Smart Image Correction)
+        function handleProductPhotoUpload(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            if (!file.type.startsWith('image/')) {
+                showNotification("Invalid File", "Please select a valid image product photo.", "rose");
+                return;
+            }
+
+            const btnText = document.getElementById('productPhotoUploadText');
+            btnText.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> Resizing...`;
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    
+                    // Force a consistent 16:9 widescreen crop layout (640px x 360px)
+                    const targetWidth = 600;
+                    const targetHeight = 338;
+                    canvas.width = targetWidth;
+                    canvas.height = targetHeight;
+
+                    const ctx = canvas.getContext('2d');
+                    
+                    // Mathematically determine best crop-centered bounds (CSS object-cover style crop)
+                    let srcX = 0;
+                    let srcY = 0;
+                    let srcWidth = img.width;
+                    let srcHeight = img.height;
+
+                    const targetRatio = targetWidth / targetHeight;
+                    const imgRatio = img.width / img.height;
+
+                    if (imgRatio > targetRatio) {
+                        // Image is wider than target ratio
+                        srcWidth = img.height * targetRatio;
+                        srcX = (img.width - srcWidth) / 2;
+                    } else {
+                        // Image is taller than target ratio
+                        srcHeight = img.width / targetRatio;
+                        srcY = (img.height - srcHeight) / 2;
+                    }
+
+                    ctx.drawImage(img, srcX, srcY, srcWidth, srcHeight, 0, 0, targetWidth, targetHeight);
+
+                    // Convert to highly compressed JPEG base64 (approx 15KB)
+                    const finalCompressedUrl = canvas.toDataURL('image/jpeg', 0.65);
+                    document.getElementById('formImageUrl').value = finalCompressedUrl;
+
+                    btnText.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400"></i> Photo Aligned & Saved`;
+                    showNotification("Photo Corrected!", "Custom photo compressed and aligned to standard widescreen layout.", "emerald");
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Remove receipt link inside modal editor
+        function removeReceiptData() {
+            document.getElementById('formReceiptFile').value = '';
+            document.getElementById('formReceiptBase64').value = '';
+            const previewContainer = document.getElementById('receiptThumbnailContainer');
+            if (previewContainer) {
+                previewContainer.classList.add('hidden');
+            }
+            const removeBtn = document.getElementById('btnRemoveReceipt');
+            if (removeBtn) {
+                removeBtn.classList.add('hidden');
+            }
+            const uploadText = document.getElementById('receiptUploadText');
+            if (uploadText) {
+                uploadText.innerHTML = `Select Receipt File`;
+            }
+        }
+
+        // Render Dynamic Asset Cards (w/ optional filter logic)
+        function filterAssets() {
+            const searchValue = document.getElementById('searchInput').value.toLowerCase();
+            const categoryValue = document.getElementById('categoryFilter').value;
+            const container = document.getElementById('assetsContainer');
+            if (!container) return;
+            container.innerHTML = '';
+
+            const filtered = assetData.filter(item => {
+                const nameText = (item.name || "").toLowerCase();
+                const modelText = (item.model || "").toLowerCase();
+                const serialText = (item.serial || "").toLowerCase();
+                
+                const matchesSearch = nameText.includes(searchValue) || 
+                                      modelText.includes(searchValue) || 
+                                      serialText.includes(searchValue);
+                const matchesCategory = categoryValue === 'All' || item.category === categoryValue;
+                return matchesSearch && matchesCategory;
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="col-span-full text-center py-16 bg-slate-900/40 border border-slate-900 rounded-2xl">
+                        <i class="fa-solid fa-folder-open text-slate-700 text-4xl mb-3 block"></i>
+                        <p class="text-sm text-slate-400 font-semibold">No assets found</p>
+                        <p class="text-xs text-slate-600 mt-1">Adjust your filters or register a new physical asset</p>
+                    </div>`;
+                return;
+            }
+
+            filtered.forEach(item => {
+                const card = document.createElement('div');
+                card.className = "bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden flex flex-col justify-between hover:border-slate-700 transition duration-200 shadow-xl group";
+
+                const categoryTags = {
+                    "Yard Tools": "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20",
+                    "Electronics": "bg-indigo-500/10 text-indigo-400 border border-indigo-500/20",
+                    "Appliances": "bg-pink-500/10 text-pink-400 border border-pink-500/20",
+                    "Home Utilities": "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                };
+
+                const tagClass = categoryTags[item.category] || "bg-slate-850 text-slate-300 border border-slate-700";
+                
+                // Enhanced Parts list generator with shopping link support - crash resistant!
+                const partsHtml = item.parts && item.parts.length > 0 
+                    ? item.parts.map(part => {
+                        const isObj = part && typeof part === 'object';
+                        const pName = isObj ? part.name : (part ? part.trim() : '');
+                        if (!pName) return '';
+                        const pUrl = isObj && part.url ? part.url : `https://www.google.com/search?q=${encodeURIComponent(pName)}`;
+                        return `
+                            <a href="${pUrl}" target="_blank" class="inline-flex items-center gap-1 bg-slate-950 hover:bg-slate-900 border border-slate-850 hover:border-emerald-500/30 text-[10px] text-slate-400 hover:text-emerald-400 px-2.5 py-1 rounded-lg mt-1 mr-1.5 transition-all" title="Shop Replacement Part">
+                                <i class="fa-solid fa-cart-shopping text-[9px] text-slate-600"></i> ${pName}
+                            </a>`;
+                    }).filter(Boolean).join('')
+                    : '<span class="text-[11px] text-slate-600 italic">None specified</span>';
+
+                // Curved, structured guide videos block
+                const guidesHtml = getYouTubeGuides(item);
+
+                // Elegant gradient & icon fallback generator for image rendering
+                const imageSectionHtml = `
+                    <div class="relative h-44 bg-slate-950 overflow-hidden border-b border-slate-800 flex items-center justify-center">
+                        ${item.imageUrl ? `
+                            <img src="${item.imageUrl}" alt="${item.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105">
+                        ` : ''}
+                        <div class="absolute inset-0 ${item.imageUrl ? 'hidden' : 'flex'} flex-col items-center justify-center bg-gradient-to-br from-slate-900 to-slate-950" style="${item.imageUrl ? 'display: none;' : ''}">
+                            <i class="${item.icon || 'fa-solid fa-box'} text-slate-800 text-5xl mb-2"></i>
+                            <span class="text-[9px] text-slate-600 uppercase font-bold tracking-widest">${item.category}</span>
+                        </div>
+                        
+                        <!-- Gradient Overlay Legibility Protection -->
+                        <div class="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent pointer-events-none"></div>
+
+                        <!-- Absolute Tag Overlay -->
+                        <div class="absolute bottom-3 left-3 flex gap-1.5 items-center">
+                            <span class="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-lg ${tagClass}">
+                                ${item.category}
+                            </span>
+                            ${item.receiptImage ? `
+                                <span class="bg-indigo-500/25 border border-indigo-500/30 text-indigo-300 text-[9px] font-bold tracking-wider uppercase px-1.5 py-0.5 rounded-lg flex items-center gap-1">
+                                    <i class="fa-solid fa-file-invoice"></i> Receipt Stored
+                                </span>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+
+                card.innerHTML = `
+                    ${imageSectionHtml}
+                    <div class="p-5 flex-1 flex flex-col justify-between">
+                        <div>
+                            <!-- Header Info -->
+                            <div class="flex justify-between items-start mb-2 gap-3">
+                                <h4 class="font-extrabold text-base text-white tracking-tight leading-snug group-hover:text-emerald-400 transition-colors duration-150">${item.name}</h4>
+                                <span class="text-sm font-bold font-mono text-emerald-400 whitespace-nowrap">
+                                    ${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(item.price)}
+                                </span>
+                            </div>
+                            
+                            <div class="space-y-1.5 text-xs text-slate-400 border-t border-slate-800/80 pt-3 mt-3">
+                                <div class="flex justify-between"><span class="text-slate-500 font-medium">Model:</span> <span class="text-slate-300 font-medium">${item.model || 'N/A'}</span></div>
+                                <div class="flex justify-between items-center"><span class="text-slate-500 font-medium">Serial No:</span> <span class="bg-slate-950 px-2 py-0.5 rounded border border-slate-800 text-slate-300 font-mono text-[11px] select-all">${item.serial || 'N/A'}</span></div>
+                                ${item.serial2 && item.serial2.trim() !== "" ? `<div class="flex justify-between items-center"><span class="text-slate-500 font-medium">Secondary No:</span> <span class="bg-slate-950 px-2 py-0.5 rounded border border-slate-800 text-slate-300 font-mono text-[11px] select-all">${item.serial2}</span></div>` : ''}
+                                <div class="flex justify-between"><span class="text-slate-500 font-medium">Purchase Date:</span> <span class="text-slate-300 font-mono">${item.purchaseDate || 'N/A'}</span></div>
+                                <div class="flex justify-between"><span class="text-slate-500 font-medium">Vendor:</span> <span class="text-slate-300">${item.purchasedFrom || 'N/A'}</span></div>
+                            </div>
+
+                            <!-- Parts Reference -->
+                            <div class="mt-4">
+                                <span class="text-[10px] uppercase font-bold tracking-wider text-slate-500 block mb-1">Parts Reference & Shop Links</span>
+                                <div class="flex flex-wrap">${partsHtml}</div>
+                            </div>
+
+                            <!-- YouTube Support Channels Block -->
+                            <div class="mt-4 border-t border-slate-800/60 pt-3">
+                                <span class="text-[10px] uppercase font-bold tracking-wider text-slate-500 block mb-1.5"><i class="fa-solid fa-screwdriver-wrench text-red-500/80 mr-1"></i> YouTube Care Guides</span>
+                                <div class="flex flex-wrap gap-2">${guidesHtml}</div>
+                            </div>
+
+                            <!-- Maintenance Info Box -->
+                            ${item.tips ? `
+                            <div class="mt-4 bg-slate-950/60 rounded-xl p-3 border border-slate-800 text-xs text-slate-300">
+                                <strong class="text-amber-400 flex items-center gap-1 mb-1 font-semibold">
+                                    <i class="fa-solid fa-lightbulb"></i> Care Tips
+                                </strong>
+                                <span class="text-slate-400 text-[11px] leading-relaxed block">${item.tips}</span>
+                            </div>` : ''}
+                        </div>
+                    </div>
+
+                    <!-- Actions Bottom bar -->
+                    <div class="px-5 py-3 bg-slate-950/40 border-t border-slate-800/80 flex justify-between items-center">
+                        <div class="flex items-center gap-1">
+                            <button onclick="openEditModal(${item.id})" class="p-1.5 text-slate-400 hover:text-indigo-400 rounded-lg hover:bg-indigo-500/10 transition text-xs" title="Edit Properties">
+                                <i class="fa-solid fa-pen-to-square"></i> Edit
+                            </button>
+                            <button onclick="deleteAsset(${item.id})" class="p-1.5 text-slate-500 hover:text-rose-400 rounded-lg hover:bg-rose-500/10 transition text-xs" title="Remove Asset">
+                                <i class="fa-solid fa-trash-can"></i> Delete
+                            </button>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            ${item.receiptImage ? `
+                                <button onclick="viewReceipt('${item.id}')" class="inline-flex items-center text-xs font-semibold text-indigo-400 hover:text-indigo-300 transition-colors bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-1 rounded-lg">
+                                    <i class="fa-solid fa-receipt mr-1 text-sm"></i> View Receipt
+                                </button>
+                            ` : ''}
+                            ${item.manualUrl ? `
+                                <a href="${item.manualUrl}" target="_blank" class="inline-flex items-center text-xs font-semibold text-emerald-400 hover:text-emerald-300 transition-colors">
+                                    <i class="fa-solid fa-file-pdf mr-1 text-sm"></i> Guides <i class="fa-solid fa-chevron-right ml-1 text-[9px] text-slate-500"></i>
+                                </a>
+                            ` : `<span class="text-[10px] text-slate-600 font-medium">No direct manual</span>`}
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // View receipt full lightbox screen modal
+        function viewReceipt(id) {
+            const asset = assetData.find(item => item.id == id);
+            if (!asset || !asset.receiptImage) return;
+
+            document.getElementById('lightboxImage').src = asset.receiptImage;
+            document.getElementById('lightboxTitle').innerText = `${asset.name} - Proof of Purchase (Receipt)`;
+            
+            const lightbox = document.getElementById('receiptLightbox');
+            if (lightbox) {
+                lightbox.classList.remove('hidden');
+                lightbox.style.opacity = '1';
+            }
+        }
+
+        function closeLightbox() {
+            const lightbox = document.getElementById('receiptLightbox');
+            if (lightbox) {
+                lightbox.style.opacity = '0';
+                setTimeout(() => {
+                    lightbox.classList.add('hidden');
+                }, 200);
+            }
+        }
+
+        // Render Care Tasks Roadmap
+        function renderTasks() {
+            const container = document.getElementById('tasksContainer');
+            if (!container) return;
+            container.innerHTML = '';
+
+            if (careTasks.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-8 text-slate-500">
+                        <i class="fa-solid fa-circle-check text-2xl mb-1.5 block text-slate-700"></i>
+                        <span class="text-xs font-medium">No tasks logged. Add your routine tasks!</span>
+                    </div>`;
+                return;
+            }
+
+            careTasks.forEach(task => {
+                container.insertAdjacentHTML('beforeend', `
+                    <div class="flex items-start gap-3 p-3 bg-slate-950 rounded-xl border border-slate-800/80 hover:border-slate-800 transition relative group ${task.done ? 'opacity-55' : ''}">
+                        <div class="flex items-center h-5">
+                            <input type="checkbox" onchange="toggleTask(${task.id})" ${task.done ? 'checked' : ''} class="h-4 w-4 rounded border-slate-800 bg-slate-900 text-emerald-500 focus:ring-0 focus:ring-offset-0 cursor-pointer">
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <span class="text-xs font-medium text-slate-200 block truncate ${task.done ? 'line-through text-slate-500' : ''}">${task.desc}</span>
+                            <span class="text-[10px] text-slate-500 font-mono tracking-wide mt-0.5 block">${task.schedule || 'Regular basis'}</span>
+                        </div>
+                        <button onclick="deleteTask(${task.id})" class="text-slate-600 hover:text-rose-400 p-1 opacity-0 group-hover:opacity-100 transition duration-150" title="Delete task">
+                            <i class="fa-solid fa-xmark text-xs"></i>
+                        </button>
+                    </div>
+                `);
+            });
+        }
+
+        // Toggle task complete / pending status
+        function toggleTask(id) {
+            const task = careTasks.find(t => t.id === id);
+            if (task) {
+                task.done = !task.done;
+                showNotification(
+                    task.done ? "Success!" : "Task Reactivated", 
+                    task.done ? "Marked care schedule item as finished!" : "Returned task back into checklist.",
+                    task.done ? "emerald" : "indigo"
+                );
+                renderAll();
+            }
+        }
+
+        // Add task logic
+        function openAddTaskModal() {
+            const modal = document.getElementById('taskModal');
+            if (modal) modal.classList.remove('hidden');
+        }
+        
+        // Close task modal
+        function closeAddTaskModal() {
+            const form = document.getElementById('taskForm');
+            if (form) form.reset();
+            const modal = document.getElementById('taskModal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function saveTask(e) {
+            e.preventDefault();
+            const desc = document.getElementById('taskDesc').value.trim();
+            const schedule = document.getElementById('taskSchedule').value.trim();
+
+            const newTask = {
+                id: Date.now(),
+                desc,
+                schedule: schedule || "As scheduled",
+                done: false
+            };
+
+            careTasks.push(newTask);
+            showNotification("Task Added", "Your custom maintenance reminder is ready.", "amber");
+            closeAddTaskModal();
+            renderAll();
+        }
+
+        // Delete Task
+        function deleteTask(id) {
+            careTasks = careTasks.filter(t => t.id !== id);
+            showNotification("Task Deleted", "Task removed from system database scheduler.", "rose");
+            renderAll();
+        }
+
+        // Modal Tab Switching Logic
+        function switchModalTab(tabType) {
+            const tabManual = document.getElementById('tabManual');
+            const tabAI = document.getElementById('tabAI');
+            const manualForm = document.getElementById('assetRegistryForm');
+            const aiContent = document.getElementById('aiTabContent');
+
+            if (tabType === 'ai') {
+                if (tabManual) tabManual.className = "pb-3 text-sm font-semibold text-slate-400 hover:text-slate-200 transition flex items-center gap-1.5 border-b-2 border-transparent";
+                if (tabAI) tabAI.className = "pb-3 text-sm font-bold text-emerald-400 border-b-2 border-emerald-400 transition flex items-center gap-1.5";
+                if (manualForm) manualForm.classList.add('hidden');
+                if (aiContent) aiContent.classList.remove('hidden');
+            } else {
+                if (tabAI) tabAI.className = "pb-3 text-sm font-semibold text-slate-400 hover:text-slate-200 transition flex items-center gap-1.5 border-b-2 border-transparent";
+                if (tabManual) tabManual.className = "pb-3 text-sm font-bold text-emerald-400 border-b-2 border-emerald-400 transition flex items-center gap-1.5";
+                if (aiContent) aiContent.classList.add('hidden');
+                if (manualForm) manualForm.classList.remove('hidden');
+            }
+        }
+
+        // Modal Form Controller: Add & Edit Properties
+        function openAddModal() {
+            const title = document.getElementById('modalTitle');
+            if (title) title.innerText = "Add New Home Asset";
+            const editId = document.getElementById('editAssetId');
+            if (editId) editId.value = '';
+            const form = document.getElementById('assetRegistryForm');
+            if (form) form.reset();
+            
+            removeReceiptData(); 
+            resetAIPortal();
+            
+            // Reset custom product photo loader labels
+            const pFile = document.getElementById('formProductFile');
+            if (pFile) pFile.value = '';
+            const pPhotoText = document.getElementById('productPhotoUploadText');
+            if (pPhotoText) pPhotoText.innerHTML = `<i class="fa-solid fa-camera text-emerald-400"></i> Select Device Photo`;
+
+            switchModalTab('manual');
+            const modal = document.getElementById('assetFormModal');
+            if (modal) modal.classList.remove('hidden');
+        }
+
+        function openEditModal(id) {
+            const asset = assetData.find(item => item.id === id);
+            if (!asset) return;
+
+            const title = document.getElementById('modalTitle');
+            if (title) title.innerText = "Edit Asset Specifications";
+            const editId = document.getElementById('editAssetId');
+            if (editId) editId.value = asset.id;
+            
+            document.getElementById('formName').value = asset.name || '';
+            document.getElementById('formCategory').value = asset.category || 'Electronics';
+            document.getElementById('formModel').value = asset.model || '';
+            document.getElementById('formSerial').value = asset.serial || '';
+            document.getElementById('formSerial2').value = asset.serial2 || '';
+            document.getElementById('formPrice').value = asset.price || '';
+            document.getElementById('formPurchaseDate').value = asset.purchaseDate || '';
+            document.getElementById('formPurchasedFrom').value = asset.purchasedFrom || '';
+            document.getElementById('formManualUrl').value = asset.manualUrl || '';
+            document.getElementById('formImageUrl').value = asset.imageUrl || '';
+            
+            // Reset custom product photo loader labels
+            const pFile = document.getElementById('formProductFile');
+            if (pFile) pFile.value = '';
+            const pPhotoText = document.getElementById('productPhotoUploadText');
+            if (pPhotoText) pPhotoText.innerHTML = `<i class="fa-solid fa-camera text-emerald-400"></i> Select Device Photo`;
+
+            // Render parts gracefully inside comma text area - crash proofed!
+            document.getElementById('formParts').value = asset.parts 
+                ? asset.parts.map(p => {
+                    if (!p) return "";
+                    if (typeof p === 'object') return p.name;
+                    return p;
+                }).filter(Boolean).join(', ') 
+                : '';
+                
+            document.getElementById('formTips').value = asset.tips || '';
+
+            // Handle edit view of existing local base64 receipts
+            if (asset.receiptImage) {
+                document.getElementById('formReceiptBase64').value = asset.receiptImage;
+                const thumbPreview = document.getElementById('receiptThumbnailPreview');
+                if (thumbPreview) thumbPreview.src = asset.receiptImage;
+                const thumbContainer = document.getElementById('receiptThumbnailContainer');
+                if (thumbContainer) thumbContainer.classList.remove('hidden');
+                
+                const sizeKb = Math.round((asset.receiptImage.length * 3 / 4) / 1024);
+                const thumbSize = document.getElementById('receiptThumbnailSize');
+                if (thumbSize) thumbSize.innerText = `Compressed Base64 (~${sizeKb} KB)`;
+                const removeBtn = document.getElementById('btnRemoveReceipt');
+                if (removeBtn) removeBtn.classList.remove('hidden');
+                const uploadText = document.getElementById('receiptUploadText');
+                if (uploadText) uploadText.innerHTML = `<i class="fa-solid fa-circle-check text-indigo-400"></i> Receipt Stored`;
+            } else {
+                removeReceiptData();
+            }
+
+            switchModalTab('manual');
+            const modal = document.getElementById('assetFormModal');
+            if (modal) modal.classList.remove('hidden');
+        }
+
+        function closeAssetModal() {
+            const form = document.getElementById('assetRegistryForm');
+            if (form) form.reset();
+            const modal = document.getElementById('assetFormModal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        // Reset the AI Magic Staging Form
+        function resetAIPortal() {
+            const prompt = document.getElementById('aiProductPrompt');
+            if (prompt) prompt.value = '';
+            const upload = document.getElementById('aiReceiptUpload');
+            if (upload) upload.value = '';
+            const previewBox = document.getElementById('aiReceiptPreviewBox');
+            if (previewBox) previewBox.classList.add('hidden');
+            const statusLabel = document.getElementById('aiScanStatusLabel');
+            if (statusLabel) statusLabel.innerText = "Click to select receipt image";
+            
+            stagedAIReceiptBase64 = null;
+            stagedAIReceiptMimeType = null;
+        }
+
+        // Load receipt specifically inside AI Tab
+        function loadReceiptForAI(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            const label = document.getElementById('aiScanStatusLabel');
+            if (label) label.innerText = "Compressing Uploaded Image...";
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    const canvas = document.createElement('canvas');
+                    const MAX_WIDTH = 800;
+                    const MAX_HEIGHT = 800;
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > height) {
+                        if (width > MAX_WIDTH) {
+                            height *= MAX_WIDTH / width;
+                            width = MAX_WIDTH;
+                        }
+                    } else {
+                        if (height > MAX_HEIGHT) {
+                            width *= MAX_HEIGHT / height;
+                            height = MAX_HEIGHT;
+                        }
+                    }
+
+                    canvas.width = width;
+                    canvas.height = height;
+
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+
+                    const dataUrl = canvas.toDataURL('image/jpeg', 0.65);
+                    stagedAIReceiptBase64 = dataUrl.split(',')[1];
+                    stagedAIReceiptMimeType = 'image/jpeg';
+
+                    const thumb = document.getElementById('aiReceiptThumb');
+                    if (thumb) thumb.src = dataUrl;
+                    const previewBox = document.getElementById('aiReceiptPreviewBox');
+                    if (previewBox) previewBox.classList.remove('hidden');
+                    
+                    const sizeKb = Math.round((dataUrl.length * 3 / 4) / 1024);
+                    const sizeText = document.getElementById('aiReceiptSizeText');
+                    if (sizeText) sizeText.innerText = `Compressed Image (~${sizeKb} KB)`;
+                    if (label) label.innerText = "File Staged for Gemini!";
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Trigger scanned parsing logic
+        function triggerReceiptScan() {
+            if (!stagedAIReceiptBase64) return;
+            generateAssetWithAI('receipt');
+        }
+
+        // Exponential backoff query dispatcher
+        async function fetchGeminiWithRetry(url, payload, retries = 5, delay = 1000) {
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    if (response.ok) return await response.json();
+                } catch (e) {
+                    // Fail silently, retry next
+                }
+                await new Promise(resolve => setTimeout(resolve, delay));
+                delay *= 2;
+            }
+            throw new Error("Unable to connect with Gemini AI services after 5 sequential backoff retries.");
+        }
+
+        // Main Multimodal AI Generation controller 
+        async function generateAssetWithAI(mode) {
+            const overlay = document.getElementById('aiLoadingOverlay');
+            const statusLabel = document.getElementById('aiLoadingStatus');
+            const subtextLabel = document.getElementById('aiLoadingSubtext');
+
+            if (overlay) overlay.classList.remove('hidden');
+            if (statusLabel) statusLabel.innerText = "Connecting to Gemini 2.5 Flash...";
+            if (subtextLabel) subtextLabel.innerText = "Setting up connection context with Google Generative AI servers...";
+
+            let parts = [];
+
+            if (mode === 'text') {
+                const promptVal = document.getElementById('aiProductPrompt').value.trim();
+                if (!promptVal) {
+                    showNotification("Empty prompt", "Please write a brief description first.", "rose");
+                    if (overlay) overlay.classList.add('hidden');
+                    return;
+                }
+                if (statusLabel) statusLabel.innerText = "Analyzing descriptions...";
+                if (subtextLabel) subtextLabel.innerText = "Formulating research queries for Google Search Grounding...";
+                parts.push({ text: `Analyze the following item description: "${promptVal}". Research the correct category, typical retail replacement cost, precise model numbers, support manual links, key parts/consumables, and storage care tips. Use Google Search grounding to find a high-quality, royalty-free stock image URL matching this item.` });
+            } else {
+                if (statusLabel) statusLabel.innerText = "Reading receipt...";
+                if (subtextLabel) subtextLabel.innerText = "Extracting raw transaction lines, dates, and total amounts...";
+                parts.push({ text: "Perform a complete multimodal analysis of this transaction receipt. Extract the product name, precise purchase date, vendor retailer, and final price. Use Google Search grounding to resolve correct manufacturer model numbers and matching product photo image URLs." });
+                parts.push({
+                    inlineData: {
+                        mimeType: stagedAIReceiptMimeType,
+                        data: stagedAIReceiptBase64
+                    }
+                });
+            }
+
+            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+            
+            // AI output schema definition
+            const payload = {
+                contents: [{ parts: parts }],
+                systemInstruction: {
+                    parts: [{ text: "You are a professional homeowners insurance asset investigator. Analyze purchase receipts or prompt descriptors and structure an output asset JSON schema. Use Google Search to find verified, publicly accessible stock image URLs (preferably Unsplash product shots) and support documentation links for that specific model." }]
+                },
+                tools: [{ "google_search": {} }],
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "OBJECT",
+                        properties: {
+                            name: { type: "STRING", description: "Official commercial name of the product" },
+                            category: { type: "STRING", enum: ["Yard Tools", "Electronics", "Appliances", "Home Utilities"], description: "The most logical category for this item" },
+                            model: { type: "STRING", description: "The manufacturer's official model number/identifier" },
+                            serial: { type: "STRING", description: "The extracted serial code if present on receipt, else default placeholder 'REPLACE_WITH_YOUR_SERIAL'" },
+                            serial2: { type: "STRING", description: "Secondary kit component serial if visible, otherwise empty" },
+                            price: { type: "NUMBER", description: "The core unit cost" },
+                            purchaseDate: { type: "STRING", description: "The transaction date in YYYY-MM-DD format" },
+                            purchasedFrom: { type: "STRING", description: "The specific retail store vendor" },
+                            manualUrl: { type: "STRING", description: "Support or guide webpage link for this specific model" },
+                            imageUrl: { type: "STRING", description: "A high-quality verified public image URL of the product" },
+                            parts: {
+                                type: "ARRAY",
+                                items: { type: "STRING" },
+                                description: "Key parts, consumables, replacement blades, accessories, or matching filters"
+                            },
+                            tips: { type: "STRING", description: "Optimal operating guidelines, winterizing advice, storage methods, or preventative upkeep checklists." }
+                        },
+                        required: ["name", "category", "price", "serial", "imageUrl"]
+                    }
+                }
+            };
+
+            try {
+                if (statusLabel) statusLabel.innerText = "Grounding Product Data...";
+                if (subtextLabel) subtextLabel.innerText = "Resolving technical specifications via Google Search grounding tools...";
+                
+                const responseData = await fetchGeminiWithRetry(endpoint, payload);
+                const rawText = responseData.candidates?.[0]?.content?.parts?.[0]?.text;
+                
+                if (!rawText) {
+                    throw new Error("Empty content received from Generative Model.");
+                }
+
+                if (statusLabel) statusLabel.innerText = "Compiling parameters...";
+                if (subtextLabel) subtextLabel.innerText = "Building registry profile fields and binding local image data...";
+
+                const assetObj = JSON.parse(rawText);
+
+                // Pre-fill manual review form
+                document.getElementById('formName').value = assetObj.name || '';
+                document.getElementById('formCategory').value = assetObj.category || 'Electronics';
+                document.getElementById('formModel').value = assetObj.model || '';
+                document.getElementById('formSerial').value = assetObj.serial || 'REPLACE_WITH_YOUR_SERIAL';
+                document.getElementById('formSerial2').value = assetObj.serial2 || '';
+                document.getElementById('formPrice').value = assetObj.price || '';
+                document.getElementById('formPurchaseDate').value = assetObj.purchaseDate || '';
+                document.getElementById('formPurchasedFrom').value = assetObj.purchasedFrom || '';
+                document.getElementById('formManualUrl').value = assetObj.manualUrl || '';
+                document.getElementById('formImageUrl').value = assetObj.imageUrl || '';
+                document.getElementById('formParts').value = assetObj.parts ? assetObj.parts.join(', ') : '';
+                document.getElementById('formTips').value = assetObj.tips || '';
+
+                // If receipt scanned, automatically stage compressed JPEG base64 directly to the verified form!
+                if (mode === 'receipt' && stagedAIReceiptBase64) {
+                    const fullDataUrl = `data:${stagedAIReceiptMimeType};base64,${stagedAIReceiptBase64}`;
+                    document.getElementById('formReceiptBase64').value = fullDataUrl;
+                    const thumbPreview = document.getElementById('receiptThumbnailPreview');
+                    if (thumbPreview) thumbPreview.src = fullDataUrl;
+                    const thumbContainer = document.getElementById('receiptThumbnailContainer');
+                    if (thumbContainer) thumbContainer.classList.remove('hidden');
+                    
+                    const sizeKb = Math.round((fullDataUrl.length * 3 / 4) / 1024);
+                    const thumbSize = document.getElementById('receiptThumbnailSize');
+                    if (thumbSize) thumbSize.innerText = `Scanned Base64 (~${sizeKb} KB)`;
+                    const removeBtn = document.getElementById('btnRemoveReceipt');
+                    if (removeBtn) removeBtn.classList.remove('hidden');
+                    const uploadText = document.getElementById('receiptUploadText');
+                    if (uploadText) uploadText.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400"></i> Scanned Receipt Linked`;
+                }
+
+                if (overlay) overlay.classList.add('hidden');
+                switchModalTab('manual');
+                showNotification("AI Magic Success!", `Pre-filled inventory details for ${assetObj.name}.`, "emerald");
+
+            } catch (err) {
+                if (overlay) overlay.classList.add('hidden');
+                showNotification("AI Generation Failed", "Gemini couldn't parse the spec sheet. Please check your network or enter manually.", "rose");
+            }
+        }
+
+        // Handle Form Submission Save Asset
+        function saveAsset(e) {
+            e.preventDefault();
+
+            const idVal = document.getElementById('editAssetId').value;
+            const name = document.getElementById('formName').value.trim();
+            const category = document.getElementById('formCategory').value;
+            const model = document.getElementById('formModel').value.trim();
+            const serial = document.getElementById('formSerial').value.trim();
+            const serial2 = document.getElementById('formSerial2').value.trim();
+            const price = parseFloat(document.getElementById('formPrice').value);
+            const purchaseDate = document.getElementById('formPurchaseDate').value;
+            const purchasedFrom = document.getElementById('formPurchasedFrom').value.trim();
+            const manualUrl = document.getElementById('formManualUrl').value.trim();
+            const imageUrl = document.getElementById('formImageUrl').value.trim();
+            const receiptImage = document.getElementById('formReceiptBase64').value || null;
+            const partsInput = document.getElementById('formParts').value.trim();
+            const tips = document.getElementById('formTips').value.trim();
+
+            // Convert text inputs to shop link structures
+            const partsArray = partsInput 
+                ? partsInput.split(',').map(p => {
+                    const pTrimmed = p.trim();
+                    return {
+                        name: pTrimmed,
+                        url: `https://www.google.com/search?q=${encodeURIComponent(pTrimmed)}`
+                    };
+                }).filter(p => p.name !== "") 
+                : [];
+
+            if (idVal) {
+                // Update mode
+                const index = assetData.findIndex(item => item.id == idVal);
+                if (index !== -1) {
+                    assetData[index] = {
+                        ...assetData[index],
+                        name, category, model, serial, serial2, price, purchaseDate, purchasedFrom, manualUrl, imageUrl, receiptImage, parts: partsArray, tips
+                    };
+                    showNotification("Asset Updated", `${name} information updated successfully.`, "emerald");
+                }
+            } else {
+                // Create mode
+                const newAsset = {
+                    id: Date.now(),
+                    name, category, model, serial, serial2, price, purchaseDate, purchasedFrom, manualUrl, imageUrl, receiptImage, parts: partsArray, tips,
+                    icon: category === "Yard Tools" ? "fa-solid fa-tree" : category === "Electronics" ? "fa-solid fa-gamepad" : "fa-solid fa-circle-notch"
+                };
+                assetData.push(newAsset);
+                
+                // Dynamically add a care task checklist reminder for this new asset
+                careTasks.push({
+                    id: Date.now() + 1,
+                    desc: `Perform routine maintenance/checkup on ${name}`,
+                    schedule: "Every 6 months",
+                    done: false
+                });
+
+                showNotification("Asset Registered", `${name} safely locked in Vault.`, "emerald");
+            }
+
+            closeAssetModal();
+            renderAll();
+        }
+
+        // Delete Asset (no alert browser triggers)
+        function deleteAsset(id) {
+            const asset = assetData.find(item => item.id === id);
+            if (!asset) return;
+
+            assetData = assetData.filter(item => item.id !== id);
+            showNotification(
+                "Removed Asset", 
+                `Deleted ${asset.name} from inventory.`, 
+                "rose"
+            );
+            renderAll();
+        }
+
+        // Open Printable Insurance Claim Portfolio Modal
+        function generateInsuranceBinder() {
+            const printValuation = document.getElementById('printValuation');
+            const printCount = document.getElementById('printCount');
+            const printReceiptPercent = document.getElementById('printReceiptPercent');
+            const tableBody = document.getElementById('insuranceTableBody');
+
+            const totalValuation = assetData.reduce((sum, item) => sum + parseFloat(item.price || 0), 0);
+            const itemsWithReceipt = assetData.filter(item => item.receiptImage).length;
+            const percentReceipts = assetData.length > 0 ? Math.round((itemsWithReceipt / assetData.length) * 100) : 0;
+
+            if (printValuation) {
+                printValuation.innerText = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(totalValuation);
+            }
+            if (printCount) {
+                printCount.innerText = `${assetData.length} Registered Items`;
+            }
+            if (printReceiptPercent) {
+                printReceiptPercent.innerText = `${percentReceipts}% Receipts Attached`;
+            }
+
+            if (tableBody) {
+                tableBody.innerHTML = '';
+                assetData.forEach(item => {
+                    const tr = document.createElement('tr');
+                    tr.className = "border-b border-slate-850 hover:bg-slate-900/50";
+                    tr.innerHTML = `
+                        <td class="p-3 text-left">
+                            <span class="font-bold text-white text-xs block">${item.name || 'N/A'}</span>
+                            <span class="text-[10px] text-slate-500 font-mono mt-0.5 block">Model: ${item.model || 'N/A'}</span>
+                        </td>
+                        <td class="p-3 text-left">
+                            <span class="bg-slate-950 px-2 py-0.5 rounded border border-slate-800 text-slate-300 font-mono text-[10px] select-all">${item.serial || 'N/A'}</span>
+                            ${item.serial2 && item.serial2.trim() !== "" ? `<br><span class="bg-slate-950 px-2 py-0.5 rounded border border-slate-800 text-slate-300/70 font-mono text-[9px] mt-1 inline-block select-all">Sec: ${item.serial2}</span>` : ''}
+                        </td>
+                        <td class="p-3 text-left">
+                            <span class="text-slate-300 block">${item.purchasedFrom || 'N/A'}</span>
+                            <span class="text-[10px] text-slate-500 font-mono mt-0.5 block">${item.purchaseDate || 'N/A'}</span>
+                        </td>
+                        <td class="p-3 text-left font-extrabold text-emerald-400 font-mono text-xs">
+                            ${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(item.price)}
+                        </td>
+                        <td class="p-3 text-right">
+                            ${item.receiptImage 
+                                ? `<img src="${item.receiptImage}" class="h-10 w-10 object-cover rounded border border-slate-800 ml-auto shadow cursor-pointer" onclick="viewReceipt('${item.id}')" title="Zoom Receipt">` 
+                                : '<span class="text-[10px] text-rose-500/80 font-bold uppercase tracking-wider">No File Attached</span>'}
+                        </td>
+                    `;
+                    tableBody.appendChild(tr);
+                });
+            }
+
+            const modal = document.getElementById('insuranceBinderModal');
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                modal.style.opacity = '1';
+            }
+        }
+
+        function closeInsuranceBinder() {
+            const modal = document.getElementById('insuranceBinderModal');
+            if (modal) {
+                modal.style.opacity = '0';
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                    modal.classList.remove('flex');
+                }, 200);
+            }
+        }
+
+        // Open Changelog Modal
+        function openChangelog() {
+            const modal = document.getElementById('changelogModal');
+            if (modal) {
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+                modal.style.opacity = '1';
+            }
+        }
+
+        // Close Changelog Modal
+        function closeChangelog() {
+            const modal = document.getElementById('changelogModal');
+            if (modal) {
+                modal.style.opacity = '0';
+                setTimeout(() => {
+                    modal.classList.add('hidden');
+                    modal.classList.remove('flex');
+                }, 200);
+            }
+        }
+
+        // Trigger dynamic JSON file download backup of the asset data for backup insurance
+        function exportDatabase() {
+            try {
+                const stateExport = {
+                    metadata: {
+                        vaultName: "House Vault",
+                        address: "123 Main Street, Anytown, USA",
+                        exportTimestamp: new Date().toISOString(),
+                        version: "1.3.0"
+                    },
+                    assets: assetData,
+                    metadataVersion: "1.3.0"
+                };
+
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(stateExport, null, 2));
+                const downloadAnchor = document.createElement('a');
+                downloadAnchor.setAttribute("href", dataStr);
+                downloadAnchor.setAttribute("download", `Asset_Vault_Backup_${new Date().toISOString().slice(0,10)}.json`);
+                document.body.appendChild(downloadAnchor);
+                downloadAnchor.click();
+                downloadAnchor.remove();
+
+                showNotification("Export Complete", "A copy of your asset registry JSON database was generated.", "indigo");
+            } catch (err) {
+                showNotification("Export Failed", "Error compiling file payload.", "rose");
+            }
+        }
+
+        // Custom Notification Toast System
+        function showNotification(title, subtext, color = "emerald") {
+            const toast = document.getElementById('toast');
+            const iconBg = document.getElementById('toast-icon-bg');
+            const icon = document.getElementById('toast-icon');
+            const mainText = document.getElementById('toast-message');
+            const descText = document.getElementById('toast-subtext');
+
+            if (!toast) return;
+
+            if (color === "rose") {
+                if (iconBg) iconBg.className = "h-8 w-8 rounded-lg flex items-center justify-center bg-rose-500/10 text-rose-400 border border-rose-500/20";
+                if (icon) icon.className = "fa-solid fa-circle-exclamation";
+                toast.style.boxShadow = "0 20px 25px -5px rgb(244 63 94 / 0.1)";
+            } else if (color === "amber") {
+                if (iconBg) iconBg.className = "h-8 w-8 rounded-lg flex items-center justify-center bg-amber-500/10 text-amber-400 border border-amber-500/20";
+                if (icon) icon.className = "fa-solid fa-screwdriver-wrench";
+                toast.style.boxShadow = "0 20px 25px -5px rgb(245 158 11 / 0.1)";
+            } else if (color === "indigo") {
+                if (iconBg) iconBg.className = "h-8 w-8 rounded-lg flex items-center justify-center bg-indigo-500/10 text-indigo-400 border border-indigo-500/20";
+                if (icon) icon.className = "fa-solid fa-arrows-rotate";
+                toast.style.boxShadow = "0 20px 25px -5px rgb(99 102 241 / 0.1)";
+            } else { // default: emerald
+                if (iconBg) iconBg.className = "h-8 w-8 rounded-lg flex items-center justify-center bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
+                if (icon) icon.className = "fa-solid fa-circle-check";
+                toast.style.boxShadow = "0 20px 25px -5px rgb(16 185 129 / 0.1)";
+            }
+
+            if (mainText) mainText.innerText = title;
+            if (descText) descText.innerText = subtext;
+
+            toast.classList.remove('translate-y-24', 'opacity-0', 'pointer-events-none');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-24', 'opacity-0', 'pointer-events-none');
+            }, 3500);
+        }
+    </script>
+</body>
+</html>
