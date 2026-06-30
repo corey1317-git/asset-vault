@@ -75,7 +75,10 @@
             </div>
         </div>
         <div class="flex items-center gap-4">
-            <span class="text-xs text-slate-500 font-mono">domain: <span class="text-slate-300 font-bold">thorpetech.org</span></span>
+            <button onclick="openFeedbackModal()" class="px-3.5 py-1.5 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 border border-indigo-500/20 hover:border-indigo-500/30 text-xs font-bold rounded-xl transition flex items-center gap-1.5">
+                <i class="fa-solid fa-comment-dots"></i> Send Feedback
+            </button>
+            <span class="text-xs text-slate-500 font-mono hidden sm:inline">domain: <span class="text-slate-300 font-bold">thorpetech.org</span></span>
             <a href="https://github.com/corey1317-git" target="_blank" class="h-9 w-9 rounded-xl bg-slate-900 border border-slate-800 hover:border-indigo-500/30 flex items-center justify-center text-slate-400 hover:text-indigo-400 transition" title="GitHub Profile">
                 <i class="fa-brands fa-github text-lg"></i>
             </a>
@@ -110,10 +113,10 @@
         </section>
 
         <!-- Dynamic Applications Section -->
-        <section class="grid grid-cols-1 md:grid-cols-2 gap-8 items-stretch">
+        <section class="max-w-xl mx-auto w-full">
             
             <!-- FEATURED APP: Asset Vault (Active) -->
-            <div class="glass-card border border-slate-800/80 hover:border-emerald-500/40 rounded-3xl p-6 md:p-8 flex flex-col justify-between transition-all duration-300 transform hover:-translate-y-1 glow-emerald group relative overflow-hidden">
+            <div class="glass-card border border-slate-800/80 hover:border-emerald-500/40 rounded-3xl p-6 md:p-8 flex flex-col justify-between transition-all duration-300 transform hover:-translate-y-1 glow-emerald group relative overflow-hidden shadow-2xl">
                 <div class="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-full blur-2xl pointer-events-none"></div>
                 
                 <div>
@@ -132,7 +135,7 @@
                         Asset Vault & Care Tracker
                     </h3>
                     <p class="text-xs text-slate-400 mt-2 mb-6 leading-relaxed">
-                        A premium local-first tool for cataloging home appliances, yard equipment, and electronics. Track serials, upload compressed receipts, calculate claim valuations, and set care schedules.
+                        A premium local-first tool that helps keep track of serial numbers, receipts, purchase prices, care schedules, and more for home appliances, yard equipment, and electronics.
                     </p>
 
                     <!-- Feature list -->
@@ -158,48 +161,6 @@
                 </a>
             </div>
 
-            <!-- FUTURE APP: Placeholder (Smart Home Hub / Coming Soon) -->
-            <div class="glass-card border border-slate-900/60 rounded-3xl p-6 md:p-8 flex flex-col justify-between transition-all duration-300 opacity-65 hover:opacity-100 relative group overflow-hidden">
-                <div class="absolute top-0 right-0 w-24 h-24 bg-indigo-500/5 rounded-full blur-2xl pointer-events-none"></div>
-
-                <div>
-                    <!-- Card Top Header -->
-                    <div class="flex justify-between items-start mb-6">
-                        <div class="h-14 w-14 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-500 group-hover:text-indigo-400 group-hover:border-indigo-500/20 transition-colors">
-                            <i class="fa-solid fa-cube text-xl"></i>
-                        </div>
-                        <span class="text-[10px] font-bold bg-slate-900 border border-slate-800 text-slate-400 px-2.5 py-1 rounded-full uppercase tracking-wider">
-                            In Development
-                        </span>
-                    </div>
-
-                    <!-- App Title -->
-                    <h3 class="text-xl md:text-2xl font-bold text-slate-300">
-                        Smart Home Hub
-                    </h3>
-                    <p class="text-xs text-slate-500 mt-2 mb-6 leading-relaxed">
-                        An upcoming dashboard designed to monitor IoT sensors, track uptime metrics, and unify smart ecosystem APIs directly within your local network.
-                    </p>
-
-                    <!-- Feature list -->
-                    <div class="space-y-3 mb-8">
-                        <div class="flex items-start gap-2.5 text-xs text-slate-500">
-                            <i class="fa-solid fa-lock text-[10px] mt-1"></i>
-                            <span>Local network mapping and automated IP discovery rules.</span>
-                        </div>
-                        <div class="flex items-start gap-2.5 text-xs text-slate-500">
-                            <i class="fa-solid fa-lock text-[10px] mt-1"></i>
-                            <span>Custom dashboard cards for thermostat and light integration.</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Launch Button CTA (Disabled) -->
-                <button disabled class="w-full py-3.5 bg-slate-900 text-slate-600 font-bold rounded-2xl text-center border border-slate-800 cursor-not-allowed flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-lock text-xs"></i> Locked (Private Beta)
-                </button>
-            </div>
-
         </section>
 
         <!-- Tech highlight banner at the bottom -->
@@ -219,6 +180,139 @@
     <footer class="border-t border-slate-900 bg-slate-950/60 py-6 text-center text-xs text-slate-600 z-10">
         <p>&copy; 2026 Thorpe Tech. All rights reserved. Client-first secure designs.</p>
     </footer>
+
+    <!-- Feedback Modal -->
+    <div id="feedbackModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden transition-opacity duration-200" onclick="closeFeedbackModal()">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl relative" onclick="event.stopPropagation()">
+            <button onclick="closeFeedbackModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-200 transition">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <div class="flex items-center gap-3 mb-4">
+                <div class="h-10 w-10 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center border border-indigo-500/20">
+                    <i class="fa-solid fa-comment-dots text-lg"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-base text-slate-100">Send Feedback</h3>
+                    <p class="text-xs text-slate-400">Have an issue or a suggestion? Let us know!</p>
+                </div>
+            </div>
+            
+            <!-- Replace YOUR_FORMSPREE_ID with your Formspree form ID to receive emails privately -->
+            <form action="https://formspree.io/f/YOUR_FORMSPREE_ID" method="POST" class="space-y-4" onsubmit="handleFeedbackSubmit(event)">
+                <div>
+                    <label class="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Your Name</label>
+                    <input type="text" name="name" required placeholder="John Doe" class="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl p-2.5 text-xs text-slate-100 placeholder-slate-700 focus:outline-none transition">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Email Address</label>
+                    <input type="email" name="_replyto" required placeholder="john@example.com" class="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl p-2.5 text-xs text-slate-100 placeholder-slate-700 focus:outline-none transition">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Message / Issue Details</label>
+                    <textarea name="message" rows="4" required placeholder="Describe the issue or feedback..." class="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl p-2.5 text-xs text-slate-100 placeholder-slate-700 focus:outline-none transition resize-none"></textarea>
+                </div>
+                <div class="pt-2 flex justify-end gap-3">
+                    <button type="button" onclick="closeFeedbackModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl transition">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl transition">
+                        Send Feedback
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Premium Toast Notification System -->
+    <div id="toast" class="fixed bottom-6 right-6 bg-slate-900 border border-slate-800 text-slate-100 px-4 py-3.5 rounded-2xl shadow-2xl shadow-emerald-500/5 transition-all duration-300 translate-y-24 opacity-0 pointer-events-none z-50 flex items-center gap-3">
+        <div id="toast-icon-bg" class="h-8 w-8 rounded-lg flex items-center justify-center bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+            <i id="toast-icon" class="fa-solid fa-circle-check"></i>
+        </div>
+        <div>
+            <span id="toast-message" class="text-sm font-semibold block leading-tight text-white">Notification</span>
+            <span id="toast-subtext" class="text-xs text-slate-400">Details</span>
+        </div>
+    </div>
+
+    <script>
+        function openFeedbackModal() {
+            const modal = document.getElementById('feedbackModal');
+            if (modal) modal.classList.remove('hidden');
+        }
+
+        function closeFeedbackModal() {
+            const modal = document.getElementById('feedbackModal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        async function handleFeedbackSubmit(e) {
+            e.preventDefault();
+            const form = e.target;
+            const data = new FormData(form);
+            const button = form.querySelector('button[type="submit"]');
+            const originalText = button.innerText;
+            
+            if (form.action.includes("YOUR_FORMSPREE_ID")) {
+                showToast("Configuration Needed", "Please configure your unique Formspree ID inside the index.html file to submit this form.", "amber");
+                return;
+            }
+
+            button.disabled = true;
+            button.innerText = "Sending...";
+
+            try {
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    body: data,
+                    headers: { 'Accept': 'application/json' }
+                });
+                if (response.ok) {
+                    showToast("Feedback Sent", "Thank you! Your feedback was securely forwarded.", "emerald");
+                    form.reset();
+                    closeFeedbackModal();
+                } else {
+                    throw new Error("Failed to send");
+                }
+            } catch (err) {
+                showToast("Submission Error", "Oops! There was a problem submitting your form.", "rose");
+            } finally {
+                button.disabled = false;
+                button.innerText = originalText;
+            }
+        }
+
+        function showToast(title, subtext, color = "emerald") {
+            const toast = document.getElementById('toast');
+            const iconBg = document.getElementById('toast-icon-bg');
+            const icon = document.getElementById('toast-icon');
+            const mainText = document.getElementById('toast-message');
+            const descText = document.getElementById('toast-subtext');
+
+            if (!toast) return;
+
+            if (color === "rose") {
+                if (iconBg) iconBg.className = "h-8 w-8 rounded-lg flex items-center justify-center bg-rose-500/10 text-rose-400 border border-rose-500/20";
+                if (icon) icon.className = "fa-solid fa-circle-exclamation";
+            } else if (color === "amber") {
+                if (iconBg) iconBg.className = "h-8 w-8 rounded-lg flex items-center justify-center bg-amber-500/10 text-amber-400 border border-amber-500/20";
+                if (icon) icon.className = "fa-solid fa-circle-exclamation";
+            } else {
+                if (iconBg) iconBg.className = "h-8 w-8 rounded-lg flex items-center justify-center bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
+                if (icon) icon.className = "fa-solid fa-circle-check";
+            }
+
+            if (mainText) mainText.innerText = title;
+            if (descText) descText.innerText = subtext;
+
+            toast.classList.remove('translate-y-24', 'opacity-0', 'pointer-events-none');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-24', 'opacity-0', 'pointer-events-none');
+            }, 3500);
+        }
+    </script>
 
 </body>
 </html>

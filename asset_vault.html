@@ -88,6 +88,9 @@
                 <option value="Appliances">Appliances</option>
                 <option value="Home Utilities">Home Utilities</option>
             </select>
+            <button onclick="openFeedbackModal()" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-750 hover:border-slate-750 text-sm font-bold rounded-xl transition flex items-center gap-1.5" title="Send Feedback">
+                <i class="fa-solid fa-comment-dots text-indigo-400"></i> Feedback
+            </button>
             <button onclick="openAddModal()" class="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-slate-950 text-sm font-bold rounded-xl shadow-lg shadow-emerald-500/10 transition flex items-center gap-2">
                 <i class="fa-solid fa-plus text-sm"></i> Add Asset
             </button>
@@ -659,6 +662,48 @@
                     Close Changelog
                 </button>
             </div>
+        </div>
+    </div>
+
+    <!-- Feedback Modal -->
+    <div id="feedbackModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden transition-opacity duration-200" onclick="closeFeedbackModal()">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl relative" onclick="event.stopPropagation()">
+            <button onclick="closeFeedbackModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-200 transition">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <div class="flex items-center gap-3 mb-4">
+                <div class="h-10 w-10 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center border border-indigo-500/20">
+                    <i class="fa-solid fa-comment-dots text-lg"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-base text-slate-100">Send Feedback</h3>
+                    <p class="text-xs text-slate-400">Have an issue or a suggestion? Let us know!</p>
+                </div>
+            </div>
+            
+            <!-- Replace YOUR_FORMSPREE_ID with your Formspree form ID to receive emails privately -->
+            <form action="https://formspree.io/f/YOUR_FORMSPREE_ID" method="POST" class="space-y-4" onsubmit="handleFeedbackSubmit(event)">
+                <div>
+                    <label class="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Your Name</label>
+                    <input type="text" name="name" required placeholder="John Doe" class="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl p-2.5 text-xs text-slate-100 placeholder-slate-700 focus:outline-none transition">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Email Address</label>
+                    <input type="email" name="_replyto" required placeholder="john@example.com" class="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl p-2.5 text-xs text-slate-100 placeholder-slate-700 focus:outline-none transition">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1.5">Message / Issue Details</label>
+                    <textarea name="message" rows="4" required placeholder="Describe the issue or feedback..." class="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl p-2.5 text-xs text-slate-100 placeholder-slate-700 focus:outline-none transition resize-none"></textarea>
+                </div>
+                <div class="pt-2 flex justify-end gap-3">
+                    <button type="button" onclick="closeFeedbackModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded-xl transition">
+                        Cancel
+                    </button>
+                    <button type="submit" class="px-5 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-xl transition">
+                        Send Feedback
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -1942,6 +1987,53 @@
                 toast.classList.remove('translate-y-0', 'opacity-100');
                 toast.classList.add('translate-y-24', 'opacity-0', 'pointer-events-none');
             }, 3500);
+        }
+
+        // Feedback Modal Handlers
+        function openFeedbackModal() {
+            const modal = document.getElementById('feedbackModal');
+            if (modal) modal.classList.remove('hidden');
+        }
+
+        function closeFeedbackModal() {
+            const modal = document.getElementById('feedbackModal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        async function handleFeedbackSubmit(e) {
+            e.preventDefault();
+            const form = e.target;
+            const data = new FormData(form);
+            const button = form.querySelector('button[type="submit"]');
+            const originalText = button.innerText;
+            
+            if (form.action.includes("YOUR_FORMSPREE_ID")) {
+                showNotification("Configuration Needed", "Please configure your unique Formspree ID inside the asset_vault.html file to submit this form.", "amber");
+                return;
+            }
+
+            button.disabled = true;
+            button.innerText = "Sending...";
+
+            try {
+                const response = await fetch(form.action, {
+                    method: 'POST',
+                    body: data,
+                    headers: { 'Accept': 'application/json' }
+                });
+                if (response.ok) {
+                    showNotification("Feedback Sent", "Thank you! Your feedback was securely forwarded.", "emerald");
+                    form.reset();
+                    closeFeedbackModal();
+                } else {
+                    throw new Error("Failed to send");
+                }
+            } catch (err) {
+                showNotification("Submission Error", "Oops! There was a problem submitting your form.", "rose");
+            } finally {
+                button.disabled = false;
+                button.innerText = originalText;
+            }
         }
     </script>
 </body>
