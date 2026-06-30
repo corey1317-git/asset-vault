@@ -98,7 +98,7 @@
                 <div class="flex items-center gap-2">
                     <h1 class="font-extrabold text-xl leading-tight bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">Asset Vault</h1>
                     <span onclick="openChangelog()" class="cursor-pointer text-[10px] font-bold bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full flex items-center gap-1 transition select-none" title="Changelog">
-                        v6.1.0 <i class="fa-solid fa-code-branch text-[9px]"></i>
+                        v6.4.0 <i class="fa-solid fa-code-branch text-[9px]"></i>
                     </span>
                 </div>
                 <p class="text-[10px] text-emerald-400 font-semibold uppercase tracking-wider">
@@ -641,15 +641,51 @@
             <!-- Timeline Elements -->
             <div class="space-y-6 relative border-l-2 border-slate-800 ml-3 pl-6 my-2 text-xs">
                 
-                <!-- Build 7 -->
+                <!-- Build 10 — LATEST -->
                 <div class="relative">
                     <span class="absolute -left-[31px] top-1 bg-emerald-500 ring-4 ring-slate-950 h-3 w-3 rounded-full animate-pulse"></span>
                     <div class="flex items-center justify-between gap-2">
-                        <span class="font-bold text-emerald-400 text-xs">v6.1.0 (Latest Release)</span>
+                        <span class="font-bold text-emerald-400 text-xs">v6.4.0 — Thorpe Tech Portal Expansion (Latest)</span>
                         <span class="text-[9px] text-slate-500 font-mono">June 2026</span>
                     </div>
                     <p class="text-slate-300 mt-1 leading-relaxed">
-                        Branding refactored to **Asset Vault**. Sourced and resolved high-res stock photo links. Squeezed in fluid **4-column aspect ratio correct cards**. Built dual offline **Product Photo Resizing Compressors** and integrated a real-time **LocalStorage Quota Space Footprint tracker**.
+                        Launched <strong>Vehicle Vault v1.0</strong> — a full vehicle maintenance tracker with service interval scheduling, maintenance history logs, insurance and registration expiry alerts, VIN tracking, AI Enrich via Gemini, StartMyCar.com community integration, and NHTSA recall lookups. Revamped the Thorpe Tech portal index to feature both apps with dedicated launch buttons. Added a Home button to all tools.
+                    </p>
+                </div>
+
+                <!-- Build 9 -->
+                <div class="relative">
+                    <span class="absolute -left-[31px] top-1 bg-violet-500 ring-4 ring-slate-950 h-3 w-3 rounded-full"></span>
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="font-bold text-violet-300 text-xs">v6.3.0 — Gemini API Key Settings UI</span>
+                        <span class="text-[9px] text-slate-500 font-mono">June 2026</span>
+                    </div>
+                    <p class="text-slate-300 mt-1 leading-relaxed">
+                        Replaced the hardcoded <code class="bg-slate-800 px-1 rounded">apiKey</code> variable with a <strong>localStorage-backed settings modal</strong> accessible via the gear icon in the header. An amber indicator dot appears when no key is set. Clicking any AI feature with a missing key now opens the settings panel directly with a link to Google AI Studio for the free tier key.
+                    </p>
+                </div>
+
+                <!-- Build 8 -->
+                <div class="relative">
+                    <span class="absolute -left-[31px] top-1 bg-indigo-500 ring-4 ring-slate-950 h-3 w-3 rounded-full"></span>
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="font-bold text-indigo-300 text-xs">v6.2.0 — AI Enrich + Vault Logo + Portal Revamp</span>
+                        <span class="text-[9px] text-slate-500 font-mono">June 2026</span>
+                    </div>
+                    <p class="text-slate-300 mt-1 leading-relaxed">
+                        Added the <strong>AI Enrich</strong> button to each asset card — uses Gemini 2.5 Flash with Google Search grounding to update YouTube care guides, care tips, replacement parts, manual URLs, and product images based on the device model number. Fixes dead links on model-specific equipment (EGO, etc.) by storing queries on the asset object. Replaced the header icon with a custom inline SVG vault door. Revamped the Thorpe Tech index page with animated hero text, feature pills, and a browser showcase frame.
+                    </p>
+                </div>
+
+                <!-- Build 7 -->
+                <div class="relative">
+                    <span class="absolute -left-[31px] top-1 bg-slate-600 ring-4 ring-slate-950 h-3 w-3 rounded-full"></span>
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="font-bold text-slate-400 text-xs">v6.1.0 — Branding & Storage Tracker</span>
+                        <span class="text-[9px] text-slate-500 font-mono">June 2026</span>
+                    </div>
+                    <p class="text-slate-300 mt-1 leading-relaxed">
+                        Branding refactored to Asset Vault. Sourced and resolved high-res stock photo links. Squeezed in fluid 4-column aspect ratio correct cards. Built dual offline Product Photo Resizing Compressors and integrated a real-time LocalStorage Quota Space Footprint tracker.
                     </p>
                 </div>
 
