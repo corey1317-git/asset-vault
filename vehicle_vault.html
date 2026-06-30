@@ -81,7 +81,7 @@
         <button onclick="openAccidentModal()" class="px-3.5 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-rose-600/25 transition flex items-center gap-1.5 animate-pulse" title="Accident Info Exchange &amp; Guidelines">
             <i class="fa-solid fa-triangle-exclamation"></i> Accident Help
         </button>
-        <button onclick="openAddModal()" class="px-4 py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-sm font-bold rounded-xl shadow-lg shadow-cyan-500/20 transition flex items-center gap-2">
+        <button onclick="openWizard()" class="px-4 py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-sm font-bold rounded-xl shadow-lg shadow-cyan-500/20 transition flex items-center gap-2">
             <i class="fa-solid fa-plus text-sm"></i> Add Vehicle
         </button>
         <button id="settings-btn" onclick="openSettingsModal()" class="relative h-9 w-9 bg-slate-800 hover:bg-slate-700 text-slate-400 border border-slate-750 rounded-xl transition flex items-center justify-center" title="Settings">
@@ -165,7 +165,7 @@
             </div>
             <h2 class="font-bold text-sm text-slate-200 mb-1">No vehicles</h2>
             <p class="text-slate-500 text-[11px] mb-4 max-w-xs">Track maintenance &amp; details.</p>
-            <button onclick="openAddModal()" class="w-full py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold rounded-xl transition text-xs flex items-center justify-center gap-1.5">
+            <button onclick="openWizard()" class="w-full py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold rounded-xl transition text-xs flex items-center justify-center gap-1.5">
                 <i class="fa-solid fa-plus"></i> Add Vehicle
             </button>
         </div>
@@ -325,22 +325,82 @@
             <!-- Tabs -->
             <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
                 <div class="flex border-b border-slate-800">
-                    <button onclick="switchTab('schedule')" id="tab-schedule" class="flex-1 py-2.5 text-[10px] md:text-xs font-semibold transition tab-active">Schedule</button>
+                    <button onclick="switchTab('schedule')" id="tab-schedule" class="flex-1 py-2.5 text-[10px] md:text-xs font-semibold transition tab-active">Overview</button>
                     <button onclick="switchTab('log')" id="tab-log" class="flex-1 py-2.5 text-[10px] md:text-xs font-semibold transition tab-inactive">Log</button>
-                    <button onclick="switchTab('guides')" id="tab-guides" class="flex-1 py-2.5 text-[10px] md:text-xs font-semibold transition tab-inactive">Guides</button>
                     <button onclick="switchTab('info')" id="tab-info" class="flex-1 py-2.5 text-[10px] md:text-xs font-semibold transition tab-inactive">Info</button>
                     <button onclick="switchTab('costs')" id="tab-costs" class="flex-1 py-2.5 text-[10px] md:text-xs font-semibold transition tab-inactive">Costs</button>
                 </div>
 
-                <!-- Schedule Tab -->
-                <div id="tab-content-schedule" class="p-3">
-                    <div class="flex items-center justify-between mb-2">
-                        <span class="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">Service Intervals</span>
-                        <button onclick="openLogModal()" class="text-[10px] px-2.5 py-1 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/20 rounded-lg font-bold transition flex items-center gap-1">
-                            <i class="fa-solid fa-plus text-[9px]"></i> Log Service
-                        </button>
+                <!-- Overview Tab -->
+                <div id="tab-content-schedule" class="p-4 space-y-4">
+                    <!-- Column 1: Service Schedule -->
+                    <div class="bg-slate-950/40 p-4 border border-slate-850 rounded-2xl">
+                        <div class="flex items-center justify-between mb-2">
+                            <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5"><i class="fa-solid fa-clock text-cyan-400"></i> Service Interval Schedule</h4>
+                            <button onclick="openLogModal()" class="text-[10px] px-2.5 py-1.5 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/20 rounded-lg font-bold transition flex items-center gap-1">
+                                <i class="fa-solid fa-plus text-[9px]"></i> Log Service
+                            </button>
+                        </div>
+                        <div id="schedule-list" class="grid grid-cols-1 md:grid-cols-2 gap-2"></div>
                     </div>
-                    <div id="schedule-list" class="space-y-1.5"></div>
+
+                    <!-- Column 2: Consumables & Fluids -->
+                    <div class="bg-slate-950/40 p-4 border border-slate-850 rounded-2xl">
+                        <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest pb-1 border-b border-slate-850 mb-3 flex items-center gap-1.5"><i class="fa-solid fa-cubes text-emerald-400"></i> OEM Parts &amp; Fluids Specifications</h4>
+                        <div id="overview-parts-grid" class="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                            <div class="bg-slate-900/60 p-2.5 border border-slate-800 rounded-xl flex flex-col gap-1">
+                                <span class="text-slate-500 font-semibold text-[10px]">Engine Oil:</span>
+                                <input type="text" id="part-oil" onchange="savePartField('engineOil', this.value)" placeholder="e.g. 0W-20, 5.7qts" class="w-full bg-slate-950/60 border border-slate-855 rounded px-2 py-1 text-slate-100 focus:outline-none focus:border-emerald-500/40">
+                            </div>
+                            <div class="bg-slate-900/60 p-2.5 border border-slate-800 rounded-xl flex flex-col gap-1">
+                                <span class="text-slate-500 font-semibold text-[10px]">Oil Filter:</span>
+                                <input type="text" id="part-oilFilter" onchange="savePartField('oilFilter', this.value)" placeholder="OEM or Fram #" class="w-full bg-slate-950/60 border border-slate-855 rounded px-2 py-1 text-slate-100 focus:outline-none focus:border-emerald-500/40">
+                            </div>
+                            <div class="bg-slate-900/60 p-2.5 border border-slate-800 rounded-xl flex flex-col gap-1">
+                                <span class="text-slate-500 font-semibold text-[10px]">Engine Air Filter:</span>
+                                <input type="text" id="part-airFilter" onchange="savePartField('engineAirFilter', this.value)" placeholder="Filter part #" class="w-full bg-slate-950/60 border border-slate-855 rounded px-2 py-1 text-slate-100 focus:outline-none focus:border-emerald-500/40">
+                            </div>
+                            <div class="bg-slate-900/60 p-2.5 border border-slate-800 rounded-xl flex flex-col gap-1">
+                                <span class="text-slate-500 font-semibold text-[10px]">Cabin Air Filter:</span>
+                                <input type="text" id="part-cabinFilter" onchange="savePartField('cabinAirFilter', this.value)" placeholder="Filter part #" class="w-full bg-slate-950/60 border border-slate-855 rounded px-2 py-1 text-slate-100 focus:outline-none focus:border-emerald-500/40">
+                            </div>
+                            <div class="bg-slate-900/60 p-2.5 border border-slate-800 rounded-xl flex flex-col gap-1">
+                                <span class="text-slate-500 font-semibold text-[10px]">Wiper Blades:</span>
+                                <input type="text" id="part-wipers" onchange="savePartField('wiperBlades', this.value)" placeholder="e.g. 26&quot; / 16&quot;" class="w-full bg-slate-950/60 border border-slate-855 rounded px-2 py-1 text-slate-100 focus:outline-none focus:border-emerald-500/40">
+                            </div>
+                            <div class="bg-slate-900/60 p-2.5 border border-slate-800 rounded-xl flex flex-col gap-1">
+                                <span class="text-slate-500 font-semibold text-[10px]">Spark Plugs:</span>
+                                <input type="text" id="part-sparkPlugs" onchange="savePartField('sparkPlugs', this.value)" placeholder="Plug model #" class="w-full bg-slate-950/60 border border-slate-855 rounded px-2 py-1 text-slate-100 focus:outline-none focus:border-emerald-500/40">
+                            </div>
+                            <div class="bg-slate-900/60 p-2.5 border border-slate-800 rounded-xl flex flex-col gap-1 col-span-2">
+                                <span class="text-slate-500 font-semibold text-[10px]">Battery Specs:</span>
+                                <input type="text" id="part-battery" onchange="savePartField('battery', this.value)" placeholder="e.g. Group 35, 640 CCA" class="w-full bg-slate-950/60 border border-slate-855 rounded px-2 py-1 text-slate-100 focus:outline-none focus:border-emerald-500/40">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Column 3: DIY Guides & Diagnostics -->
+                    <div class="bg-slate-950/40 p-4 border border-slate-850 rounded-2xl">
+                        <h4 class="text-[10px] font-bold text-slate-400 uppercase tracking-widest pb-1 border-b border-slate-850 mb-3 flex items-center gap-1.5"><i class="fa-solid fa-circle-question text-violet-400"></i> DIY Repair Guides &amp; Reliability Bulletins</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <div id="guides-startmycar" class="mb-2"></div>
+                                <div id="guides-carcarekiosk" class="mb-2"></div>
+                                <div id="guides-nhtsa" class="mb-2"></div>
+                                <div id="guides-youtube" class="mb-2"></div>
+                            </div>
+                            <div>
+                                <div id="guides-issues" class="mb-3"></div>
+                                <div id="guides-tips" class=""></div>
+                                <div id="guides-empty" class="py-6 text-center text-slate-650 text-xs hidden">
+                                    No guides or issues populated.<br><br>
+                                    <button onclick="enrichVehicle()" class="mt-1 px-3 py-1.5 bg-violet-600/20 hover:bg-violet-600/40 text-violet-400 border border-violet-500/30 text-[10px] font-bold rounded-lg transition">
+                                        <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Run AI Enrich
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Log Tab -->
@@ -356,21 +416,6 @@
                     <div id="log-total" class="hidden mt-3 pt-2 border-t border-slate-800 flex justify-between text-xs text-slate-400">
                         <span>Total spent</span>
                         <span id="log-total-val" class="font-bold text-emerald-400"></span>
-                    </div>
-                </div>
-
-                <!-- Guides Tab -->
-                <div id="tab-content-guides" class="p-3 hidden">
-                    <div id="guides-startmycar" class="mb-3"></div>
-                    <div id="guides-carcarekiosk" class="mb-3"></div>
-                    <div id="guides-youtube" class="mb-3"></div>
-                    <div id="guides-nhtsa" class="mb-3"></div>
-                    <div id="guides-issues" class=""></div>
-                    <div id="guides-tips" class=""></div>
-                    <div id="guides-empty" class="py-6 text-center text-slate-600 text-xs">Run AI Enrich to populate guides and common issues.<br><br>
-                        <button onclick="enrichVehicle()" class="mt-1 px-3 py-1.5 bg-violet-600/20 hover:bg-violet-600/40 text-violet-400 border border-violet-500/30 text-[10px] font-bold rounded-lg transition">
-                            <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Enrich Now
-                        </button>
                     </div>
                 </div>
 
@@ -1035,6 +1080,176 @@
     </div>
 </div>
 
+<!-- ═══════════ SETUP WIZARD MODAL ═══════════ -->
+<div id="wizard-modal" class="fixed inset-0 z-[850] hidden items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+    <div class="bg-slate-900 border border-slate-750 rounded-3xl shadow-2xl w-full max-w-xl overflow-hidden flex flex-col">
+        <!-- Header -->
+        <div class="px-6 py-4 border-b border-slate-800 flex justify-between items-center bg-slate-955/40">
+            <div>
+                <h3 class="font-bold text-white text-base">Vehicle Setup Wizard</h3>
+                <p class="text-[10px] text-slate-400 mt-0.5">Let's configure your vehicle's specs and service milestones.</p>
+            </div>
+            <button onclick="closeWizard()" class="text-slate-500 hover:text-slate-300 transition"><i class="fa-solid fa-xmark text-lg"></i></button>
+        </div>
+        
+        <!-- Progress Bar -->
+        <div class="h-1 bg-slate-800 w-full relative">
+            <div id="wizard-progress" class="h-full bg-cyan-500 transition-all duration-300" style="width: 25%;"></div>
+        </div>
+
+        <!-- Scrollable Steps Area -->
+        <div class="p-6 overflow-y-auto max-h-[60vh] flex-1 text-sm space-y-4">
+            
+            <!-- STEP 1: Basic Info -->
+            <div id="w-step-1" class="space-y-4">
+                <h4 class="font-bold text-slate-200 text-xs uppercase tracking-wider flex items-center gap-1.5"><i class="fa-solid fa-car text-cyan-400"></i> Step 1: Vehicle Description</h4>
+                
+                <div class="grid grid-cols-2 gap-3 text-xs">
+                    <div class="col-span-2">
+                        <label class="block text-[10px] font-semibold text-slate-400 mb-1">Make *</label>
+                        <select id="w-make" onchange="onWizardMakeChange()" class="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-xl p-2.5 text-slate-100 focus:outline-none transition"></select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-semibold text-slate-400 mb-1">Model *</label>
+                        <select id="w-model-select" onchange="onWizardModelSelectChange()" class="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-xl p-2.5 text-slate-100 focus:outline-none transition"></select>
+                        <input id="w-model-text" type="text" placeholder="Type Model Name" class="hidden w-full bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-xl p-2.5 text-slate-100 focus:outline-none transition mt-1.5">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-semibold text-slate-400 mb-1">Year *</label>
+                        <input id="w-year" type="number" placeholder="e.g. 2021" class="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-xl p-2.5 text-slate-100 focus:outline-none transition">
+                    </div>
+                    <div class="col-span-2">
+                        <label class="block text-[10px] font-semibold text-slate-400 mb-1">Nickname (Optional)</label>
+                        <input id="w-nickname" type="text" placeholder="e.g. My Tacoma, Daily Driver" class="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-xl p-2.5 text-slate-100 focus:outline-none transition">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-semibold text-slate-400 mb-1">Current Mileage (mi) *</label>
+                        <input id="w-mileage" type="number" placeholder="e.g. 36000" class="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-xl p-2.5 text-slate-100 focus:outline-none transition">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-semibold text-slate-400 mb-1">VIN (Optional)</label>
+                        <input id="w-vin" type="text" placeholder="17-character VIN" class="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-xl p-2.5 text-slate-100 focus:outline-none transition">
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP 2: Main Milestones -->
+            <div id="w-step-2" class="space-y-4 hidden">
+                <h4 class="font-bold text-slate-200 text-xs uppercase tracking-wider flex items-center gap-1.5"><i class="fa-solid fa-wrench text-cyan-400"></i> Step 2: Essential Maintenance History</h4>
+                <p class="text-xs text-slate-400 leading-relaxed">Tell us when your core services were last completed to set up automated scheduling alert countdowns.</p>
+                
+                <div class="space-y-3 bg-slate-950/40 p-4 border border-slate-850 rounded-2xl">
+                    <h5 class="text-xs font-bold text-slate-300">Last Oil Change</h5>
+                    <div class="grid grid-cols-2 gap-3 text-xs">
+                        <div>
+                            <label class="block text-[9px] font-semibold text-slate-500 mb-1">Date Completed</label>
+                            <input id="w-oil-date" type="date" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2 text-slate-100 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-[9px] font-semibold text-slate-500 mb-1">Odometer Mileage (mi)</label>
+                            <input id="w-oil-mileage" type="number" placeholder="e.g. 32000" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2 text-slate-100 focus:outline-none">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="space-y-3 bg-slate-950/40 p-4 border border-slate-850 rounded-2xl">
+                    <h5 class="text-xs font-bold text-slate-300">Last Tire Rotation</h5>
+                    <div class="grid grid-cols-2 gap-3 text-xs">
+                        <div>
+                            <label class="block text-[9px] font-semibold text-slate-500 mb-1">Date Completed</label>
+                            <input id="w-tires-date" type="date" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2 text-slate-100 focus:outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-[9px] font-semibold text-slate-500 mb-1">Odometer Mileage (mi)</label>
+                            <input id="w-tires-mileage" type="number" placeholder="e.g. 32000" class="w-full bg-slate-900 border border-slate-800 rounded-xl p-2 text-slate-100 focus:outline-none">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP 3: Other Services -->
+            <div id="w-step-3" class="space-y-4 hidden">
+                <h4 class="font-bold text-slate-200 text-xs uppercase tracking-wider flex items-center gap-1.5"><i class="fa-solid fa-clock-rotate-left text-cyan-400"></i> Step 3: Other Service Milestones</h4>
+                <p class="text-xs text-slate-400 leading-relaxed">Have you completed any of these other services recently? (Leave empty if unknown or not done).</p>
+                
+                <div class="space-y-3.5">
+                    <div class="flex items-center justify-between gap-3 bg-slate-950/30 p-2.5 border border-slate-850 rounded-xl">
+                        <span class="text-xs text-slate-350 font-semibold">Engine Air Filter</span>
+                        <div class="flex items-center gap-2">
+                            <input id="w-airfilter-date" type="date" class="bg-slate-900 border border-slate-800 rounded-lg p-1.5 text-xs text-slate-300 focus:outline-none w-32">
+                            <input id="w-airfilter-mileage" type="number" placeholder="Miles" class="bg-slate-900 border border-slate-800 rounded-lg p-1.5 text-xs text-slate-300 focus:outline-none w-20">
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between gap-3 bg-slate-950/30 p-2.5 border border-slate-850 rounded-xl">
+                        <span class="text-xs text-slate-355 font-semibold">Cabin Air Filter</span>
+                        <div class="flex items-center gap-2">
+                            <input id="w-cabinfilter-date" type="date" class="bg-slate-900 border border-slate-800 rounded-lg p-1.5 text-xs text-slate-300 focus:outline-none w-32">
+                            <input id="w-cabinfilter-mileage" type="number" placeholder="Miles" class="bg-slate-900 border border-slate-800 rounded-lg p-1.5 text-xs text-slate-300 focus:outline-none w-20">
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between gap-3 bg-slate-950/30 p-2.5 border border-slate-850 rounded-xl">
+                        <span class="text-xs text-slate-355 font-semibold">Wiper Blades</span>
+                        <div class="flex items-center gap-2">
+                            <input id="w-wipers-date" type="date" class="bg-slate-900 border border-slate-800 rounded-lg p-1.5 text-xs text-slate-300 focus:outline-none w-32">
+                            <input id="w-wipers-mileage" type="number" placeholder="Miles" class="bg-slate-900 border border-slate-800 rounded-lg p-1.5 text-xs text-slate-300 focus:outline-none w-20">
+                        </div>
+                    </div>
+                    <div class="flex items-center justify-between gap-3 bg-slate-950/30 p-2.5 border border-slate-850 rounded-xl">
+                        <span class="text-xs text-slate-355 font-semibold">Spark Plugs</span>
+                        <div class="flex items-center gap-2">
+                            <input id="w-sparkplugs-date" type="date" class="bg-slate-900 border border-slate-800 rounded-lg p-1.5 text-xs text-slate-300 focus:outline-none w-32">
+                            <input id="w-sparkplugs-mileage" type="number" placeholder="Miles" class="bg-slate-900 border border-slate-800 rounded-lg p-1.5 text-xs text-slate-300 focus:outline-none w-20">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP 4: Image & Purchase -->
+            <div id="w-step-4" class="space-y-4 hidden">
+                <h4 class="font-bold text-slate-200 text-xs uppercase tracking-wider flex items-center gap-1.5"><i class="fa-solid fa-file-invoice-dollar text-cyan-400"></i> Step 4: Purchase &amp; Photo</h4>
+                
+                <div class="flex gap-4 items-start">
+                    <div class="flex-shrink-0">
+                        <div id="w-img-preview-wrap" class="h-24 w-32 rounded-xl bg-slate-955 border border-slate-855 flex items-center justify-center cursor-pointer hover:border-cyan-500/50 transition relative overflow-hidden bg-slate-950" onclick="document.getElementById('w-img-file-input').click()">
+                            <img id="w-img-preview" src="" class="w-full h-full object-cover hidden">
+                            <div id="w-img-preview-placeholder" class="flex flex-col items-center gap-1 text-slate-655">
+                                <i class="fa-solid fa-camera text-xl"></i>
+                                <span class="text-[10px]">Photo</span>
+                            </div>
+                        </div>
+                        <input type="file" id="w-img-file-input" accept="image/*" class="hidden" onchange="handleWizardImageUpload(event)">
+                    </div>
+                    <div class="flex-1 grid grid-cols-2 gap-3 text-xs">
+                        <div>
+                            <label class="block text-[10px] font-semibold text-slate-400 mb-1">Purchase Date</label>
+                            <input id="w-pur-date" type="date" class="w-full bg-slate-950 border border-slate-850 focus:border-cyan-500 rounded-xl p-2.5 text-slate-100 focus:outline-none transition bg-slate-950">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-semibold text-slate-400 mb-1">Purchase Price ($)</label>
+                            <input id="w-pur-price" type="number" placeholder="e.g. 28000" class="w-full bg-slate-950 border border-slate-850 focus:border-cyan-500 rounded-xl p-2.5 text-slate-100 focus:outline-none transition bg-slate-950">
+                        </div>
+                        <div class="col-span-2">
+                            <label class="block text-[10px] font-semibold text-slate-400 mb-1">Purchased From</label>
+                            <input id="w-pur-from" type="text" placeholder="Dealer or private party" class="w-full bg-slate-955 border border-slate-855 focus:border-cyan-500 rounded-xl p-2.5 text-slate-100 focus:outline-none transition bg-slate-950">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Footer Buttons -->
+        <div class="px-6 py-4 border-t border-slate-800 flex justify-between bg-slate-950/40 sticky bottom-0">
+            <button id="wizard-prev-btn" onclick="wizardPrev()" class="px-4 py-2 bg-slate-850 hover:bg-slate-800 text-slate-350 border border-slate-750 text-xs font-bold rounded-xl transition disabled:opacity-50" disabled>
+                <i class="fa-solid fa-arrow-left mr-1"></i> Back
+            </button>
+            <button id="wizard-next-btn" onclick="wizardNext()" class="px-5 py-2.5 bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-extrabold rounded-xl transition shadow-lg shadow-cyan-500/10 flex items-center gap-1.5">
+                Next <i class="fa-solid fa-arrow-right text-[10px]"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
 <!-- Application Guide & Intro Modal -->
 <div id="welcome-modal" class="fixed inset-0 z-[920] hidden items-center justify-center p-4 bg-black/85 backdrop-blur-sm" onclick="closeWelcomeModal()">
     <div class="bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto flex flex-col" onclick="event.stopPropagation()">
@@ -1221,7 +1436,16 @@ function getSampleVehicle() {
             "Automatic transmission gear hunting on highway hills"
         ],
         tips: "Ensure transmission fluid is at optimal level. Check leaf springs grease points during service. Use quality synthetic oil for engine longevity.",
-        accidentReports: []
+        accidentReports: [],
+        parts: {
+            engineOil: "0W-20 (5.7 quarts)",
+            oilFilter: "Toyota 04152-YZZA1",
+            engineAirFilter: "Toyota 17801-0P051",
+            cabinAirFilter: "Toyota 87139-YZZ20",
+            wiperBlades: "26\" Driver / 16\" Passenger",
+            sparkPlugs: "Denso FK20HR11",
+            battery: "Group 24F (680 CCA)"
+        }
     };
 }
 
@@ -2022,7 +2246,7 @@ function renderExpiryField(elId, dateStr) {
 
 function switchTab(tab) {
     currentTab = tab;
-    ['schedule','log','guides','info','costs'].forEach(t => {
+    ['schedule','log','info','costs'].forEach(t => {
         const el = document.getElementById(`tab-${t}`);
         if (el) el.className = `flex-1 py-2.5 text-xs font-semibold transition ${t === tab ? 'tab-active' : 'tab-inactive'}`;
         const content = document.getElementById(`tab-content-${t}`);
@@ -2032,9 +2256,23 @@ function switchTab(tab) {
 }
 
 function renderTab(tab, v) {
-    if (tab === 'schedule') renderSchedule(v);
+    if (tab === 'schedule') {
+        renderSchedule(v);
+        
+        // Populate Parts & Consumables grid inputs
+        const p = v.parts || {};
+        document.getElementById('part-oil').value = p.engineOil || '';
+        document.getElementById('part-oilFilter').value = p.oilFilter || '';
+        document.getElementById('part-airFilter').value = p.engineAirFilter || '';
+        document.getElementById('part-cabinFilter').value = p.cabinAirFilter || '';
+        document.getElementById('part-wipers').value = p.wiperBlades || '';
+        document.getElementById('part-sparkPlugs').value = p.sparkPlugs || '';
+        document.getElementById('part-battery').value = p.battery || '';
+        
+        // Render video guides & known issues right here on the Overview tab
+        renderGuides(v);
+    }
     else if (tab === 'log') renderLog(v);
-    else if (tab === 'guides') renderGuides(v);
     else if (tab === 'info') renderInfo(v);
     else if (tab === 'costs') renderCostsTab(v);
 }
@@ -3015,6 +3253,15 @@ async function enrichVehicle() {
   "commonIssues": [string],
   "tips": string,
   "serviceIntervals": [{"id": string, "name": string, "mileageInterval": number, "monthInterval": number}],
+  "parts": {
+    "engineOil": "viscosity and capacity, e.g. 0W-20 (5.7 quarts)",
+    "oilFilter": "OEM oil filter model number",
+    "engineAirFilter": "OEM engine air filter part number",
+    "cabinAirFilter": "OEM cabin air filter part number",
+    "wiperBlades": "wiper sizes (driver / passenger), e.g. 26\\\" / 16\\\"",
+    "sparkPlugs": "OEM spark plug brand and model number",
+    "battery": "battery group size and standard CCA"
+  },
   "imageUrl": string
 }
 
@@ -3063,6 +3310,16 @@ Return ONLY JSON, no markdown, no commentary.`;
                         v.serviceIntervals.push({ ...aiInt, lastDate: null, lastMileage: null });
                     }
                 });
+            }
+            if (parsed.parts) {
+                if (!v.parts) v.parts = {};
+                v.parts.engineOil = parsed.parts.engineOil || '';
+                v.parts.oilFilter = parsed.parts.oilFilter || '';
+                v.parts.engineAirFilter = parsed.parts.engineAirFilter || '';
+                v.parts.cabinAirFilter = parsed.parts.cabinAirFilter || '';
+                v.parts.wiperBlades = parsed.parts.wiperBlades || '';
+                v.parts.sparkPlugs = parsed.parts.sparkPlugs || '';
+                v.parts.battery = parsed.parts.battery || '';
             }
             if (parsed.imageUrl && parsed.imageUrl.startsWith('http') && (!v.imageUrl || !v.imageUrl.startsWith('data:'))) {
                 v.imageUrl = parsed.imageUrl;
@@ -3471,6 +3728,7 @@ function saveAccidentReport() {
         if (e.target === this) {
             if (id === 'settingsModal') closeSettingsModal();
             else if (id === 'vehicle-modal') closeAddModal();
+            else if (id === 'wizard-modal') closeWizard();
             else if (id === 'log-modal') closeLogModal();
             else if (id === 'mileage-modal') closeMileageModal();
             else if (id === 'glovebox-modal') closeGloveboxModal();
@@ -3481,6 +3739,331 @@ function saveAccidentReport() {
         }
     });
 });
+
+// ── Setup Wizard & Parts Specs Handlers ──────────────────
+let wizardStep = 1;
+let wizardImageBase64 = null;
+
+function openWizard() {
+    wizardStep = 1;
+    wizardImageBase64 = null;
+    
+    // Clear inputs
+    document.getElementById('w-year').value = '';
+    document.getElementById('w-nickname').value = '';
+    document.getElementById('w-mileage').value = '';
+    document.getElementById('w-vin').value = '';
+    document.getElementById('w-oil-date').value = '';
+    document.getElementById('w-oil-mileage').value = '';
+    document.getElementById('w-tires-date').value = '';
+    document.getElementById('w-tires-mileage').value = '';
+    document.getElementById('w-airfilter-date').value = '';
+    document.getElementById('w-airfilter-mileage').value = '';
+    document.getElementById('w-cabinfilter-date').value = '';
+    document.getElementById('w-cabinfilter-mileage').value = '';
+    document.getElementById('w-wipers-date').value = '';
+    document.getElementById('w-wipers-mileage').value = '';
+    document.getElementById('w-sparkplugs-date').value = '';
+    document.getElementById('w-sparkplugs-mileage').value = '';
+    document.getElementById('w-pur-date').value = '';
+    document.getElementById('w-pur-price').value = '';
+    document.getElementById('w-pur-from').value = '';
+    
+    const wImg = document.getElementById('w-img-preview');
+    const wImgPh = document.getElementById('w-img-preview-placeholder');
+    wImg.src = '';
+    wImg.classList.add('hidden');
+    wImgPh.classList.remove('hidden');
+
+    populateWizardMakeSelect();
+
+    showStep(1);
+
+    const modal = document.getElementById('wizard-modal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+
+function closeWizard() {
+    const modal = document.getElementById('wizard-modal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+}
+
+function showStep(step) {
+    wizardStep = step;
+    for (let i = 1; i <= 4; i++) {
+        const el = document.getElementById(`w-step-${i}`);
+        if (el) el.classList.toggle('hidden', i !== step);
+    }
+    
+    // Update progress bar
+    const progressEl = document.getElementById('wizard-progress');
+    if (progressEl) {
+        progressEl.style.width = `${(step / 4) * 100}%`;
+    }
+
+    // Update buttons
+    const prevBtn = document.getElementById('wizard-prev-btn');
+    const nextBtn = document.getElementById('wizard-next-btn');
+    
+    if (prevBtn) prevBtn.disabled = step === 1;
+    if (nextBtn) {
+        if (step === 4) {
+            nextBtn.innerHTML = 'Finish Setup <i class="fa-solid fa-check text-[10px]"></i>';
+            nextBtn.className = "px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-955 text-xs font-extrabold rounded-xl transition shadow-lg shadow-emerald-500/10 flex items-center gap-1.5";
+        } else {
+            nextBtn.innerHTML = 'Next <i class="fa-solid fa-arrow-right text-[10px]"></i>';
+            nextBtn.className = "px-5 py-2.5 bg-cyan-500 hover:bg-cyan-400 text-slate-955 text-xs font-extrabold rounded-xl transition shadow-lg shadow-cyan-500/10 flex items-center gap-1.5";
+        }
+    }
+}
+
+function wizardPrev() {
+    if (wizardStep > 1) {
+        showStep(wizardStep - 1);
+    }
+}
+
+function wizardNext() {
+    if (wizardStep === 1) {
+        // Validation
+        const make = document.getElementById('w-make').value;
+        let model = document.getElementById('w-model-select').value;
+        if (model === '__other__') {
+            model = document.getElementById('w-model-text').value.trim();
+        }
+        const year = parseInt(document.getElementById('w-year').value);
+        const mileage = parseInt(document.getElementById('w-mileage').value);
+        
+        if (!make || !model || isNaN(year) || isNaN(mileage)) {
+            showToast("Missing Required Fields", "Please enter Year, Make, Model, and Current Mileage.", "rose");
+            return;
+        }
+        
+        // Auto-fill nickname if empty
+        const nickEl = document.getElementById('w-nickname');
+        if (!nickEl.value.trim()) {
+            nickEl.value = `${year} ${make} ${model}`;
+        }
+        
+        showStep(2);
+    } else if (wizardStep === 2 || wizardStep === 3) {
+        showStep(wizardStep + 1);
+    } else if (wizardStep === 4) {
+        finishWizardSetup();
+    }
+}
+
+function populateWizardMakeSelect() {
+    const sel = document.getElementById('w-make');
+    sel.innerHTML = '<option value="">Select Make...</option>';
+    Object.keys(SMC_DB).forEach(make => {
+        const opt = document.createElement('option');
+        opt.value = make;
+        opt.textContent = make;
+        sel.appendChild(opt);
+    });
+    // Add Other
+    const optOther = document.createElement('option');
+    optOther.value = '__other__';
+    optOther.textContent = 'Other Make...';
+    sel.appendChild(optOther);
+    
+    onWizardMakeChange();
+}
+
+function onWizardMakeChange() {
+    const makeName = document.getElementById('w-make').value;
+    const modelSel = document.getElementById('w-model-select');
+    const modelText = document.getElementById('w-model-text');
+
+    if (!makeName || !SMC_DB[makeName] || SMC_DB[makeName].models.length === 0) {
+        modelSel.classList.add('hidden');
+        modelText.classList.remove('hidden');
+        modelText.value = '';
+        return;
+    }
+
+    modelSel.innerHTML = '<option value="">Select Model...</option>';
+    SMC_DB[makeName].models.forEach(([label]) => {
+        const opt = document.createElement('option');
+        opt.value = label;
+        opt.textContent = label;
+        modelSel.appendChild(opt);
+    });
+    
+    const other = document.createElement('option');
+    other.value = '__other__';
+    other.textContent = 'Other (type below)...';
+    modelSel.appendChild(other);
+
+    modelSel.classList.remove('hidden');
+    modelText.classList.add('hidden');
+    modelText.value = '';
+    modelSel.value = '';
+}
+
+function onWizardModelSelectChange() {
+    const modelSel = document.getElementById('w-model-select');
+    const modelText = document.getElementById('w-model-text');
+    if (modelSel.value === '__other__') {
+        modelText.classList.remove('hidden');
+        modelText.value = '';
+        modelText.focus();
+    } else {
+        modelText.classList.add('hidden');
+        modelText.value = '';
+    }
+}
+
+function handleWizardImageUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = function(evt) {
+        const img = new Image();
+        img.onload = function() {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const maxW = 400;
+            const maxH = 300;
+            let w = img.width;
+            let h = img.height;
+            if (w > h) {
+                if (w > maxW) { h = Math.round((h * maxW) / w); w = maxW; }
+            } else {
+                if (h > maxH) { w = Math.round((w * maxH) / h); h = maxH; }
+            }
+            canvas.width = w;
+            canvas.height = h;
+            ctx.drawImage(img, 0, 0, w, h);
+            
+            wizardImageBase64 = canvas.toDataURL('image/jpeg', 0.7);
+            
+            const preview = document.getElementById('w-img-preview');
+            const ph = document.getElementById('w-img-preview-placeholder');
+            preview.src = wizardImageBase64;
+            preview.classList.remove('hidden');
+            ph.classList.add('hidden');
+        };
+        img.src = evt.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+
+function finishWizardSetup() {
+    const make = document.getElementById('w-make').value;
+    let model = document.getElementById('w-model-select').value;
+    if (model === '__other__' || !model) {
+        model = document.getElementById('w-model-text').value.trim();
+    }
+    const year = parseInt(document.getElementById('w-year').value);
+    const mileage = parseInt(document.getElementById('w-mileage').value);
+    const nickname = document.getElementById('w-nickname').value.trim();
+    const vin = document.getElementById('w-vin').value.trim().toUpperCase();
+    const purDate = document.getElementById('w-pur-date').value;
+    const purPrice = parseFloat(document.getElementById('w-pur-price').value) || null;
+    const purFrom = document.getElementById('w-pur-from').value.trim();
+    
+    let makeSlug = make.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    let modelSlug = model.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+    if (SMC_DB[make]) {
+        makeSlug = SMC_DB[make].slug;
+        const mObj = SMC_DB[make].models.find(m => m[0] === model);
+        if (mObj) modelSlug = mObj[1];
+    }
+    
+    const intervals = DEFAULT_INTERVALS.map(interval => {
+        let lastDate = null;
+        let lastMileage = null;
+        
+        if (interval.id === 'oil') {
+            lastDate = document.getElementById('w-oil-date').value || null;
+            lastMileage = parseInt(document.getElementById('w-oil-mileage').value) || null;
+        } else if (interval.id === 'tires') {
+            lastDate = document.getElementById('w-tires-date').value || null;
+            lastMileage = parseInt(document.getElementById('w-tires-mileage').value) || null;
+        } else if (interval.id === 'airfilter') {
+            lastDate = document.getElementById('w-airfilter-date').value || null;
+            lastMileage = parseInt(document.getElementById('w-airfilter-mileage').value) || null;
+        } else if (interval.id === 'cabinfilter') {
+            lastDate = document.getElementById('w-cabinfilter-date').value || null;
+            lastMileage = parseInt(document.getElementById('w-cabinfilter-mileage').value) || null;
+        } else if (interval.id === 'wipers') {
+            lastDate = document.getElementById('w-wipers-date').value || null;
+            lastMileage = parseInt(document.getElementById('w-wipers-mileage').value) || null;
+        } else if (interval.id === 'sparkplugs') {
+            lastDate = document.getElementById('w-sparkplugs-date').value || null;
+            lastMileage = parseInt(document.getElementById('w-sparkplugs-mileage').value) || null;
+        }
+        
+        return { ...interval, lastDate, lastMileage };
+    });
+
+    const newV = {
+        id: Date.now(),
+        nickname, year, make, model, makeSlug, modelSlug,
+        trim: '', color: '', vin, licensePlate: '',
+        currentMileage: mileage,
+        purchaseDate: purDate, purchasePrice: purPrice, purchasedFrom: purFrom,
+        insuranceProvider: '', insurancePolicyNumber: '', insurancePhone: '', emergencyContact: '',
+        insurancePremium: 0, insuranceFrequency: 'Monthly', insuranceExpiry: '', registrationExpiry: '',
+        imageUrl: wizardImageBase64 || '', dlImage: '', insImage: '', regImage: '',
+        maintenanceLogs: [],
+        serviceIntervals: intervals,
+        youtubeGuides: [], commonIssues: [], tips: '',
+        accidentReports: [],
+        parts: {
+            engineOil: '', oilFilter: '', engineAirFilter: '', cabinAirFilter: '', wiperBlades: '', sparkPlugs: '', battery: ''
+        }
+    };
+    
+    const addHistoricalLog = (type, date, mileage) => {
+        if (date || mileage) {
+            newV.maintenanceLogs.push({
+                id: Date.now() + Math.random(),
+                type,
+                date: date || new Date().toISOString().split('T')[0],
+                mileage: mileage || 0,
+                cost: 0,
+                shop: 'DIY / Previous',
+                notes: 'Logged during initial setup wizard.',
+                receiptUrl: ''
+            });
+        }
+    };
+    
+    addHistoricalLog('Oil Change', document.getElementById('w-oil-date').value, parseInt(document.getElementById('w-oil-mileage').value));
+    addHistoricalLog('Tire Rotation', document.getElementById('w-tires-date').value, parseInt(document.getElementById('w-tires-mileage').value));
+    addHistoricalLog('Engine Air Filter', document.getElementById('w-airfilter-date').value, parseInt(document.getElementById('w-airfilter-mileage').value));
+    addHistoricalLog('Cabin Air Filter', document.getElementById('w-cabinfilter-date').value, parseInt(document.getElementById('w-cabinfilter-mileage').value));
+    addHistoricalLog('Wiper Blades', document.getElementById('w-wipers-date').value, parseInt(document.getElementById('w-wipers-mileage').value));
+    addHistoricalLog('Spark Plugs', document.getElementById('w-sparkplugs-date').value, parseInt(document.getElementById('w-sparkplugs-mileage').value));
+
+    vehicles.push(newV);
+    save();
+    
+    selectedId = newV.id;
+    renderAll();
+    closeWizard();
+    
+    showToast("Setup Finished!", `${newV.nickname} has been added!`, "emerald");
+
+    if (apiKey) {
+        enrichVehicle();
+    }
+}
+
+function savePartField(field, val) {
+    if (!selectedId) return;
+    const v = getVehicle(selectedId);
+    if (!v) return;
+    if (!v.parts) v.parts = {};
+    v.parts[field] = val;
+    save();
+}
 
 // ── Toast Notifications ───────────────────────────────────
 function showToast(title, msg, color = 'cyan') {
