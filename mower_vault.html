@@ -619,10 +619,56 @@
                 mowers = [];
             }
         } else {
-            mowers = [];
+            mowers = [getSampleMower()];
+            localStorage.setItem('thorpetech_mower_vault', JSON.stringify(mowers));
         }
         updateDashboard();
         renderList();
+    }
+
+    function getSampleMower() {
+        return {
+            id: 1719610000000,
+            nickname: "Green Deere (Flip Project)",
+            make: "John Deere",
+            model: "D140",
+            year: "2015",
+            serial: "1GXD140XEFG123456",
+            status: "Repair",
+            buyPrice: 250,
+            buyDate: "2026-06-01",
+            engine: "22 HP Briggs & Stratton V-Twin",
+            deckSize: "48-inch",
+            oilCapacity: "2.0 quarts",
+            sparkPlug: "RC12YC",
+            airFilter: "GY21057",
+            oilFilter: "AM125424",
+            deckBelt: "GX21833",
+            driveBelt: "GX20006",
+            chkOil: true,
+            chkBlades: true,
+            chkDeck: false,
+            chkBelts: true,
+            chkCarb: true,
+            logs: [
+                {
+                    date: "2026-06-02",
+                    task: "New Deck Spindle & Mandrel",
+                    cost: 35,
+                    notes: "Replaced noisy left spindle deck mandrel, greased all pulleys."
+                },
+                {
+                    date: "2026-06-03",
+                    task: "Carburetor Clean & Tune-up Kit",
+                    cost: 18,
+                    notes: "Installed carburetor clean kit, replaced fuel filter & spark plugs."
+                }
+            ],
+            youtubeGuides: [
+                { label: "Deck Belt Routing Walkthrough", query: "John Deere D140 deck belt replacement diagram" },
+                { label: "Spindle Mandrel Replacement", query: "John Deere D140 deck spindle repair how-to" }
+            ]
+        };
     }
 
     function saveData() {

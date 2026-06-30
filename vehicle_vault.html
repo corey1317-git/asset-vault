@@ -1139,6 +1139,90 @@ let stagedReceiptBase64 = null;
 let mileageTargetId = null;
 let currentTab = 'schedule';
 
+// Pre-populate sample vehicle if database is empty
+if (vehicles.length === 0) {
+    vehicles = [getSampleVehicle()];
+    localStorage.setItem('vehicle_vault_data', JSON.stringify(vehicles));
+}
+
+function getSampleVehicle() {
+    const today = new Date().toISOString().split('T')[0];
+    const insExp = new Date(); insExp.setMonth(insExp.getMonth() + 6);
+    const regExp = new Date(); regExp.setMonth(regExp.getMonth() + 9);
+    
+    return {
+        id: 1719600000000,
+        nickname: "Daily Tacoma",
+        year: 2021,
+        make: "Toyota",
+        model: "Tacoma",
+        makeSlug: "toyota",
+        modelSlug: "tacoma",
+        trim: "TRD Off-Road",
+        color: "Army Green",
+        vin: "5TFDY5F10MX000000",
+        licensePlate: "TACO-4X4",
+        currentMileage: 36000,
+        purchaseDate: "2023-04-10",
+        purchasePrice: 34500,
+        purchasedFrom: "Toyota of Seattle",
+        insuranceProvider: "Geico",
+        insurancePolicyNumber: "9876543-A",
+        insurancePhone: "1-800-841-3000",
+        emergencyContact: "555-0199",
+        insurancePremium: 120,
+        insuranceFrequency: "Monthly",
+        insuranceExpiry: insExp.toISOString().split('T')[0],
+        registrationExpiry: regExp.toISOString().split('T')[0],
+        imageUrl: "",
+        dlImage: "",
+        insImage: "",
+        regImage: "",
+        maintenanceLogs: [
+            {
+                date: "2026-05-15",
+                task: "Oil Change & Filter",
+                cost: 65,
+                mileage: 35000,
+                shop: "Valvoline Express",
+                notes: "Used full synthetic 0W-20 and OEM filter.",
+                receiptImage: ""
+            },
+            {
+                date: "2026-06-10",
+                task: "Tire Rotation",
+                cost: 25,
+                mileage: 35200,
+                shop: "Discount Tire",
+                notes: "Rear to front cross rotation pattern.",
+                receiptImage: ""
+            }
+        ],
+        serviceIntervals: [
+            { id: 'oil', name: 'Oil Change', mileageInterval: 5000, monthInterval: 6, lastDate: "2026-05-15", lastMileage: 35000 },
+            { id: 'tires', name: 'Tire Rotation', mileageInterval: 7500, monthInterval: 6, lastDate: "2026-06-10", lastMileage: 35200 },
+            { id: 'airfilter', name: 'Engine Air Filter', mileageInterval: 15000, monthInterval: 12, lastDate: null, lastMileage: null },
+            { id: 'cabinfilter', name: 'Cabin Air Filter', mileageInterval: 15000, monthInterval: 12, lastDate: null, lastMileage: null },
+            { id: 'wipers', name: 'Wiper Blades', mileageInterval: 10000, monthInterval: 6, lastDate: null, lastMileage: null },
+            { id: 'sparkplugs', name: 'Spark Plugs', mileageInterval: 60000, monthInterval: 72, lastDate: null, lastMileage: null },
+            { id: 'coolant', name: 'Engine Coolant Flush', mileageInterval: 100000, monthInterval: 120, lastDate: null, lastMileage: null },
+            { id: 'brakes', name: 'Brake Pad Replacement', mileageInterval: 40000, monthInterval: 36, lastDate: null, lastMileage: null },
+            { id: 'battery', name: 'Battery Replacement', mileageInterval: 0, monthInterval: 48, lastDate: null, lastMileage: null }
+        ],
+        youtubeGuides: [
+            { label: "Oil Change DIY", query: "2021 Toyota Tacoma oil change walkthrough" },
+            { label: "Replace Cabin Air Filter", query: "2021 Toyota Tacoma cabin air filter replacement" }
+        ],
+        commonIssues: [
+            "Rear leaf springs squeaking under load",
+            "Third brake light seal leaks (Recall check available)",
+            "Automatic transmission gear hunting on highway hills"
+        ],
+        tips: "Ensure transmission fluid is at optimal level. Check leaf springs grease points during service. Use quality synthetic oil for engine longevity.",
+        accidentReports: []
+    };
+}
+
 // ── Default Service Intervals ─────────────────────────────
 const DEFAULT_INTERVALS = [
     { id: 'oil',          name: 'Oil Change',            mileageInterval: 5000,  monthInterval: 6  },
