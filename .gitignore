@@ -1,2 +1,5 @@
 # Ignore local database backups containing sensitive user asset logs
 *.json
+
+# Local push helper (contains PAT — never commit)
+push.ps1
