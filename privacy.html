@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy - Thorpe Tech</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+        
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #030712; /* slate-950 */
+        }
+
+        .mesh-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+            background: radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.04) 0%, transparent 40%),
+                        radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.04) 0%, transparent 40%);
+        }
+
+        .grid-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background-image: linear-gradient(rgba(255, 255, 255, 0.007) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(255, 255, 255, 0.007) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        .glass-card {
+            background: rgba(17, 24, 39, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        .glow-blob {
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.05) 0%, rgba(16, 185, 129, 0.01) 60%, transparent 100%);
+            filter: blur(60px);
+            z-index: -1;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="text-slate-100 min-h-screen flex flex-col justify-between overflow-x-hidden relative">
+
+    <div class="mesh-bg"></div>
+    <div class="grid-overlay"></div>
+    <div class="glow-blob top-10 -left-48"></div>
+
+    <!-- Header Section -->
+    <header class="border-b border-slate-900 bg-slate-950/40 backdrop-blur-md px-8 py-5 flex justify-between items-center z-10">
+        <a href="index.html" class="flex items-center space-x-3 hover:opacity-90 transition">
+            <div class="h-10 w-10 rounded-xl overflow-hidden shadow-lg shadow-indigo-500/10 border border-slate-800 flex items-center justify-center bg-slate-900">
+                <i class="fa-solid fa-house-laptop text-indigo-400 text-lg"></i>
+            </div>
+            <div>
+                <h1 class="font-extrabold text-lg tracking-tight bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">Thorpe Tech</h1>
+                <p class="text-[10px] text-indigo-400 font-semibold uppercase tracking-wider">Software Labs</p>
+            </div>
+        </a>
+        <div>
+            <a href="index.html" class="px-4 py-2 bg-slate-900 hover:bg-slate-850 border border-slate-800 text-xs font-bold rounded-xl transition flex items-center gap-1.5 text-slate-300">
+                <i class="fa-solid fa-arrow-left"></i> Back to Home
+            </a>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="flex-1 max-w-3xl mx-auto w-full px-6 py-12 z-10">
+        
+        <div class="glass-card border border-slate-800/80 rounded-3xl p-8 md:p-10 shadow-2xl relative">
+            <div class="flex items-center gap-3.5 mb-6 pb-6 border-b border-slate-850">
+                <div class="h-12 w-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center">
+                    <i class="fa-solid fa-shield-halved text-xl"></i>
+                </div>
+                <div>
+                    <h2 class="text-2xl font-extrabold text-white tracking-tight">Privacy Policy</h2>
+                    <p class="text-xs text-slate-400 mt-0.5">Effective Date: June 29, 2026</p>
+                </div>
+            </div>
+
+            <div class="space-y-6 text-xs md:text-sm text-slate-350 leading-relaxed">
+                <p>
+                    At Thorpe Tech, we design software with <strong>client-side integrity</strong>. We believe that your private inventory data, warranty receipts, and purchase catalogs belong strictly on your own device.
+                </p>
+
+                <div>
+                    <h3 class="text-sm font-extrabold text-slate-100 flex items-center gap-2 mb-2 uppercase tracking-wider font-sans">
+                        <i class="fa-solid fa-database text-indigo-400"></i> 1. Local-First Storage
+                    </h3>
+                    <p>
+                        All database items, serial numbers, warranty end dates, and receipt attachments registered in our tools are saved inside your local browser's storage (<code>localStorage</code>) on your own device. We do not host any database servers, we do not log your inventory, and we cannot access your records under any circumstances.
+                    </p>
+                </div>
+
+                <div>
+                    <h3 class="text-sm font-extrabold text-slate-100 flex items-center gap-2 mb-2 uppercase tracking-wider font-sans">
+                        <i class="fa-solid fa-cloud text-emerald-400"></i> 2. Cloud Backup Sync
+                    </h3>
+                    <p>
+                        When using the <strong>Cloud Backup Hub</strong> features (Google Drive and Microsoft OneDrive):
+                    </p>
+                    <ul class="list-disc list-inside mt-2 space-y-1.5 pl-2 text-slate-400">
+                        <li>Authentications occur directly and securely on the respective cloud provider's official login pages via OAuth.</li>
+                        <li>This site uses restricted-scope protocols (specifically Google's <code>drive.file</code> scope) which only allows the app to write and read files that it created. It has no access to your other cloud documents.</li>
+                        <li>OAuth access tokens are parsed client-side inside your browser to complete the file upload, and are immediately cleared. Access tokens are never stored, transmitted, or shared with Thorpe Tech.</li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h3 class="text-sm font-extrabold text-slate-100 flex items-center gap-2 mb-2 uppercase tracking-wider font-sans">
+                        <i class="fa-solid fa-wand-magic-sparkles text-amber-400"></i> 3. AI Receipt Scanning
+                    </h3>
+                    <p>
+                        If you utilize the receipt scanner, processing is performed directly via API keys. Receipts are analyzed in real-time, and the parsed details are written directly into your browser state database. No media, text, or receipts are stored on our servers.
+                    </p>
+                </div>
+
+                <div>
+                    <h3 class="text-sm font-extrabold text-slate-100 flex items-center gap-2 mb-2 uppercase tracking-wider font-sans">
+                        <i class="fa-solid fa-envelope text-blue-400"></i> 4. Feedback Submissions
+                    </h3>
+                    <p>
+                        If you choose to submit feedback through our portal, your name, email, and message are securely transmitted to our support inbox via Formspree.io. We only use this information to respond to bugs and suggestions.
+                    </p>
+                </div>
+
+                <div>
+                    <h3 class="text-sm font-extrabold text-slate-100 flex items-center gap-2 mb-2 uppercase tracking-wider font-sans">
+                        <i class="fa-solid fa-cookie-bite text-rose-400"></i> 5. Cookies & Tracking
+                    </h3>
+                    <p>
+                        This portal does not set any advertising cookies, tracking pixels, or third-party analytics beacons. 
+                    </p>
+                </div>
+
+                <div class="pt-6 border-t border-slate-850 text-slate-400 text-center">
+                    <p>If you have any questions about this privacy statement, contact us via the feedback button on the home portal.</p>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-900 bg-slate-950/60 py-6 text-center text-xs text-slate-600 z-10 flex flex-col items-center gap-2">
+        <p>&copy; 2026 Thorpe Tech. All rights reserved. Client-first secure designs.</p>
+        <div class="flex items-center gap-3">
+            <a href="index.html" class="hover:text-slate-400 transition font-semibold">Home</a>
+            <span class="text-slate-800">|</span>
+            <a href="privacy.html" class="text-indigo-400 hover:text-indigo-300 font-semibold transition">Privacy Policy</a>
+        </div>
+    </footer>
+
+</body>
+</html>
