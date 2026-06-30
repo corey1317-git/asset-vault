@@ -1397,6 +1397,30 @@ let hasUnsavedChanges = false;
 if (vehicles.length === 0) {
     vehicles = [getSampleVehicle()];
     localStorage.setItem('vehicle_vault_data', JSON.stringify(vehicles));
+} else {
+    // Force (Demo) nickname onto sample vehicle if it already exists in localStorage from previous load
+    let updated = false;
+    vehicles.forEach(v => {
+        if (v.id === 1719600000000) {
+            if (!v.nickname.includes('(Demo)')) {
+                v.nickname = "Daily Tacoma (Demo)";
+                updated = true;
+            }
+            if (!v.imageUrl || !v.imageUrl.includes('maxresdefault.jpg')) {
+                v.imageUrl = "https://i.ytimg.com/vi/1-v2CFwH0Q4/maxresdefault.jpg";
+                updated = true;
+            }
+            if (!v.dlImage || !v.dlImage.includes('Mclovin')) {
+                v.dlImage = "https://imgflip.com/s/meme/Mclovin-Drivers-License.jpg";
+                v.insImage = "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=600&q=80";
+                v.regImage = "https://images.unsplash.com/photo-1586075010923-2dd4570fb338?w=600&q=80";
+                updated = true;
+            }
+        }
+    });
+    if (updated) {
+        localStorage.setItem('vehicle_vault_data', JSON.stringify(vehicles));
+    }
 }
 
 function getSampleVehicle() {

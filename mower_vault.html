@@ -661,6 +661,16 @@
         if (raw) {
             try {
                 mowers = JSON.parse(raw);
+                let updated = false;
+                mowers.forEach(m => {
+                    if (m.id === 1719610000000 && !m.nickname.includes('(Demo)')) {
+                        m.nickname = "Green Deere (Flip Project) (Demo)";
+                        updated = true;
+                    }
+                });
+                if (updated) {
+                    saveData();
+                }
             } catch(e) {
                 mowers = [];
             }

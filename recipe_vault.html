@@ -458,6 +458,16 @@
     function loadLocalRecipes() {
         try {
             recipesCache = JSON.parse(localStorage.getItem('rv_recipes') || '[]');
+            let updated = false;
+            recipesCache.forEach(r => {
+                if (r.id === 'sample-recipe-pizza' && !r.title.includes('(Demo)')) {
+                    r.title = "Crispy Cast Iron Pan Pizza (Demo)";
+                    updated = true;
+                }
+            });
+            if (updated) {
+                localStorage.setItem('rv_recipes', JSON.stringify(recipesCache));
+            }
         } catch (e) {
             recipesCache = [];
         }

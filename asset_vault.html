@@ -937,10 +937,14 @@
         let careTasks = JSON.parse(localStorage.getItem('vault_tasks')) || initialTasks;
         let hasUnsavedChanges = false;
 
-        // Migration patch: Automatically update old mock Unsplash URLs and missing mock warranties
+        // Migration patch: Automatically update old mock Unsplash URLs, missing mock warranties, and add (Demo) labels
         let migrated = false;
         assetData.forEach(item => {
             if (item.id === 1) {
+                if (!item.name.includes('(Demo)')) {
+                    item.name = "Self-Propelled Lawn Mower (Demo)";
+                    migrated = true;
+                }
                 if (!item.imageUrl || item.imageUrl.includes("photo-1584473457406-6240486418e9")) {
                     item.imageUrl = "mower.jpg";
                     migrated = true;
@@ -950,6 +954,10 @@
                     migrated = true;
                 }
             } else if (item.id === 2) {
+                if (!item.name.includes('(Demo)')) {
+                    item.name = "Premium 65\" 4K Smart Television (Demo)";
+                    migrated = true;
+                }
                 if (!item.warrantyEndDate) {
                     item.warrantyEndDate = "2027-01-15";
                     migrated = true;
