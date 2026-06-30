@@ -875,7 +875,7 @@
         let apiKey = localStorage.getItem('av_gemini_api_key') || "";
         // OpenRouter backup provider — used automatically if Gemini fails or isn't configured
         let openrouterApiKey = localStorage.getItem('av_openrouter_api_key') || "";
-        let openrouterModel = localStorage.getItem('av_openrouter_model') || 'google/gemma-4-31b-it:free';
+        let openrouterModel = localStorage.getItem('av_openrouter_model') || 'meta-llama/llama-3.3-8b-instruct:free';
 
         // Developer cloud API configurations (specify standard OAuth 2.0 app client IDs here)
         const googleClientId = "386561707147-fkqqbg1qeb7prudclclmcbg26ctcpgkb.apps.googleusercontent.com";
@@ -2016,11 +2016,10 @@
 
         // ── AI Providers: Gemini (primary) + OpenRouter (automatic backup) ──
         // Plain-JSON-instruction prompting (not responseSchema) is used deliberately: combining
-        // Google Search grounding with strict schema mode is restricted to Gemini 3-series models,
-        // so schema mode silently broke this feature. Markdown-fence-stripped JSON.parse is more
-        // broadly compatible across both providers and whatever model the user configures.
+        // Uses gemini-2.0-flash — stable, free-tier compatible, supports Google Search grounding.
+        // JSON is returned as raw text and stripped of markdown fences for broad compatibility.
         async function callGeminiJSON(promptText, systemText, useSearch, imageBase64, imageMime) {
-            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${apiKey}`;
+            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
             const parts = [{ text: promptText }];
             if (imageBase64) parts.push({ inlineData: { mimeType: imageMime, data: imageBase64 } });
             const payload = {
@@ -2030,19 +2029,23 @@
             };
             if (useSearch) payload.tools = [{ "google_search": {} }];
 
-            let attempts = 0, delay = 800;
-            while (attempts < 4) {
+            // Retry with generous back-off for 429 rate limits (5s, 10s, 20s, 40s, 60s)
+            const retryDelays = [5000, 10000, 20000, 40000, 60000];
+            for (let attempt = 0; attempt <= retryDelays.length; attempt++) {
                 const response = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
                 if (response.status === 429 || response.status >= 500) {
-                    attempts++;
-                    if (attempts >= 4) throw new Error(`Gemini error: HTTP ${response.status} after retries`);
-                    await new Promise(r => setTimeout(r, delay));
-                    delay *= 2;
+                    if (attempt >= retryDelays.length) {
+                        let detail = '';
+                        try { const errBody = await response.json(); detail = errBody.error?.message || ''; } catch (e) {}
+                        throw new Error(`Gemini error: HTTP ${response.status} after retries${detail ? ' — ' + detail : ''}`);
+                    }
+                    console.warn(`Gemini HTTP ${response.status}. Waiting ${retryDelays[attempt] / 1000}s before retry ${attempt + 1}/${retryDelays.length}...`);
+                    await new Promise(r => setTimeout(r, retryDelays[attempt]));
                     continue;
                 }
                 if (!response.ok) {
                     let detail = '';
-                    try { const errBody = await response.json(); detail = errBody.error && errBody.error.message; } catch (e) {}
+                    try { const errBody = await response.json(); detail = errBody.error?.message || ''; } catch (e) {}
                     throw new Error(`Gemini error: HTTP ${response.status}${detail ? ' — ' + detail : ''}`);
                 }
                 const data = await response.json();
