@@ -328,37 +328,81 @@
 
         </section>
 
-        <!-- Vehicle Vault App Card -->
-        <section class="max-w-5xl mx-auto w-full mt-6">
-            <div class="glass-card border border-slate-800/80 hover:border-cyan-500/40 rounded-3xl p-6 md:p-8 transition-all duration-300 group relative overflow-hidden shadow-2xl">
+        <!-- FEATURED APP: Vehicle Vault (Active Layout with Showcase Demo) -->
+        <section class="max-w-5xl mx-auto w-full mt-8">
+            <div class="glass-card border border-slate-800/80 hover:border-cyan-500/40 rounded-3xl p-6 md:p-8 lg:p-10 transition-all duration-300 glow-cyan group relative overflow-hidden shadow-2xl">
                 <div class="absolute top-0 right-0 w-32 h-32 bg-cyan-500/5 rounded-full blur-3xl pointer-events-none"></div>
-                <div class="flex flex-col md:flex-row items-center gap-8">
-                    <div class="flex-1 space-y-4">
-                        <div class="flex items-center gap-3">
-                            <div class="h-14 w-14 rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20 flex-shrink-0">
-                                <i class="fa-solid fa-car text-slate-950 text-xl"></i>
-                            </div>
-                            <div>
-                                <div class="flex items-center gap-2">
-                                    <span class="font-bold text-slate-400 text-xs uppercase tracking-widest">Coming Online</span>
-                                    <span class="text-[10px] font-bold bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 px-1.5 py-0.5 rounded-full">v1.0</span>
+                
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                    <!-- Left Column: Details -->
+                    <div class="lg:col-span-5 flex flex-col justify-between h-full space-y-6">
+                        <div>
+                            <!-- Card Top Header -->
+                            <div class="flex justify-between items-start mb-6">
+                                <div class="h-14 w-14 rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/10">
+                                    <i class="fa-solid fa-car text-slate-950 text-xl"></i>
                                 </div>
-                                <h3 class="text-xl font-bold text-white group-hover:text-cyan-400 transition-colors">Vehicle Vault</h3>
+                                <span class="inline-flex items-center gap-1.5 text-[10px] font-bold bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 px-2.5 py-1 rounded-full uppercase tracking-wider">
+                                    <span class="h-1.5 w-1.5 rounded-full bg-cyan-400 animate-pulse inline-block"></span> Active Release
+                                </span>
+                            </div>
+
+                            <!-- App Title -->
+                            <h3 class="text-xl md:text-2xl font-bold text-white group-hover:text-cyan-400 transition-colors">
+                                Vehicle Vault &amp; Fleet Tracker
+                            </h3>
+                            <p class="text-xs text-slate-400 mt-2 mb-6 leading-relaxed">
+                                A comprehensive, local-first utility to log mileage, track maintenance schedules, manage insurance/registration documents, and calculate monthly proration costs.
+                            </p>
+
+                            <!-- Feature list -->
+                            <div class="space-y-3 mb-6">
+                                <div class="flex items-start gap-2.5 text-xs text-slate-300">
+                                    <i class="fa-solid fa-circle-check text-cyan-400 mt-0.5"></i>
+                                    <span><strong>Cost Analytics Dashboard:</strong> Visualize insurance premiums and log history using interactive bar and ratio charts.</span>
+                                </div>
+                                <div class="flex items-start gap-2.5 text-xs text-slate-300">
+                                    <i class="fa-solid fa-circle-check text-cyan-400 mt-0.5"></i>
+                                    <span><strong>Emergency Accident Hub:</strong> Flashing accident help button with calming steps, call shortcuts, and info-exchange card scans.</span>
+                                </div>
+                                <div class="flex items-start gap-2.5 text-xs text-slate-300">
+                                    <i class="fa-solid fa-circle-check text-cyan-400 mt-0.5"></i>
+                                    <span><strong>Smart Document Glovebox:</strong> Compress and scan driver licenses, insurance policies, and registrations directly from your phone.</span>
+                                </div>
                             </div>
                         </div>
-                        <p class="text-sm text-slate-400 leading-relaxed max-w-lg">
-                            Track service intervals, maintenance history, insurance and registration expiry, and VINs for all your vehicles. AI Enrich populates vehicle-specific guides, known issues, and YouTube tutorials using Gemini. Integrates directly with StartMyCar.com and NHTSA recall lookup.
-                        </p>
-                        <div class="flex flex-wrap gap-2">
-                            <span class="text-[10px] font-semibold px-2.5 py-1 bg-slate-900 border border-slate-800 text-slate-400 rounded-full">Service Intervals</span>
-                            <span class="text-[10px] font-semibold px-2.5 py-1 bg-slate-900 border border-slate-800 text-slate-400 rounded-full">Maintenance Log</span>
-                            <span class="text-[10px] font-semibold px-2.5 py-1 bg-slate-900 border border-slate-800 text-slate-400 rounded-full">Expiry Alerts</span>
-                            <span class="text-[10px] font-semibold px-2.5 py-1 bg-slate-900 border border-slate-800 text-slate-400 rounded-full">AI Enrich</span>
-                            <span class="text-[10px] font-semibold px-2.5 py-1 bg-slate-900 border border-slate-800 text-slate-400 rounded-full">StartMyCar.com</span>
-                        </div>
-                        <a href="vehicle_vault.html" class="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-extrabold text-sm rounded-xl shadow-lg shadow-cyan-500/20 transition-all duration-200">
+
+                        <!-- Launch Button CTA -->
+                        <a href="vehicle_vault.html" class="w-full py-3.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-extrabold rounded-2xl text-center shadow-lg shadow-cyan-500/15 hover:shadow-cyan-500/25 transition-all duration-300 flex items-center justify-center gap-2">
                             Launch Vehicle Vault <i class="fa-solid fa-arrow-right text-xs"></i>
                         </a>
+                    </div>
+
+                    <!-- Right Column: Interactive Browser Showcase -->
+                    <div class="lg:col-span-7 relative group/browser">
+                        <!-- Neon Glow Underlay -->
+                        <div class="absolute -inset-1 bg-gradient-to-tr from-cyan-500 to-blue-600 rounded-2xl blur opacity-15 group-hover/browser:opacity-30 transition duration-500"></div>
+                        
+                        <!-- Mock Browser Window Frame -->
+                        <div class="relative bg-slate-950 rounded-2xl border border-slate-800 shadow-2xl overflow-hidden transform group-hover/browser:scale-[1.01] transition-all duration-500">
+                            <!-- Mac style header -->
+                            <div class="flex items-center gap-2 px-4 py-3 bg-slate-900 border-b border-slate-850/80">
+                                <div class="flex gap-1.5">
+                                    <span class="w-3 h-3 rounded-full bg-rose-500/60 block"></span>
+                                    <span class="w-3 h-3 rounded-full bg-amber-500/60 block"></span>
+                                    <span class="w-3 h-3 rounded-full bg-emerald-500/60 block"></span>
+                                </div>
+                                <div class="flex-1 max-w-md mx-auto bg-slate-950 border border-slate-850 rounded-md py-0.5 px-3 flex items-center justify-center gap-1.5 text-[10px] text-slate-500 font-mono">
+                                    <i class="fa-solid fa-lock text-[8px] text-cyan-500/80"></i>
+                                    <span>thorpetech.org/vehicle_vault.html</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Browser Screen Content -->
+                            <div class="aspect-video w-full overflow-hidden bg-slate-950 relative">
+                                <img src="vehicle_vault_demo.png" class="w-full h-full object-cover group-hover/browser:scale-105 transition-all duration-1000" alt="Vehicle Vault App Demo Screenshot">
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

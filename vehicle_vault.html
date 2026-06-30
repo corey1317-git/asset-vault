@@ -87,6 +87,9 @@
             <i class="fa-solid fa-gear text-base"></i>
             <span id="api-key-dot" class="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-amber-400 border border-slate-900 hidden"></span>
         </button>
+        <button onclick="openWelcomeModal()" class="h-9 w-9 bg-slate-800 hover:bg-slate-700 text-slate-400 border border-slate-750 rounded-xl transition flex items-center justify-center" title="Application Guide &amp; Privacy Details">
+            <i class="fa-solid fa-circle-question text-base"></i>
+        </button>
     </div>
 </header>
 
@@ -1030,6 +1033,88 @@
     </div>
 </div>
 
+<!-- Application Guide & Intro Modal -->
+<div id="welcome-modal" class="fixed inset-0 z-[920] hidden items-center justify-center p-4 bg-black/85 backdrop-blur-sm" onclick="closeWelcomeModal()">
+    <div class="bg-slate-900 border border-slate-800 rounded-3xl shadow-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto flex flex-col" onclick="event.stopPropagation()">
+        <!-- Header -->
+        <div class="flex items-center justify-between px-6 py-4 border-b border-slate-800 sticky top-0 bg-slate-900 z-10">
+            <div class="flex items-center gap-3">
+                <div class="h-10 w-10 rounded-xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center border border-cyan-500/20">
+                    <i class="fa-solid fa-circle-question text-lg"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-white text-base leading-tight">Welcome to Vehicle Vault</h3>
+                    <p class="text-xs text-slate-400">Application guide &amp; offline privacy disclosure</p>
+                </div>
+            </div>
+            <button onclick="closeWelcomeModal()" class="text-slate-500 hover:text-slate-300 transition"><i class="fa-solid fa-xmark text-lg"></i></button>
+        </div>
+
+        <!-- Body -->
+        <div class="p-6 space-y-5 text-xs leading-relaxed text-slate-350 overflow-y-auto">
+            <!-- Calming Intro -->
+            <p>
+                <strong>Vehicle Vault</strong> is your personal offline assistant designed to track car maintenance schedules, log service history, analyze insurance premiums, and aid you during roadside incidents.
+            </p>
+
+            <!-- CRITICAL PRIVACY BANNER -->
+            <div class="bg-amber-500/5 border border-amber-500/20 rounded-2xl p-4 space-y-2">
+                <h4 class="font-extrabold text-[10px] text-amber-400 uppercase tracking-wide flex items-center gap-1.5">
+                    <i class="fa-solid fa-shield-halved"></i> 100% Private &amp; Offline Storage
+                </h4>
+                <p class="text-slate-300">
+                    Your privacy is our priority. <strong>No data, vehicle profiles, logs, or card uploads are ever sent to Thorpe Tech servers.</strong> All information is compressed and stored locally in your browser's local storage.
+                </p>
+                <p class="text-slate-400">
+                    ⚠️ <strong>CRITICAL BACKUP REQUIREMENT:</strong> Clearing your browser cookies or cache will erase all your profiles. Please use the <strong>Save Backup</strong> or <strong>Google Drive Save</strong> buttons in the header toolbar regularly to avoid data loss.
+                </p>
+            </div>
+
+            <!-- Features -->
+            <div class="space-y-3">
+                <h4 class="font-bold text-slate-200 uppercase tracking-wider text-[10px]">What the App Does</h4>
+                
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div class="bg-slate-950/60 border border-slate-850 p-3 rounded-xl">
+                        <span class="font-bold text-slate-200 block mb-1">🔧 Maintenance Schedule</span>
+                        Log oil changes, rotations, or air filters. Set up custom mileage and date notifications.
+                    </div>
+                    <div class="bg-slate-950/60 border border-slate-850 p-3 rounded-xl">
+                        <span class="font-bold text-slate-200 block mb-1">📊 Prorated Expense Charts</span>
+                        Prerate insurance rates (Monthly, Semi-Annual, Annual) and compare spending in grouped bars.
+                    </div>
+                    <div class="bg-slate-950/60 border border-slate-850 p-3 rounded-xl">
+                        <span class="font-bold text-slate-200 block mb-1">📂 Document Scan Glovebox</span>
+                        Scan card photos (License, Reg, Policy) and downscale sizes automatically to fit browser quotas.
+                    </div>
+                    <div class="bg-slate-955 bg-slate-950/60 border border-slate-850 p-3 rounded-xl">
+                        <span class="font-bold text-slate-200 block mb-1">🚨 Roadside Accident Hub</span>
+                        Instantly call emergency services or carriers, follow crash safety guides, and log details.
+                    </div>
+                </div>
+            </div>
+
+            <!-- How to use -->
+            <div class="space-y-2.5">
+                <h4 class="font-bold text-slate-200 uppercase tracking-wider text-[10px]">How to Get Started</h4>
+                <ol class="list-decimal pl-4 space-y-1.5 text-slate-400">
+                    <li>Add your vehicle make, model, current mileage, and premium rates via <strong>+ Add Vehicle</strong>.</li>
+                    <li>Open the vehicle card, click <strong>Digital Glovebox</strong>, and scan documents to prepare for roadside emergencies.</li>
+                    <li>Update mileage or log services whenever you visit a repair shop. Add receipts to logs.</li>
+                    <li>Regularly export database files as backup to prevent data loss.</li>
+                </ol>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="px-6 py-4 border-t border-slate-800 flex justify-end sticky bottom-0 bg-slate-900 z-10">
+            <button onclick="closeWelcomeModal()" class="px-5 py-2.5 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold rounded-xl transition text-xs flex items-center gap-1.5">
+                Get Started <i class="fa-solid fa-arrow-right text-[10px]"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
 <!-- Document Lightbox Modal -->
 <div id="doc-lightbox" class="fixed inset-0 z-[9999] hidden items-center justify-center p-4 bg-black/95 backdrop-blur-sm" onclick="closeDocLightbox()">
     <button onclick="closeDocLightbox()" class="absolute top-6 right-6 text-white hover:text-slate-300 transition text-2xl">
@@ -1674,6 +1759,10 @@ window.addEventListener('DOMContentLoaded', () => {
     document.getElementById('log-type').addEventListener('change', function() {
         document.getElementById('log-custom-type-wrap').classList.toggle('hidden', this.value !== 'Other');
     });
+    // First-time welcome intro
+    if (!localStorage.getItem('vv_welcome_dismissed')) {
+        setTimeout(() => openWelcomeModal(), 400);
+    }
 });
 
 // ── Render ────────────────────────────────────────────────
@@ -3006,6 +3095,24 @@ function renderCostsTab(v) {
     }
 }
 
+// ── Application Guide & Welcome Modals ────────────────────
+function openWelcomeModal() {
+    const modal = document.getElementById('welcome-modal');
+    if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+}
+
+function closeWelcomeModal() {
+    const modal = document.getElementById('welcome-modal');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+        localStorage.setItem('vv_welcome_dismissed', 'true');
+    }
+}
+
 // ── Interactive Changelog Modals ──────────────────────────
 function openChangelog() {
     const modal = document.getElementById('changelogModal');
@@ -3208,7 +3315,7 @@ function saveAccidentReport() {
 }
 
 // Close modals on backdrop click
-['settingsModal','vehicle-modal','log-modal','mileage-modal','glovebox-modal','doc-lightbox','changelogModal','accident-modal'].forEach(id => {
+['settingsModal','vehicle-modal','log-modal','mileage-modal','glovebox-modal','doc-lightbox','changelogModal','accident-modal','welcome-modal'].forEach(id => {
     document.getElementById(id)?.addEventListener('click', function(e) {
         if (e.target === this) {
             if (id === 'settingsModal') closeSettingsModal();
@@ -3219,6 +3326,7 @@ function saveAccidentReport() {
             else if (id === 'doc-lightbox') closeDocLightbox();
             else if (id === 'changelogModal') closeChangelog();
             else if (id === 'accident-modal') closeAccidentModal();
+            else if (id === 'welcome-modal') closeWelcomeModal();
         }
     });
 });
