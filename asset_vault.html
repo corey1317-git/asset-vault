@@ -134,6 +134,10 @@
             <button onclick="openAddModal()" class="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-slate-950 text-sm font-bold rounded-xl shadow-lg shadow-emerald-500/10 transition flex items-center gap-2">
                 <i class="fa-solid fa-plus text-sm"></i> Add Asset
             </button>
+            <button id="settings-btn" onclick="openSettingsModal()" class="h-9 w-9 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 border border-slate-750 hover:border-slate-755 rounded-xl transition flex items-center justify-center relative" title="Settings (API Key)">
+                <i class="fa-solid fa-gear text-base text-slate-400"></i>
+                <span id="api-key-dot" class="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-amber-400 border border-slate-900 hidden"></span>
+            </button>
             <button onclick="openWelcomeSplash()" class="h-9 w-9 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 border border-slate-750 hover:border-slate-755 rounded-xl transition flex items-center justify-center" title="How to Use Guide">
                 <i class="fa-solid fa-circle-question text-base text-indigo-400"></i>
             </button>
@@ -783,8 +787,8 @@
 
     <!-- Main JS Application Controllers -->
     <script>
-        // Set up the API Key config as empty string (provided by environment)
-        const apiKey = "";
+        // Gemini API key — stored in localStorage, never hardcoded
+        let apiKey = localStorage.getItem('av_gemini_api_key') || "";
 
         // Developer cloud API configurations (specify standard OAuth 2.0 app client IDs here)
         const googleClientId = "386561707147-fkqqbg1qeb7prudclclmcbg26ctcpgkb.apps.googleusercontent.com";
@@ -932,6 +936,7 @@
             renderAll();
             checkWelcomeSplash();
             handleOAuthRedirectCallback();
+            updateApiKeyDot(); // Show amber dot on gear icon if no API key is set
         });
 
         // Trigger updates across UI elements
@@ -1740,6 +1745,12 @@
             const statusLabel = document.getElementById('aiLoadingStatus');
             const subtextLabel = document.getElementById('aiLoadingSubtext');
 
+            if (!apiKey) {
+                showNotification("API Key Required", "Click the ⚙ Settings button in the header to add your free Gemini API key.", "amber");
+                openSettingsModal();
+                return;
+            }
+
             if (overlay) overlay.classList.remove('hidden');
             if (statusLabel) statusLabel.innerText = "Connecting to Gemini 2.5 Flash...";
             if (subtextLabel) subtextLabel.innerText = "Setting up connection context with Google Generative AI servers...";
@@ -1867,7 +1878,8 @@
         // AI Enrich: Update care guides, parts, tips, and manual URL for an existing asset
         async function enrichAssetWithAI(id) {
             if (!apiKey) {
-                showNotification("API Key Required", "Add your Gemini API key to the apiKey variable at the top of this file.", "amber");
+                showNotification("API Key Required", "Click the ⚙ Settings button in the header to add your free Gemini API key.", "amber");
+                openSettingsModal();
                 return;
             }
 
@@ -2356,12 +2368,98 @@ Use Google Search to find accurate, model-specific information. Return:
         function closeWelcomeSplash() {
             const modal = document.getElementById('welcomeSplashModal');
             if (modal) modal.classList.add('hidden');
-            
+
             const checkbox = document.getElementById('hideWelcomeCheckbox');
             if (checkbox && checkbox.checked) {
                 localStorage.setItem('vault_hide_welcome', 'true');
             }
         }
+
+        // ── Settings Modal (Gemini API Key) ──────────────────────
+        function openSettingsModal() {
+            const modal = document.getElementById('settingsModal');
+            if (!modal) return;
+            // Pre-fill with current key (masked)
+            const input = document.getElementById('settingsApiKeyInput');
+            if (input) input.value = apiKey || '';
+            // Reset eye icon to hidden state
+            if (input) input.type = 'password';
+            const eye = document.getElementById('apiKeyEyeIcon');
+            if (eye) { eye.classList.remove('fa-eye-slash'); eye.classList.add('fa-eye'); }
+            // Hide status
+            const statusEl = document.getElementById('apiKeyStatus');
+            if (statusEl) statusEl.classList.add('hidden');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeSettingsModal() {
+            const modal = document.getElementById('settingsModal');
+            if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+        }
+
+        function toggleApiKeyVisibility() {
+            const input = document.getElementById('settingsApiKeyInput');
+            const icon = document.getElementById('apiKeyEyeIcon');
+            if (!input) return;
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye'); icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash'); icon.classList.add('fa-eye');
+            }
+        }
+
+        function saveApiKey() {
+            const input = document.getElementById('settingsApiKeyInput');
+            const statusEl = document.getElementById('apiKeyStatus');
+            const statusText = document.getElementById('apiKeyStatusText');
+            const newKey = (input ? input.value.trim() : '');
+
+            if (!newKey) {
+                // Clear key
+                apiKey = '';
+                localStorage.removeItem('av_gemini_api_key');
+                updateApiKeyDot();
+                if (statusText) statusText.textContent = 'API key cleared.';
+                if (statusText) statusText.className = 'text-[11px] text-center font-medium text-slate-400';
+                if (statusEl) statusEl.classList.remove('hidden');
+                return;
+            }
+
+            // Basic format check — Gemini keys start with AIza or are ~39 chars
+            if (newKey.length < 20) {
+                if (statusText) statusText.textContent = 'That doesn\'t look like a valid API key.';
+                if (statusText) statusText.className = 'text-[11px] text-center font-medium text-rose-400';
+                if (statusEl) statusEl.classList.remove('hidden');
+                return;
+            }
+
+            apiKey = newKey;
+            localStorage.setItem('av_gemini_api_key', newKey);
+            updateApiKeyDot();
+            if (statusText) statusText.textContent = '✓ API key saved — AI features are ready!';
+            if (statusText) statusText.className = 'text-[11px] text-center font-medium text-emerald-400';
+            if (statusEl) statusEl.classList.remove('hidden');
+            // Close after a moment
+            setTimeout(() => closeSettingsModal(), 1200);
+        }
+
+        function updateApiKeyDot() {
+            const dot = document.getElementById('api-key-dot');
+            if (!dot) return;
+            if (!apiKey) {
+                dot.classList.remove('hidden'); // amber dot = key missing
+            } else {
+                dot.classList.add('hidden');
+            }
+        }
+
+        // Close settings modal on backdrop click
+        document.getElementById('settingsModal')?.addEventListener('click', function(e) {
+            if (e.target === this) closeSettingsModal();
+        });
 
         // Cloud Backup Hub Actions
         let googleTokenClient = null;
@@ -2673,6 +2771,62 @@ Use Google Search to find accurate, model-specific information. Return:
                 <button onclick="closeCloudSyncModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-lg transition text-[11px]">
                     Close
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         SETTINGS MODAL — Gemini API Key
+    ═══════════════════════════════════════════════════════ -->
+    <div id="settingsModal" class="fixed inset-0 z-[900] hidden items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-md p-6 relative">
+            <button onclick="closeSettingsModal()" class="absolute top-4 right-4 text-slate-500 hover:text-slate-300 transition">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <div class="flex items-center gap-3 mb-5">
+                <div class="h-10 w-10 rounded-xl bg-gradient-to-tr from-violet-600 to-indigo-500 flex items-center justify-center shadow-lg">
+                    <i class="fa-solid fa-gear text-white text-base"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-white text-base leading-tight">Settings</h3>
+                    <p class="text-[11px] text-slate-400">Gemini AI configuration</p>
+                </div>
+            </div>
+
+            <!-- API Key Section -->
+            <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 mb-4">
+                <div class="flex items-center gap-2 mb-3">
+                    <i class="fa-solid fa-key text-amber-400 text-sm"></i>
+                    <span class="text-xs font-bold text-slate-200 uppercase tracking-wider">Gemini API Key</span>
+                    <span class="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-1.5 py-0.5 rounded-full font-semibold">FREE</span>
+                </div>
+                <p class="text-[11px] text-slate-400 mb-3 leading-relaxed">Required for AI Generate and AI Enrich features. Google's free tier gives you plenty of usage with no credit card needed.</p>
+                <div class="flex gap-2 mb-3">
+                    <input type="password" id="settingsApiKeyInput" placeholder="Paste your Gemini API key here..."
+                        class="flex-1 bg-slate-900 border border-slate-700 focus:border-violet-500 rounded-lg px-3 py-2 text-sm text-slate-200 placeholder-slate-600 focus:outline-none transition font-mono">
+                    <button onclick="toggleApiKeyVisibility()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 border border-slate-700 rounded-lg transition text-xs" title="Show/hide key">
+                        <i id="apiKeyEyeIcon" class="fa-solid fa-eye"></i>
+                    </button>
+                </div>
+                <div class="flex gap-2">
+                    <a href="https://aistudio.google.com/apikey" target="_blank"
+                        class="flex-1 text-center px-3 py-2 bg-slate-800 hover:bg-slate-700 text-indigo-400 hover:text-indigo-300 border border-slate-700 text-xs font-semibold rounded-lg transition flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i> Get Free Key at AI Studio
+                    </a>
+                    <button onclick="saveApiKey()" class="flex-1 px-3 py-2 bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold rounded-lg transition flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-floppy-disk"></i> Save Key
+                    </button>
+                </div>
+                <div id="apiKeyStatus" class="mt-2.5 hidden">
+                    <p id="apiKeyStatusText" class="text-[11px] text-center font-medium"></p>
+                </div>
+            </div>
+
+            <div class="bg-indigo-500/5 border border-indigo-500/20 rounded-xl p-3">
+                <p class="text-[11px] text-indigo-300 leading-relaxed">
+                    <i class="fa-solid fa-shield-halved mr-1"></i>
+                    <strong>Privacy:</strong> Your API key is stored only in this browser's localStorage. It never leaves your device and is never sent to any server other than Google's Gemini API directly.
+                </p>
             </div>
         </div>
     </div>

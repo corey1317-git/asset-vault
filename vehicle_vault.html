@@ -1,0 +1,1461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vehicle Vault — Thorpe Tech</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+        body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        ::-webkit-scrollbar { width: 7px; height: 7px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        .status-ok    { color: #34d399; }
+        .status-soon  { color: #fbbf24; }
+        .status-due   { color: #f87171; }
+        .card-hover { transition: transform 0.15s ease, box-shadow 0.15s ease; }
+        .card-hover:hover { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+        .tab-active { border-bottom: 2px solid #22d3ee; color: #e2e8f0; }
+        .tab-inactive { border-bottom: 2px solid transparent; color: #94a3b8; }
+        @keyframes fadeIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }
+        .fade-in { animation: fadeIn 0.2s ease forwards; }
+        @keyframes shimmer { 0%{background-position:200% center} 100%{background-position:-200% center} }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col overflow-x-hidden">
+
+<!-- ═══════════ HEADER ═══════════ -->
+<header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-40 px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+    <div class="flex items-center space-x-3.5 self-start md:self-auto">
+        <div class="h-11 w-11 rounded-xl bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+            <!-- Car key / vehicle icon SVG -->
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="w-6 h-6">
+                <path d="M5 11L6.5 6.5C7 5 8 4 9.5 4H14.5C16 4 17 5 17.5 6.5L19 11" stroke="#0f172a" stroke-width="1.8" stroke-linecap="round"/>
+                <rect x="2" y="11" width="20" height="7" rx="2" fill="#0f172a" fill-opacity="0.15" stroke="#0f172a" stroke-width="1.8"/>
+                <circle cx="6.5" cy="14.5" r="1.5" fill="#0f172a"/>
+                <circle cx="17.5" cy="14.5" r="1.5" fill="#0f172a"/>
+                <path d="M2 14H4M20 14H22" stroke="#0f172a" stroke-width="1.8" stroke-linecap="round"/>
+                <path d="M9 11H15" stroke="#0f172a" stroke-width="1.5" stroke-linecap="round"/>
+                <path d="M2 18V20M22 18V20" stroke="#0f172a" stroke-width="1.8" stroke-linecap="round"/>
+            </svg>
+        </div>
+        <div>
+            <div class="flex items-center gap-2">
+                <h1 class="font-extrabold text-xl leading-tight bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">Vehicle Vault</h1>
+                <span class="text-[10px] font-bold bg-cyan-500/10 text-cyan-400 border border-cyan-500/30 px-2 py-0.5 rounded-full">v1.0.0</span>
+            </div>
+            <p class="text-[11px] text-slate-500 hidden md:block">Maintenance tracker &amp; service scheduler</p>
+        </div>
+    </div>
+    <div class="flex items-center gap-2 flex-wrap justify-end">
+        <a href="index.html" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 border border-slate-750 text-xs font-semibold rounded-xl transition flex items-center gap-1.5">
+            <i class="fa-solid fa-house text-slate-500"></i> Home
+        </a>
+        <a href="asset_vault.html" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 border border-slate-750 text-xs font-semibold rounded-xl transition flex items-center gap-1.5">
+            <i class="fa-solid fa-box-open text-emerald-400"></i> Asset Vault
+        </a>
+        <button onclick="openAddModal()" class="px-4 py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-sm font-bold rounded-xl shadow-lg shadow-cyan-500/20 transition flex items-center gap-2">
+            <i class="fa-solid fa-plus text-sm"></i> Add Vehicle
+        </button>
+        <button id="settings-btn" onclick="openSettingsModal()" class="relative h-9 w-9 bg-slate-800 hover:bg-slate-700 text-slate-400 border border-slate-750 rounded-xl transition flex items-center justify-center" title="Settings">
+            <i class="fa-solid fa-gear text-base"></i>
+            <span id="api-key-dot" class="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-amber-400 border border-slate-900 hidden"></span>
+        </button>
+    </div>
+</header>
+
+<!-- ═══════════ STATS BAR ═══════════ -->
+<div id="stats-bar" class="bg-slate-900/50 border-b border-slate-800 px-6 py-3">
+    <div class="max-w-[1750px] mx-auto grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div class="flex items-center gap-2.5">
+            <div class="h-8 w-8 rounded-lg bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center flex-shrink-0">
+                <i class="fa-solid fa-car text-cyan-400 text-xs"></i>
+            </div>
+            <div>
+                <div id="stat-vehicles" class="text-base font-extrabold text-white">0</div>
+                <div class="text-[10px] text-slate-500 uppercase tracking-wide">Vehicles</div>
+            </div>
+        </div>
+        <div class="flex items-center gap-2.5">
+            <div class="h-8 w-8 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center flex-shrink-0">
+                <i class="fa-solid fa-triangle-exclamation text-amber-400 text-xs"></i>
+            </div>
+            <div>
+                <div id="stat-due" class="text-base font-extrabold text-white">0</div>
+                <div class="text-[10px] text-slate-500 uppercase tracking-wide">Services Due</div>
+            </div>
+        </div>
+        <div class="flex items-center gap-2.5">
+            <div class="h-8 w-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                <i class="fa-solid fa-dollar-sign text-emerald-400 text-xs"></i>
+            </div>
+            <div>
+                <div id="stat-cost" class="text-base font-extrabold text-white">$0</div>
+                <div class="text-[10px] text-slate-500 uppercase tracking-wide">Total Spent</div>
+            </div>
+        </div>
+        <div class="flex items-center gap-2.5">
+            <div class="h-8 w-8 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center justify-center flex-shrink-0">
+                <i class="fa-solid fa-calendar-xmark text-rose-400 text-xs"></i>
+            </div>
+            <div>
+                <div id="stat-expiry" class="text-base font-extrabold text-white">—</div>
+                <div class="text-[10px] text-slate-500 uppercase tracking-wide">Next Expiry</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════ MAIN LAYOUT ═══════════ -->
+<main class="flex-1 p-6 max-w-[1750px] mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+    <!-- LEFT: Vehicle Cards -->
+    <section class="lg:col-span-8 flex flex-col gap-5">
+
+        <!-- Empty State -->
+        <div id="empty-state" class="hidden flex-col items-center justify-center py-24 text-center">
+            <div class="h-20 w-20 rounded-2xl bg-gradient-to-tr from-cyan-500/20 to-blue-600/20 border border-cyan-500/20 flex items-center justify-center mb-5">
+                <i class="fa-solid fa-car text-cyan-400 text-3xl"></i>
+            </div>
+            <h2 class="font-bold text-xl text-slate-200 mb-2">No vehicles yet</h2>
+            <p class="text-slate-500 text-sm mb-5 max-w-xs">Add your first vehicle to start tracking maintenance, service intervals, and expiry dates.</p>
+            <button onclick="openAddModal()" class="px-5 py-2.5 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold rounded-xl transition flex items-center gap-2">
+                <i class="fa-solid fa-plus"></i> Add Your First Vehicle
+            </button>
+        </div>
+
+        <!-- Vehicle Cards Grid -->
+        <div id="vehicle-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+    </section>
+
+    <!-- RIGHT: Detail Panel -->
+    <aside class="lg:col-span-4 flex flex-col gap-5">
+
+        <!-- No selection placeholder -->
+        <div id="detail-placeholder" class="bg-slate-900 border border-slate-800 rounded-2xl p-8 flex flex-col items-center justify-center text-center min-h-[300px]">
+            <div class="h-14 w-14 rounded-xl bg-slate-800 flex items-center justify-center mb-3">
+                <i class="fa-solid fa-car-side text-slate-600 text-2xl"></i>
+            </div>
+            <p class="text-slate-500 text-sm">Select a vehicle<br>to view details</p>
+        </div>
+
+        <!-- Vehicle Detail Panel (hidden until a vehicle is selected) -->
+        <div id="detail-panel" class="hidden flex flex-col gap-4 fade-in">
+
+            <!-- Vehicle header card -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
+                <div id="detail-image-area" class="h-40 bg-gradient-to-br from-slate-800 to-slate-900 relative overflow-hidden">
+                    <img id="detail-img" src="" alt="" class="w-full h-full object-cover hidden">
+                    <div id="detail-img-placeholder" class="w-full h-full flex items-center justify-center">
+                        <i class="fa-solid fa-car text-slate-700 text-5xl"></i>
+                    </div>
+                    <!-- Action buttons overlay -->
+                    <div class="absolute top-2 right-2 flex gap-1.5">
+                        <button id="detail-enrich-btn" onclick="enrichVehicle()" class="px-2.5 py-1.5 bg-slate-900/80 backdrop-blur hover:bg-violet-600 text-violet-300 hover:text-white border border-violet-500/30 text-[10px] font-bold rounded-lg transition flex items-center gap-1">
+                            <i class="fa-solid fa-wand-magic-sparkles text-[10px]"></i> AI Enrich
+                        </button>
+                        <button id="detail-edit-btn" onclick="openEditModal()" class="px-2.5 py-1.5 bg-slate-900/80 backdrop-blur hover:bg-slate-700 text-slate-300 border border-slate-700 text-[10px] font-bold rounded-lg transition">
+                            <i class="fa-solid fa-pen"></i>
+                        </button>
+                        <button id="detail-delete-btn" onclick="deleteVehicle()" class="px-2.5 py-1.5 bg-slate-900/80 backdrop-blur hover:bg-rose-600/80 text-slate-400 hover:text-white border border-slate-700 text-[10px] font-bold rounded-lg transition">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="p-4">
+                    <div class="flex items-start justify-between gap-2 mb-1">
+                        <div>
+                            <h2 id="detail-nickname" class="font-extrabold text-lg text-white leading-tight"></h2>
+                            <p id="detail-year-make" class="text-sm text-slate-400"></p>
+                        </div>
+                        <div id="detail-badges" class="flex flex-col gap-1 items-end flex-shrink-0"></div>
+                    </div>
+                    <!-- Quick info row -->
+                    <div class="grid grid-cols-2 gap-2 mt-3">
+                        <div class="bg-slate-950 rounded-lg px-3 py-2">
+                            <div class="text-[10px] text-slate-500 uppercase tracking-wide mb-0.5">Mileage</div>
+                            <div id="detail-mileage" class="text-sm font-bold text-white"></div>
+                        </div>
+                        <div class="bg-slate-950 rounded-lg px-3 py-2">
+                            <div class="text-[10px] text-slate-500 uppercase tracking-wide mb-0.5">VIN</div>
+                            <div id="detail-vin" class="text-[11px] font-mono text-slate-300 truncate"></div>
+                        </div>
+                        <div class="bg-slate-950 rounded-lg px-3 py-2">
+                            <div class="text-[10px] text-slate-500 uppercase tracking-wide mb-0.5">Insurance Exp.</div>
+                            <div id="detail-ins-expiry" class="text-sm font-bold"></div>
+                        </div>
+                        <div class="bg-slate-950 rounded-lg px-3 py-2">
+                            <div class="text-[10px] text-slate-500 uppercase tracking-wide mb-0.5">Reg. Expires</div>
+                            <div id="detail-reg-expiry" class="text-sm font-bold"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
+                <div class="flex border-b border-slate-800">
+                    <button onclick="switchTab('schedule')" id="tab-schedule" class="flex-1 py-2.5 text-xs font-semibold transition tab-active">Schedule</button>
+                    <button onclick="switchTab('log')" id="tab-log" class="flex-1 py-2.5 text-xs font-semibold transition tab-inactive">Log</button>
+                    <button onclick="switchTab('guides')" id="tab-guides" class="flex-1 py-2.5 text-xs font-semibold transition tab-inactive">Guides</button>
+                    <button onclick="switchTab('info')" id="tab-info" class="flex-1 py-2.5 text-xs font-semibold transition tab-inactive">Info</button>
+                </div>
+
+                <!-- Schedule Tab -->
+                <div id="tab-content-schedule" class="p-3">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">Service Intervals</span>
+                        <button onclick="openLogModal()" class="text-[10px] px-2.5 py-1 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/20 rounded-lg font-bold transition flex items-center gap-1">
+                            <i class="fa-solid fa-plus text-[9px]"></i> Log Service
+                        </button>
+                    </div>
+                    <div id="schedule-list" class="space-y-1.5"></div>
+                </div>
+
+                <!-- Log Tab -->
+                <div id="tab-content-log" class="p-3 hidden">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-[10px] uppercase tracking-wider text-slate-500 font-semibold">Maintenance History</span>
+                        <button onclick="openLogModal()" class="text-[10px] px-2.5 py-1 bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-400 border border-cyan-500/20 rounded-lg font-bold transition flex items-center gap-1">
+                            <i class="fa-solid fa-plus text-[9px]"></i> Add Record
+                        </button>
+                    </div>
+                    <div id="log-list" class="space-y-1.5"></div>
+                    <div id="log-empty" class="hidden py-6 text-center text-slate-600 text-xs">No service records yet</div>
+                    <div id="log-total" class="hidden mt-3 pt-2 border-t border-slate-800 flex justify-between text-xs text-slate-400">
+                        <span>Total spent</span>
+                        <span id="log-total-val" class="font-bold text-emerald-400"></span>
+                    </div>
+                </div>
+
+                <!-- Guides Tab -->
+                <div id="tab-content-guides" class="p-3 hidden">
+                    <div id="guides-startmycar" class="mb-3"></div>
+                    <div id="guides-youtube" class="mb-3"></div>
+                    <div id="guides-nhtsa" class="mb-3"></div>
+                    <div id="guides-issues" class=""></div>
+                    <div id="guides-tips" class=""></div>
+                    <div id="guides-empty" class="py-6 text-center text-slate-600 text-xs">Run AI Enrich to populate guides and common issues.<br><br>
+                        <button onclick="enrichVehicle()" class="mt-1 px-3 py-1.5 bg-violet-600/20 hover:bg-violet-600/40 text-violet-400 border border-violet-500/30 text-[10px] font-bold rounded-lg transition">
+                            <i class="fa-solid fa-wand-magic-sparkles mr-1"></i> Enrich Now
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Info Tab -->
+                <div id="tab-content-info" class="p-3 hidden">
+                    <div id="info-content" class="space-y-2 text-xs"></div>
+                </div>
+            </div>
+        </div>
+    </aside>
+</main>
+
+<!-- ═══════════ TOAST CONTAINER ═══════════ -->
+<div id="toast-container" class="fixed bottom-5 right-5 z-[9999] flex flex-col gap-2 pointer-events-none"></div>
+
+<!-- ═══════════ ADD / EDIT VEHICLE MODAL ═══════════ -->
+<div id="vehicle-modal" class="fixed inset-0 z-[800] hidden items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-slate-800 sticky top-0 bg-slate-900 z-10">
+            <h3 id="modal-title" class="font-bold text-white text-base">Add Vehicle</h3>
+            <button onclick="closeAddModal()" class="text-slate-500 hover:text-slate-300 transition"><i class="fa-solid fa-xmark text-lg"></i></button>
+        </div>
+        <div class="p-6 space-y-5">
+
+            <!-- Image upload -->
+            <div class="flex gap-4 items-start">
+                <div class="flex-shrink-0">
+                    <div id="img-preview-wrap" class="h-24 w-32 rounded-xl bg-slate-800 border border-slate-700 overflow-hidden flex items-center justify-center cursor-pointer hover:border-cyan-500/50 transition relative" onclick="document.getElementById('img-file-input').click()">
+                        <img id="img-preview" src="" class="w-full h-full object-cover hidden">
+                        <div id="img-preview-placeholder" class="flex flex-col items-center gap-1 text-slate-600">
+                            <i class="fa-solid fa-camera text-xl"></i>
+                            <span class="text-[10px]">Photo</span>
+                        </div>
+                    </div>
+                    <input type="file" id="img-file-input" accept="image/*" class="hidden" onchange="handleImageUpload(event)">
+                    <button onclick="clearImage()" id="clear-img-btn" class="hidden mt-1 w-full text-[10px] text-rose-400 hover:text-rose-300 text-center transition">Remove</button>
+                </div>
+                <div class="flex-1 grid grid-cols-2 gap-3">
+                    <div class="col-span-2">
+                        <label class="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Nickname</label>
+                        <input id="f-nickname" type="text" placeholder="e.g. My Truck, Daily Driver" class="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-xl p-2.5 text-sm placeholder-slate-700 focus:outline-none transition">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Year</label>
+                        <input id="f-year" type="number" placeholder="2021" min="1900" max="2030" class="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-xl p-2.5 text-sm placeholder-slate-700 focus:outline-none transition">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Color</label>
+                        <input id="f-color" type="text" placeholder="Oxford White" class="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-xl p-2.5 text-sm placeholder-slate-700 focus:outline-none transition">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Make / Model / Trim -->
+            <div class="grid grid-cols-3 gap-3">
+                <div>
+                    <label class="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Make</label>
+                    <input id="f-make" type="text" placeholder="Ford" class="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-xl p-2.5 text-sm placeholder-slate-700 focus:outline-none transition">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Model</label>
+                    <input id="f-model" type="text" placeholder="F-150" class="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-xl p-2.5 text-sm placeholder-slate-700 focus:outline-none transition">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Trim</label>
+                    <input id="f-trim" type="text" placeholder="XLT" class="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-xl p-2.5 text-sm placeholder-slate-700 focus:outline-none transition">
+                </div>
+            </div>
+
+            <!-- VIN / Plate / State -->
+            <div class="grid grid-cols-3 gap-3">
+                <div class="col-span-2">
+                    <label class="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">VIN</label>
+                    <input id="f-vin" type="text" placeholder="1FTFW1E8XLKD00000" maxlength="17" class="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-xl p-2.5 text-sm placeholder-slate-700 focus:outline-none transition font-mono">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">License Plate</label>
+                    <input id="f-plate" type="text" placeholder="ABC 1234" class="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-xl p-2.5 text-sm placeholder-slate-700 focus:outline-none transition font-mono">
+                </div>
+            </div>
+
+            <!-- Mileage -->
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Current Mileage</label>
+                    <input id="f-mileage" type="number" placeholder="45000" min="0" class="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-xl p-2.5 text-sm placeholder-slate-700 focus:outline-none transition">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Purchase Date</label>
+                    <input id="f-purchase-date" type="date" class="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-xl p-2.5 text-sm text-slate-400 focus:outline-none transition">
+                </div>
+            </div>
+
+            <!-- Insurance & Registration -->
+            <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 space-y-3">
+                <p class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Insurance &amp; Registration</p>
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[10px] text-slate-500 mb-1">Insurance Provider</label>
+                        <input id="f-ins-provider" type="text" placeholder="State Farm" class="w-full bg-slate-900 border border-slate-800 focus:border-cyan-500 rounded-lg p-2 text-sm placeholder-slate-700 focus:outline-none transition">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] text-slate-500 mb-1">Policy Number</label>
+                        <input id="f-ins-policy" type="text" placeholder="POL-0000000" class="w-full bg-slate-900 border border-slate-800 focus:border-cyan-500 rounded-lg p-2 text-sm placeholder-slate-700 focus:outline-none transition font-mono">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] text-slate-500 mb-1">Insurance Expiry</label>
+                        <input id="f-ins-expiry" type="date" class="w-full bg-slate-900 border border-slate-800 focus:border-cyan-500 rounded-lg p-2 text-sm text-slate-400 focus:outline-none transition">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] text-slate-500 mb-1">Registration Expiry</label>
+                        <input id="f-reg-expiry" type="date" class="w-full bg-slate-900 border border-slate-800 focus:border-cyan-500 rounded-lg p-2 text-sm text-slate-400 focus:outline-none transition">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Purchase info (optional) -->
+            <details class="group">
+                <summary class="text-[10px] font-bold uppercase tracking-wider text-slate-500 cursor-pointer hover:text-slate-300 transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-chevron-right text-[9px] group-open:rotate-90 transition-transform"></i>
+                    Purchase Info (optional)
+                </summary>
+                <div class="grid grid-cols-2 gap-3 mt-3">
+                    <div>
+                        <label class="block text-[10px] text-slate-500 mb-1">Purchase Price</label>
+                        <input id="f-price" type="number" placeholder="32000" min="0" class="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-lg p-2 text-sm placeholder-slate-700 focus:outline-none transition">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] text-slate-500 mb-1">Purchased From</label>
+                        <input id="f-purchased-from" type="text" placeholder="Dealer / Private" class="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-lg p-2 text-sm placeholder-slate-700 focus:outline-none transition">
+                    </div>
+                </div>
+            </details>
+
+            <div class="flex justify-end gap-3 pt-2">
+                <button onclick="closeAddModal()" class="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-xl transition text-sm">Cancel</button>
+                <button onclick="saveVehicle()" class="px-5 py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold rounded-xl transition text-sm flex items-center gap-2">
+                    <i class="fa-solid fa-floppy-disk"></i> <span id="save-btn-text">Save Vehicle</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════ LOG SERVICE MODAL ═══════════ -->
+<div id="log-modal" class="fixed inset-0 z-[800] hidden items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-md">
+        <div class="flex items-center justify-between px-6 py-4 border-b border-slate-800">
+            <h3 class="font-bold text-white text-base">Log Service</h3>
+            <button onclick="closeLogModal()" class="text-slate-500 hover:text-slate-300 transition"><i class="fa-solid fa-xmark text-lg"></i></button>
+        </div>
+        <div class="p-6 space-y-4">
+            <div>
+                <label class="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Service Type</label>
+                <select id="log-type" class="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-xl p-2.5 text-sm text-slate-200 focus:outline-none transition">
+                    <option value="Oil Change">Oil Change</option>
+                    <option value="Tire Rotation">Tire Rotation</option>
+                    <option value="Air Filter">Air Filter</option>
+                    <option value="Cabin Air Filter">Cabin Air Filter</option>
+                    <option value="Brake Service">Brake Service</option>
+                    <option value="Brake Inspection">Brake Inspection</option>
+                    <option value="Transmission Service">Transmission Service</option>
+                    <option value="Coolant Flush">Coolant Flush</option>
+                    <option value="Spark Plugs">Spark Plugs</option>
+                    <option value="Battery Replacement">Battery Replacement</option>
+                    <option value="Battery Check">Battery Check</option>
+                    <option value="Tire Replacement">Tire Replacement</option>
+                    <option value="Wheel Alignment">Wheel Alignment</option>
+                    <option value="Fuel Filter">Fuel Filter</option>
+                    <option value="Wiper Blades">Wiper Blades</option>
+                    <option value="Timing Belt/Chain">Timing Belt/Chain</option>
+                    <option value="Power Steering Service">Power Steering Service</option>
+                    <option value="AC Service">AC Service</option>
+                    <option value="Inspection/State Emission">Inspection/State Emission</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+            <div id="log-custom-type-wrap" class="hidden">
+                <label class="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Custom Service Name</label>
+                <input id="log-custom-type" type="text" placeholder="Describe the service..." class="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-xl p-2.5 text-sm placeholder-slate-700 focus:outline-none transition">
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Date</label>
+                    <input id="log-date" type="date" class="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-xl p-2.5 text-sm text-slate-400 focus:outline-none transition">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Mileage at Service</label>
+                    <input id="log-mileage" type="number" placeholder="45000" class="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-xl p-2.5 text-sm placeholder-slate-700 focus:outline-none transition">
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Cost</label>
+                    <input id="log-cost" type="number" placeholder="79.99" min="0" step="0.01" class="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-xl p-2.5 text-sm placeholder-slate-700 focus:outline-none transition">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Shop / Performed By</label>
+                    <input id="log-shop" type="text" placeholder="Jiffy Lube / DIY" class="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-xl p-2.5 text-sm placeholder-slate-700 focus:outline-none transition">
+                </div>
+            </div>
+            <div>
+                <label class="block text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-1">Notes</label>
+                <textarea id="log-notes" rows="2" placeholder="Used Mobil 1 5W-30, next due at 50k miles..." class="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-xl p-2.5 text-sm placeholder-slate-700 focus:outline-none transition resize-none"></textarea>
+            </div>
+            <div class="flex justify-end gap-3 pt-1">
+                <button onclick="closeLogModal()" class="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-xl transition text-sm">Cancel</button>
+                <button onclick="saveLog()" class="px-5 py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold rounded-xl transition text-sm flex items-center gap-2">
+                    <i class="fa-solid fa-floppy-disk"></i> Save Record
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════ MILEAGE UPDATE MODAL ═══════════ -->
+<div id="mileage-modal" class="fixed inset-0 z-[800] hidden items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-sm p-6">
+        <h3 class="font-bold text-white text-base mb-4">Update Mileage</h3>
+        <input id="mileage-input" type="number" min="0" placeholder="Enter current mileage..." class="w-full bg-slate-950 border border-slate-800 focus:border-cyan-500 rounded-xl p-3 text-sm placeholder-slate-700 focus:outline-none transition mb-4">
+        <div class="flex gap-3">
+            <button onclick="closeMileageModal()" class="flex-1 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-xl transition text-sm">Cancel</button>
+            <button onclick="saveMileage()" class="flex-1 py-2 bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold rounded-xl transition text-sm">Update</button>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════ SETTINGS MODAL ═══════════ -->
+<div id="settingsModal" class="fixed inset-0 z-[900] hidden items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-md p-6 relative">
+        <button onclick="closeSettingsModal()" class="absolute top-4 right-4 text-slate-500 hover:text-slate-300 transition">
+            <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+        <div class="flex items-center gap-3 mb-5">
+            <div class="h-10 w-10 rounded-xl bg-gradient-to-tr from-violet-600 to-indigo-500 flex items-center justify-center">
+                <i class="fa-solid fa-gear text-white text-base"></i>
+            </div>
+            <div>
+                <h3 class="font-bold text-white text-base">Settings</h3>
+                <p class="text-[11px] text-slate-400">Gemini AI configuration</p>
+            </div>
+        </div>
+        <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 mb-4">
+            <div class="flex items-center gap-2 mb-3">
+                <i class="fa-solid fa-key text-amber-400 text-sm"></i>
+                <span class="text-xs font-bold text-slate-200 uppercase tracking-wider">Gemini API Key</span>
+                <span class="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-1.5 py-0.5 rounded-full font-semibold">FREE</span>
+            </div>
+            <p class="text-[11px] text-slate-400 mb-3 leading-relaxed">Required for AI Enrich. Get a free key from Google AI Studio — no credit card needed.</p>
+            <div class="flex gap-2 mb-3">
+                <input type="password" id="settingsApiKeyInput" placeholder="Paste your Gemini API key here..."
+                    class="flex-1 bg-slate-900 border border-slate-700 focus:border-violet-500 rounded-lg px-3 py-2 text-sm text-slate-200 placeholder-slate-600 focus:outline-none transition font-mono">
+                <button onclick="toggleKeyVisibility()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-400 border border-slate-700 rounded-lg transition text-xs">
+                    <i id="eye-icon" class="fa-solid fa-eye"></i>
+                </button>
+            </div>
+            <div class="flex gap-2">
+                <a href="https://aistudio.google.com/apikey" target="_blank"
+                    class="flex-1 text-center px-3 py-2 bg-slate-800 hover:bg-slate-700 text-indigo-400 border border-slate-700 text-xs font-semibold rounded-lg transition flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i> Get Free Key
+                </a>
+                <button onclick="saveApiKey()" class="flex-1 px-3 py-2 bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold rounded-lg transition flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-floppy-disk"></i> Save Key
+                </button>
+            </div>
+            <p id="key-status" class="mt-2 text-[11px] text-center font-medium hidden"></p>
+        </div>
+        <div class="bg-indigo-500/5 border border-indigo-500/20 rounded-xl p-3">
+            <p class="text-[11px] text-indigo-300 leading-relaxed">
+                <i class="fa-solid fa-shield-halved mr-1"></i>
+                Your key is stored only in this browser's localStorage — never sent anywhere except Google's Gemini API.
+            </p>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════ JAVASCRIPT ═══════════ -->
+<script>
+// ── State ────────────────────────────────────────────────
+let vehicles = JSON.parse(localStorage.getItem('vehicle_vault_data') || '[]');
+let apiKey = localStorage.getItem('vv_gemini_api_key') || '';
+let selectedId = null;
+let editingId = null;
+let stagedImageBase64 = null;
+let mileageTargetId = null;
+let currentTab = 'schedule';
+
+// ── Default Service Intervals ─────────────────────────────
+const DEFAULT_INTERVALS = [
+    { id: 'oil',          name: 'Oil Change',            mileageInterval: 5000,  monthInterval: 6  },
+    { id: 'tires',        name: 'Tire Rotation',         mileageInterval: 7500,  monthInterval: 6  },
+    { id: 'air_filter',   name: 'Air Filter',            mileageInterval: 15000, monthInterval: 12 },
+    { id: 'cabin_filter', name: 'Cabin Air Filter',      mileageInterval: 15000, monthInterval: 12 },
+    { id: 'brakes',       name: 'Brake Inspection',      mileageInterval: 25000, monthInterval: 24 },
+    { id: 'trans',        name: 'Transmission Service',  mileageInterval: 30000, monthInterval: 24 },
+    { id: 'coolant',      name: 'Coolant Flush',         mileageInterval: 50000, monthInterval: 36 },
+    { id: 'spark',        name: 'Spark Plugs',           mileageInterval: 60000, monthInterval: 48 },
+    { id: 'battery',      name: 'Battery Check',         mileageInterval: 50000, monthInterval: 36 },
+];
+
+// ── Persistence ───────────────────────────────────────────
+function save() {
+    localStorage.setItem('vehicle_vault_data', JSON.stringify(vehicles));
+}
+
+function getVehicle(id) {
+    return vehicles.find(v => v.id === id);
+}
+
+// ── Init ──────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+    renderAll();
+    updateApiKeyDot();
+    // Default today's date in log modal
+    document.getElementById('log-date').value = new Date().toISOString().split('T')[0];
+    // Show custom type field when "Other" is selected
+    document.getElementById('log-type').addEventListener('change', function() {
+        document.getElementById('log-custom-type-wrap').classList.toggle('hidden', this.value !== 'Other');
+    });
+});
+
+// ── Render ────────────────────────────────────────────────
+function renderAll() {
+    renderGrid();
+    renderStats();
+    if (selectedId) renderDetail(selectedId);
+}
+
+function renderGrid() {
+    const grid = document.getElementById('vehicle-grid');
+    const empty = document.getElementById('empty-state');
+
+    if (vehicles.length === 0) {
+        grid.innerHTML = '';
+        empty.classList.remove('hidden');
+        empty.classList.add('flex');
+        return;
+    }
+    empty.classList.add('hidden');
+    empty.classList.remove('flex');
+
+    grid.innerHTML = vehicles.map(v => buildCard(v)).join('');
+}
+
+function buildCard(v) {
+    const dueCount = countDueServices(v);
+    const expiryStatus = getExpiryStatus(v);
+    const imgHtml = v.imageUrl
+        ? `<img src="${v.imageUrl}" class="w-full h-full object-cover" onerror="this.style.display='none'">`
+        : `<div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-800 to-slate-900"><i class="fa-solid fa-car text-slate-700 text-3xl"></i></div>`;
+
+    const badges = [];
+    if (dueCount > 0) badges.push(`<span class="text-[9px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20 px-1.5 py-0.5 rounded-full">${dueCount} service${dueCount>1?'s':''} due</span>`);
+    if (expiryStatus.label) badges.push(`<span class="text-[9px] font-bold ${expiryStatus.cls} px-1.5 py-0.5 rounded-full border">${expiryStatus.label}</span>`);
+
+    const selected = selectedId === v.id ? 'ring-2 ring-cyan-500/60' : '';
+
+    return `
+    <div onclick="selectVehicle(${v.id})" class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden card-hover cursor-pointer ${selected}">
+        <div class="h-36 overflow-hidden relative">${imgHtml}</div>
+        <div class="p-4">
+            <div class="flex items-start justify-between gap-2 mb-1">
+                <div>
+                    <h3 class="font-bold text-white text-sm leading-tight">${esc(v.nickname || `${v.year} ${v.make} ${v.model}`)}</h3>
+                    <p class="text-xs text-slate-500">${v.year} ${esc(v.make)} ${esc(v.model)}${v.trim ? ' ' + esc(v.trim) : ''}</p>
+                </div>
+                <div class="flex flex-col gap-1 items-end">${badges.join('')}</div>
+            </div>
+            <div class="flex items-center justify-between mt-3">
+                <div class="flex items-center gap-1 text-xs text-slate-400">
+                    <i class="fa-solid fa-gauge-simple text-slate-600 text-[10px]"></i>
+                    ${v.currentMileage ? v.currentMileage.toLocaleString() + ' mi' : '—'}
+                </div>
+                <button onclick="event.stopPropagation(); openMileageModal(${v.id})" class="text-[10px] px-2 py-1 bg-slate-800 hover:bg-cyan-500/10 text-slate-500 hover:text-cyan-400 border border-slate-700 hover:border-cyan-500/30 rounded-lg transition">
+                    <i class="fa-solid fa-pencil text-[9px]"></i> mi
+                </button>
+            </div>
+        </div>
+    </div>`;
+}
+
+function renderStats() {
+    const total = vehicles.length;
+    const due = vehicles.reduce((n, v) => n + countDueServices(v), 0);
+    const cost = vehicles.reduce((n, v) =>
+        n + (v.maintenanceLogs || []).reduce((s, l) => s + (parseFloat(l.cost) || 0), 0), 0);
+
+    // Next expiry across all vehicles
+    const dates = [];
+    vehicles.forEach(v => {
+        if (v.insuranceExpiry) dates.push({ label: 'Ins.', date: v.insuranceExpiry });
+        if (v.registrationExpiry) dates.push({ label: 'Reg.', date: v.registrationExpiry });
+    });
+    dates.sort((a, b) => new Date(a.date) - new Date(b.date));
+    const next = dates.find(d => new Date(d.date) >= new Date());
+
+    document.getElementById('stat-vehicles').textContent = total;
+    document.getElementById('stat-due').textContent = due;
+    document.getElementById('stat-cost').textContent = '$' + cost.toLocaleString('en-US', {minimumFractionDigits:0, maximumFractionDigits:0});
+    document.getElementById('stat-expiry').textContent = next
+        ? `${next.label} ${new Date(next.date + 'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}`
+        : '—';
+}
+
+// ── Vehicle Selection & Detail ────────────────────────────
+function selectVehicle(id) {
+    selectedId = id;
+    renderGrid(); // re-render to update selected ring
+    renderDetail(id);
+    document.getElementById('detail-placeholder').classList.add('hidden');
+    document.getElementById('detail-panel').classList.remove('hidden');
+    document.getElementById('detail-panel').classList.add('flex');
+}
+
+function renderDetail(id) {
+    const v = getVehicle(id);
+    if (!v) return;
+
+    // Image
+    const img = document.getElementById('detail-img');
+    const imgPh = document.getElementById('detail-img-placeholder');
+    if (v.imageUrl) {
+        img.src = v.imageUrl;
+        img.classList.remove('hidden');
+        imgPh.classList.add('hidden');
+    } else {
+        img.classList.add('hidden');
+        imgPh.classList.remove('hidden');
+    }
+
+    document.getElementById('detail-nickname').textContent = v.nickname || `${v.year} ${v.make} ${v.model}`;
+    document.getElementById('detail-year-make').textContent = `${v.year} ${v.make} ${v.model}${v.trim ? ' ' + v.trim : ''}${v.color ? ' · ' + v.color : ''}`;
+    document.getElementById('detail-mileage').textContent = v.currentMileage ? v.currentMileage.toLocaleString() + ' mi' : '—';
+    document.getElementById('detail-vin').textContent = v.vin || '—';
+
+    // Expiry fields
+    renderExpiryField('detail-ins-expiry', v.insuranceExpiry);
+    renderExpiryField('detail-reg-expiry', v.registrationExpiry);
+
+    // Badges
+    const dueCount = countDueServices(v);
+    const badgesEl = document.getElementById('detail-badges');
+    badgesEl.innerHTML = dueCount > 0
+        ? `<span class="text-[9px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20 px-1.5 py-0.5 rounded-full">${dueCount} service${dueCount>1?'s':''} due</span>`
+        : '';
+
+    // Render current tab
+    renderTab(currentTab, v);
+}
+
+function renderExpiryField(elId, dateStr) {
+    const el = document.getElementById(elId);
+    if (!dateStr) { el.textContent = '—'; el.className = 'text-sm font-bold text-slate-500'; return; }
+    const d = new Date(dateStr + 'T00:00:00');
+    const days = Math.ceil((d - new Date()) / 86400000);
+    const fmt = d.toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
+    if (days < 0)       { el.textContent = fmt + ' (expired)';   el.className = 'text-sm font-bold text-rose-400'; }
+    else if (days <= 30){ el.textContent = fmt + ` (${days}d)`;  el.className = 'text-sm font-bold text-amber-400'; }
+    else if (days <= 90){ el.textContent = fmt;                  el.className = 'text-sm font-bold text-yellow-400'; }
+    else                { el.textContent = fmt;                  el.className = 'text-sm font-bold text-slate-300'; }
+}
+
+function switchTab(tab) {
+    currentTab = tab;
+    ['schedule','log','guides','info'].forEach(t => {
+        document.getElementById(`tab-${t}`).className = `flex-1 py-2.5 text-xs font-semibold transition ${t === tab ? 'tab-active' : 'tab-inactive'}`;
+        const content = document.getElementById(`tab-content-${t}`);
+        if (content) content.classList.toggle('hidden', t !== tab);
+    });
+    if (selectedId) renderTab(tab, getVehicle(selectedId));
+}
+
+function renderTab(tab, v) {
+    if (tab === 'schedule') renderSchedule(v);
+    else if (tab === 'log') renderLog(v);
+    else if (tab === 'guides') renderGuides(v);
+    else if (tab === 'info') renderInfo(v);
+}
+
+// ── Schedule Tab ─────────────────────────────────────────
+function renderSchedule(v) {
+    const list = document.getElementById('schedule-list');
+    const intervals = v.serviceIntervals || DEFAULT_INTERVALS.map(i => ({...i, lastDate: null, lastMileage: null}));
+    if (!v.serviceIntervals) { v.serviceIntervals = intervals; }
+
+    list.innerHTML = intervals.map(interval => {
+        const status = getIntervalStatus(interval, v.currentMileage || 0);
+        const icons = { ok: 'fa-circle-check text-emerald-400', soon: 'fa-circle-exclamation text-amber-400', overdue: 'fa-circle-xmark text-rose-400' };
+        const labels = { ok: 'text-emerald-400', soon: 'text-amber-400', overdue: 'text-rose-400' };
+
+        return `
+        <div class="flex items-center gap-2 bg-slate-950/60 rounded-lg px-3 py-2">
+            <i class="fa-solid ${icons[status.state]} text-sm flex-shrink-0"></i>
+            <div class="flex-1 min-w-0">
+                <div class="text-xs font-semibold text-slate-200 truncate">${esc(interval.name)}</div>
+                <div class="text-[10px] ${labels[status.state]}">${status.label}</div>
+            </div>
+            <button onclick="quickLogService('${esc(interval.name)}')" class="text-[9px] px-2 py-1 bg-slate-800 hover:bg-cyan-500/10 hover:text-cyan-400 text-slate-500 border border-slate-700 hover:border-cyan-500/30 rounded-md transition flex-shrink-0">Log</button>
+        </div>`;
+    }).join('');
+}
+
+function getIntervalStatus(interval, currentMileage) {
+    const { mileageInterval, monthInterval, lastDate, lastMileage } = interval;
+    const now = new Date();
+
+    // Next due by mileage
+    let nextMi = null, miRemaining = null;
+    if (lastMileage != null && mileageInterval) {
+        nextMi = lastMileage + mileageInterval;
+        miRemaining = nextMi - currentMileage;
+    }
+
+    // Next due by date
+    let daysRemaining = null;
+    if (lastDate && monthInterval) {
+        const next = new Date(lastDate + 'T00:00:00');
+        next.setMonth(next.getMonth() + monthInterval);
+        daysRemaining = Math.ceil((next - now) / 86400000);
+    }
+
+    // Determine worst status
+    const miOverdue = miRemaining != null && miRemaining <= 0;
+    const dateOverdue = daysRemaining != null && daysRemaining <= 0;
+    const miSoon = miRemaining != null && miRemaining <= 500 && !miOverdue;
+    const dateSoon = daysRemaining != null && daysRemaining <= 30 && !dateOverdue;
+
+    if (miOverdue || dateOverdue) {
+        const parts = [];
+        if (miOverdue) parts.push(`${Math.abs(miRemaining).toLocaleString()} mi overdue`);
+        if (dateOverdue) parts.push(`${Math.abs(daysRemaining)}d overdue`);
+        return { state: 'overdue', label: parts.join(' · ') };
+    }
+    if (miSoon || dateSoon) {
+        const parts = [];
+        if (miSoon) parts.push(`${miRemaining.toLocaleString()} mi left`);
+        if (dateSoon) parts.push(`${daysRemaining}d left`);
+        return { state: 'soon', label: parts.join(' · ') };
+    }
+
+    // OK — show when next due
+    const parts = [];
+    if (!lastMileage && !lastDate) return { state: 'ok', label: 'No service recorded' };
+    if (miRemaining != null) parts.push(`${miRemaining.toLocaleString()} mi left`);
+    if (daysRemaining != null) parts.push(`${daysRemaining}d left`);
+    return { state: 'ok', label: parts.join(' · ') || 'Up to date' };
+}
+
+function countDueServices(v) {
+    const intervals = v.serviceIntervals || DEFAULT_INTERVALS.map(i => ({...i, lastDate: null, lastMileage: null}));
+    return intervals.filter(i => {
+        const s = getIntervalStatus(i, v.currentMileage || 0);
+        return s.state === 'overdue' || s.state === 'soon';
+    }).length;
+}
+
+// ── Log Tab ───────────────────────────────────────────────
+function renderLog(v) {
+    const logs = [...(v.maintenanceLogs || [])].sort((a, b) => new Date(b.date) - new Date(a.date));
+    const listEl = document.getElementById('log-list');
+    const emptyEl = document.getElementById('log-empty');
+    const totalEl = document.getElementById('log-total');
+    const totalValEl = document.getElementById('log-total-val');
+
+    if (logs.length === 0) {
+        listEl.innerHTML = '';
+        emptyEl.classList.remove('hidden');
+        totalEl.classList.add('hidden');
+        return;
+    }
+    emptyEl.classList.add('hidden');
+
+    const totalCost = logs.reduce((s, l) => s + (parseFloat(l.cost) || 0), 0);
+    totalEl.classList.remove('hidden');
+    totalValEl.textContent = '$' + totalCost.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+
+    listEl.innerHTML = logs.map(l => `
+    <div class="bg-slate-950/60 rounded-lg px-3 py-2.5 group relative">
+        <div class="flex items-start justify-between gap-2">
+            <div class="flex-1 min-w-0">
+                <div class="text-xs font-semibold text-slate-200">${esc(l.type)}</div>
+                <div class="text-[10px] text-slate-500 mt-0.5">
+                    ${l.date ? new Date(l.date+'T00:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}) : ''}
+                    ${l.mileage ? ' · ' + Number(l.mileage).toLocaleString() + ' mi' : ''}
+                    ${l.shop ? ' · ' + esc(l.shop) : ''}
+                </div>
+                ${l.notes ? `<div class="text-[10px] text-slate-600 mt-1 italic">${esc(l.notes)}</div>` : ''}
+            </div>
+            <div class="flex items-center gap-2 flex-shrink-0">
+                ${l.cost ? `<span class="text-[10px] font-bold text-emerald-400">$${parseFloat(l.cost).toFixed(2)}</span>` : ''}
+                <button onclick="deleteLog(${v.id}, ${l.id})" class="opacity-0 group-hover:opacity-100 transition text-slate-600 hover:text-rose-400 text-[10px]"><i class="fa-solid fa-trash"></i></button>
+            </div>
+        </div>
+    </div>`).join('');
+}
+
+// ── Guides Tab ────────────────────────────────────────────
+function renderGuides(v) {
+    const hasGuides = (v.youtubeGuides && v.youtubeGuides.length > 0) || v.commonIssues?.length || v.tips;
+    document.getElementById('guides-empty').classList.toggle('hidden', hasGuides);
+
+    // StartMyCar link
+    const smcEl = document.getElementById('guides-startmycar');
+    if (v.make && v.model) {
+        const makeSlug = v.make.toLowerCase().replace(/\s+/g, '-');
+        const modelSlug = v.model.toLowerCase().replace(/\s+/g, '-');
+        smcEl.innerHTML = `
+        <div class="mb-2">
+            <div class="text-[10px] uppercase tracking-wider text-slate-500 font-semibold mb-1.5">Community Issues</div>
+            <a href="https://www.startmycar.com/${makeSlug}/${modelSlug}" target="_blank"
+               class="flex items-center gap-2.5 px-3 py-2.5 bg-slate-950/60 hover:bg-blue-500/10 border border-slate-800 hover:border-blue-500/30 rounded-xl transition group">
+                <div class="h-8 w-8 rounded-lg bg-blue-500/10 flex items-center justify-center flex-shrink-0">
+                    <i class="fa-solid fa-car-burst text-blue-400 text-sm"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div class="text-xs font-semibold text-slate-200 group-hover:text-blue-300 transition">StartMyCar.com</div>
+                    <div class="text-[10px] text-slate-500">${v.year ? v.year+' ' : ''}${v.make} ${v.model} community issues &amp; fixes</div>
+                </div>
+                <i class="fa-solid fa-arrow-up-right-from-square text-slate-600 group-hover:text-blue-400 text-[10px] transition"></i>
+            </a>
+        </div>`;
+    } else smcEl.innerHTML = '';
+
+    // NHTSA Recall check
+    const nhtsaEl = document.getElementById('guides-nhtsa');
+    if (v.make && v.model && v.year) {
+        const nhtsaUrl = `https://www.nhtsa.gov/vehicle/${encodeURIComponent(v.year)}/${encodeURIComponent(v.make.toUpperCase())}/${encodeURIComponent(v.model.toUpperCase())}/All`;
+        nhtsaEl.innerHTML = `
+        <div class="mb-2">
+            <a href="${nhtsaUrl}" target="_blank"
+               class="flex items-center gap-2.5 px-3 py-2.5 bg-slate-950/60 hover:bg-rose-500/10 border border-slate-800 hover:border-rose-500/30 rounded-xl transition group">
+                <div class="h-8 w-8 rounded-lg bg-rose-500/10 flex items-center justify-center flex-shrink-0">
+                    <i class="fa-solid fa-shield-halved text-rose-400 text-sm"></i>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div class="text-xs font-semibold text-slate-200 group-hover:text-rose-300 transition">NHTSA Recall Lookup</div>
+                    <div class="text-[10px] text-slate-500">Check official safety recalls for your ${v.year} ${v.make} ${v.model}</div>
+                </div>
+                <i class="fa-solid fa-arrow-up-right-from-square text-slate-600 group-hover:text-rose-400 text-[10px] transition"></i>
+            </a>
+        </div>`;
+    } else nhtsaEl.innerHTML = '';
+
+    // YouTube guides (AI-enriched)
+    const ytEl = document.getElementById('guides-youtube');
+    if (v.youtubeGuides && v.youtubeGuides.length > 0) {
+        ytEl.innerHTML = `
+        <div class="mb-2">
+            <div class="text-[10px] uppercase tracking-wider text-slate-500 font-semibold mb-1.5">YouTube Guides</div>
+            <div class="flex flex-wrap gap-1.5">
+                ${v.youtubeGuides.map(g => `
+                    <a href="https://www.youtube.com/results?search_query=${encodeURIComponent(g.query)}" target="_blank"
+                       class="flex items-center gap-1 px-2.5 py-1.5 bg-slate-950 hover:bg-red-500/10 border border-slate-800 hover:border-red-500/30 text-[10px] font-semibold text-slate-300 hover:text-red-400 rounded-xl transition">
+                        <i class="fa-brands fa-youtube text-red-500 text-sm"></i> ${esc(g.label)}
+                    </a>`).join('')}
+            </div>
+        </div>`;
+    } else ytEl.innerHTML = '';
+
+    // Common issues
+    const issuesEl = document.getElementById('guides-issues');
+    if (v.commonIssues && v.commonIssues.length > 0) {
+        issuesEl.innerHTML = `
+        <div class="mb-2">
+            <div class="text-[10px] uppercase tracking-wider text-slate-500 font-semibold mb-1.5">Known Issues</div>
+            <div class="space-y-1">
+                ${v.commonIssues.map(issue => `
+                    <div class="flex items-start gap-2 text-[11px] text-slate-400 bg-slate-950/60 rounded-lg px-3 py-2">
+                        <i class="fa-solid fa-circle-info text-amber-400/70 mt-0.5 flex-shrink-0 text-[10px]"></i>
+                        ${esc(issue)}
+                    </div>`).join('')}
+            </div>
+        </div>`;
+    } else issuesEl.innerHTML = '';
+
+    // Tips
+    const tipsEl = document.getElementById('guides-tips');
+    if (v.tips) {
+        tipsEl.innerHTML = `
+        <div>
+            <div class="text-[10px] uppercase tracking-wider text-slate-500 font-semibold mb-1.5">Maintenance Tips</div>
+            <div class="text-[11px] text-slate-400 leading-relaxed bg-slate-950/60 rounded-lg px-3 py-2">${esc(v.tips)}</div>
+        </div>`;
+    } else tipsEl.innerHTML = '';
+}
+
+// ── Info Tab ──────────────────────────────────────────────
+function renderInfo(v) {
+    const rows = [
+        ['Nickname',         v.nickname],
+        ['Year',             v.year],
+        ['Make',             v.make],
+        ['Model',            v.model],
+        ['Trim',             v.trim],
+        ['Color',            v.color],
+        ['VIN',              v.vin],
+        ['License Plate',    v.licensePlate],
+        ['Current Mileage',  v.currentMileage ? v.currentMileage.toLocaleString() + ' mi' : null],
+        ['Purchase Date',    v.purchaseDate ? new Date(v.purchaseDate+'T00:00:00').toLocaleDateString() : null],
+        ['Purchase Price',   v.purchasePrice ? '$' + Number(v.purchasePrice).toLocaleString() : null],
+        ['Purchased From',   v.purchasedFrom],
+        ['Insurance',        v.insuranceProvider],
+        ['Policy #',         v.insurancePolicyNumber],
+        ['Ins. Expiry',      v.insuranceExpiry],
+        ['Reg. Expiry',      v.registrationExpiry],
+    ];
+    document.getElementById('info-content').innerHTML = rows.filter(r => r[1]).map(r => `
+        <div class="flex justify-between gap-3 py-1.5 border-b border-slate-800/60">
+            <span class="text-slate-500 flex-shrink-0">${r[0]}</span>
+            <span class="text-slate-300 text-right font-mono text-[11px] truncate">${esc(String(r[1]))}</span>
+        </div>`).join('');
+}
+
+// ── Expiry Helper ─────────────────────────────────────────
+function getExpiryStatus(v) {
+    const now = new Date();
+    const check = dateStr => {
+        if (!dateStr) return null;
+        const d = new Date(dateStr + 'T00:00:00');
+        const days = Math.ceil((d - now) / 86400000);
+        return days;
+    };
+    const ins = check(v.insuranceExpiry);
+    const reg = check(v.registrationExpiry);
+    const worst = [ins, reg].filter(d => d != null).reduce((m, d) => (m == null || d < m) ? d : m, null);
+    if (worst == null) return { label: '', cls: '' };
+    if (worst < 0)  return { label: 'Expired', cls: 'bg-rose-500/10 text-rose-400 border-rose-500/20' };
+    if (worst <= 30) return { label: `${worst}d to expiry`, cls: 'bg-amber-500/10 text-amber-400 border-amber-500/20' };
+    return { label: '', cls: '' };
+}
+
+// ── CRUD ──────────────────────────────────────────────────
+function openAddModal() {
+    editingId = null;
+    stagedImageBase64 = null;
+    clearFormFields();
+    document.getElementById('modal-title').textContent = 'Add Vehicle';
+    document.getElementById('save-btn-text').textContent = 'Save Vehicle';
+    document.getElementById('log-date').value = new Date().toISOString().split('T')[0];
+    const modal = document.getElementById('vehicle-modal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+
+function openEditModal() {
+    if (!selectedId) return;
+    const v = getVehicle(selectedId);
+    if (!v) return;
+    editingId = selectedId;
+    stagedImageBase64 = null;
+
+    document.getElementById('modal-title').textContent = 'Edit Vehicle';
+    document.getElementById('save-btn-text').textContent = 'Save Changes';
+    document.getElementById('f-nickname').value = v.nickname || '';
+    document.getElementById('f-year').value = v.year || '';
+    document.getElementById('f-make').value = v.make || '';
+    document.getElementById('f-model').value = v.model || '';
+    document.getElementById('f-trim').value = v.trim || '';
+    document.getElementById('f-color').value = v.color || '';
+    document.getElementById('f-vin').value = v.vin || '';
+    document.getElementById('f-plate').value = v.licensePlate || '';
+    document.getElementById('f-mileage').value = v.currentMileage || '';
+    document.getElementById('f-purchase-date').value = v.purchaseDate || '';
+    document.getElementById('f-ins-provider').value = v.insuranceProvider || '';
+    document.getElementById('f-ins-policy').value = v.insurancePolicyNumber || '';
+    document.getElementById('f-ins-expiry').value = v.insuranceExpiry || '';
+    document.getElementById('f-reg-expiry').value = v.registrationExpiry || '';
+    document.getElementById('f-price').value = v.purchasePrice || '';
+    document.getElementById('f-purchased-from').value = v.purchasedFrom || '';
+
+    // Image preview
+    const previewImg = document.getElementById('img-preview');
+    const previewPh = document.getElementById('img-preview-placeholder');
+    const clearBtn = document.getElementById('clear-img-btn');
+    if (v.imageUrl) {
+        previewImg.src = v.imageUrl;
+        previewImg.classList.remove('hidden');
+        previewPh.classList.add('hidden');
+        clearBtn.classList.remove('hidden');
+    } else {
+        previewImg.classList.add('hidden');
+        previewPh.classList.remove('hidden');
+        clearBtn.classList.add('hidden');
+    }
+
+    const modal = document.getElementById('vehicle-modal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+
+function closeAddModal() {
+    const modal = document.getElementById('vehicle-modal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    stagedImageBase64 = null;
+}
+
+function clearFormFields() {
+    ['f-nickname','f-year','f-make','f-model','f-trim','f-color','f-vin','f-plate',
+     'f-mileage','f-purchase-date','f-ins-provider','f-ins-policy','f-ins-expiry',
+     'f-reg-expiry','f-price','f-purchased-from'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.value = '';
+    });
+    document.getElementById('img-preview').classList.add('hidden');
+    document.getElementById('img-preview-placeholder').classList.remove('hidden');
+    document.getElementById('clear-img-btn').classList.add('hidden');
+}
+
+function saveVehicle() {
+    const make = document.getElementById('f-make').value.trim();
+    const model = document.getElementById('f-model').value.trim();
+    if (!make || !model) {
+        showToast('Missing Info', 'Make and Model are required.', 'amber');
+        return;
+    }
+
+    if (editingId) {
+        const v = getVehicle(editingId);
+        if (!v) return;
+        v.nickname = document.getElementById('f-nickname').value.trim() || `${document.getElementById('f-year').value} ${make} ${model}`;
+        v.year = parseInt(document.getElementById('f-year').value) || v.year;
+        v.make = make; v.model = model;
+        v.trim = document.getElementById('f-trim').value.trim();
+        v.color = document.getElementById('f-color').value.trim();
+        v.vin = document.getElementById('f-vin').value.trim().toUpperCase();
+        v.licensePlate = document.getElementById('f-plate').value.trim().toUpperCase();
+        v.currentMileage = parseInt(document.getElementById('f-mileage').value) || v.currentMileage;
+        v.purchaseDate = document.getElementById('f-purchase-date').value;
+        v.insuranceProvider = document.getElementById('f-ins-provider').value.trim();
+        v.insurancePolicyNumber = document.getElementById('f-ins-policy').value.trim();
+        v.insuranceExpiry = document.getElementById('f-ins-expiry').value;
+        v.registrationExpiry = document.getElementById('f-reg-expiry').value;
+        v.purchasePrice = parseFloat(document.getElementById('f-price').value) || v.purchasePrice;
+        v.purchasedFrom = document.getElementById('f-purchased-from').value.trim();
+        if (stagedImageBase64) v.imageUrl = stagedImageBase64;
+    } else {
+        const year = parseInt(document.getElementById('f-year').value) || new Date().getFullYear();
+        const nick = document.getElementById('f-nickname').value.trim() || `${year} ${make} ${model}`;
+        const newV = {
+            id: Date.now(),
+            nickname: nick, year, make, model,
+            trim: document.getElementById('f-trim').value.trim(),
+            color: document.getElementById('f-color').value.trim(),
+            vin: document.getElementById('f-vin').value.trim().toUpperCase(),
+            licensePlate: document.getElementById('f-plate').value.trim().toUpperCase(),
+            currentMileage: parseInt(document.getElementById('f-mileage').value) || 0,
+            purchaseDate: document.getElementById('f-purchase-date').value,
+            purchasePrice: parseFloat(document.getElementById('f-price').value) || null,
+            purchasedFrom: document.getElementById('f-purchased-from').value.trim(),
+            insuranceProvider: document.getElementById('f-ins-provider').value.trim(),
+            insurancePolicyNumber: document.getElementById('f-ins-policy').value.trim(),
+            insuranceExpiry: document.getElementById('f-ins-expiry').value,
+            registrationExpiry: document.getElementById('f-reg-expiry').value,
+            imageUrl: stagedImageBase64 || '',
+            maintenanceLogs: [],
+            serviceIntervals: DEFAULT_INTERVALS.map(i => ({...i, lastDate: null, lastMileage: null})),
+            youtubeGuides: [], commonIssues: [], tips: '',
+        };
+        vehicles.push(newV);
+        selectedId = newV.id;
+    }
+
+    save();
+    closeAddModal();
+    renderAll();
+    if (selectedId) {
+        document.getElementById('detail-placeholder').classList.add('hidden');
+        document.getElementById('detail-panel').classList.remove('hidden');
+        document.getElementById('detail-panel').classList.add('flex');
+    }
+    showToast(editingId ? 'Vehicle Updated' : 'Vehicle Added', make + ' ' + model + ' saved.', 'cyan');
+    editingId = null;
+}
+
+function deleteVehicle() {
+    if (!selectedId) return;
+    const v = getVehicle(selectedId);
+    if (!v) return;
+    if (!confirm(`Delete "${v.nickname || v.make + ' ' + v.model}"? This cannot be undone.`)) return;
+    vehicles = vehicles.filter(x => x.id !== selectedId);
+    selectedId = null;
+    save();
+    document.getElementById('detail-placeholder').classList.remove('hidden');
+    document.getElementById('detail-panel').classList.add('hidden');
+    document.getElementById('detail-panel').classList.remove('flex');
+    renderAll();
+    showToast('Deleted', 'Vehicle removed.', 'rose');
+}
+
+// ── Maintenance Log ───────────────────────────────────────
+function openLogModal(prefillType) {
+    if (!selectedId) return;
+    document.getElementById('log-date').value = new Date().toISOString().split('T')[0];
+    const v = getVehicle(selectedId);
+    document.getElementById('log-mileage').value = v?.currentMileage || '';
+    document.getElementById('log-cost').value = '';
+    document.getElementById('log-shop').value = '';
+    document.getElementById('log-notes').value = '';
+    if (prefillType) {
+        const sel = document.getElementById('log-type');
+        const opt = [...sel.options].find(o => o.value === prefillType);
+        if (opt) sel.value = prefillType;
+    }
+    const modal = document.getElementById('log-modal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+
+function quickLogService(serviceName) {
+    openLogModal(serviceName);
+}
+
+function closeLogModal() {
+    const modal = document.getElementById('log-modal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+}
+
+function saveLog() {
+    if (!selectedId) return;
+    const v = getVehicle(selectedId);
+    if (!v) return;
+
+    let type = document.getElementById('log-type').value;
+    if (type === 'Other') {
+        type = document.getElementById('log-custom-type').value.trim() || 'Other';
+    }
+
+    const date = document.getElementById('log-date').value;
+    const mileage = parseInt(document.getElementById('log-mileage').value) || null;
+    const cost = parseFloat(document.getElementById('log-cost').value) || null;
+    const shop = document.getElementById('log-shop').value.trim();
+    const notes = document.getElementById('log-notes').value.trim();
+
+    const record = { id: Date.now(), type, date, mileage, cost, shop, notes };
+    if (!v.maintenanceLogs) v.maintenanceLogs = [];
+    v.maintenanceLogs.push(record);
+
+    // Update the matching service interval's lastDate and lastMileage
+    if (v.serviceIntervals) {
+        const interval = v.serviceIntervals.find(i => i.name === type);
+        if (interval) {
+            if (date) interval.lastDate = date;
+            if (mileage) interval.lastMileage = mileage;
+        }
+    }
+
+    // Update vehicle mileage if logged mileage is higher
+    if (mileage && mileage > (v.currentMileage || 0)) {
+        v.currentMileage = mileage;
+    }
+
+    save();
+    closeLogModal();
+    renderAll();
+    showToast('Service Logged', `${type} recorded.`, 'cyan');
+}
+
+function deleteLog(vehicleId, logId) {
+    if (!confirm('Delete this service record?')) return;
+    const v = getVehicle(vehicleId);
+    if (!v) return;
+    v.maintenanceLogs = (v.maintenanceLogs || []).filter(l => l.id !== logId);
+    save();
+    renderAll();
+}
+
+// ── Mileage Update ────────────────────────────────────────
+function openMileageModal(id) {
+    mileageTargetId = id;
+    const v = getVehicle(id);
+    document.getElementById('mileage-input').value = v?.currentMileage || '';
+    const modal = document.getElementById('mileage-modal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+
+function closeMileageModal() {
+    const modal = document.getElementById('mileage-modal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+}
+
+function saveMileage() {
+    const v = getVehicle(mileageTargetId);
+    if (!v) return;
+    const val = parseInt(document.getElementById('mileage-input').value);
+    if (isNaN(val) || val < 0) { showToast('Invalid', 'Enter a valid mileage.', 'amber'); return; }
+    v.currentMileage = val;
+    save();
+    closeMileageModal();
+    renderAll();
+    showToast('Mileage Updated', val.toLocaleString() + ' mi saved.', 'cyan');
+}
+
+// ── Image Upload ──────────────────────────────────────────
+function handleImageUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const canvas = document.createElement('canvas');
+    const img = new Image();
+    img.onload = () => {
+        const MAX = 800;
+        let w = img.width, h = img.height;
+        if (w > MAX || h > MAX) {
+            if (w > h) { h = h * MAX / w; w = MAX; }
+            else { w = w * MAX / h; h = MAX; }
+        }
+        canvas.width = w; canvas.height = h;
+        canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+        stagedImageBase64 = canvas.toDataURL('image/jpeg', 0.8);
+        document.getElementById('img-preview').src = stagedImageBase64;
+        document.getElementById('img-preview').classList.remove('hidden');
+        document.getElementById('img-preview-placeholder').classList.add('hidden');
+        document.getElementById('clear-img-btn').classList.remove('hidden');
+    };
+    img.src = URL.createObjectURL(file);
+}
+
+function clearImage() {
+    stagedImageBase64 = null;
+    if (editingId) { const v = getVehicle(editingId); if (v) v.imageUrl = ''; }
+    document.getElementById('img-preview').classList.add('hidden');
+    document.getElementById('img-preview-placeholder').classList.remove('hidden');
+    document.getElementById('clear-img-btn').classList.add('hidden');
+    document.getElementById('img-file-input').value = '';
+}
+
+// ── AI Enrich ─────────────────────────────────────────────
+async function enrichVehicle() {
+    if (!apiKey) {
+        showToast('API Key Required', 'Click the gear icon to add your free Gemini API key.', 'amber');
+        openSettingsModal();
+        return;
+    }
+    if (!selectedId) return;
+    const v = getVehicle(selectedId);
+    if (!v) return;
+
+    const btn = document.getElementById('detail-enrich-btn');
+    if (btn) { btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-[10px]"></i> Enriching...'; btn.disabled = true; }
+
+    const prompt = `You are a vehicle maintenance expert. Research the ${v.year || ''} ${v.make} ${v.model}${v.trim ? ' ' + v.trim : ''} and return ONLY valid JSON with exactly these fields:
+{
+  "youtubeGuides": [{"label": string, "query": string}],
+  "commonIssues": [string],
+  "tips": string,
+  "serviceIntervals": [{"id": string, "name": string, "mileageInterval": number, "monthInterval": number}],
+  "imageUrl": string
+}
+
+youtubeGuides: 5-6 specific YouTube search queries for this exact vehicle (oil change how-to, common repair, maintenance walkthrough, etc). Use the format "${v.year} ${v.make} ${v.model} [topic]".
+commonIssues: 4-6 known reliability issues or TSBs specific to this make/model/year.
+tips: 2-3 sentences of practical ownership tips for this specific vehicle.
+serviceIntervals: Manufacturer-recommended intervals for this vehicle. Include: Oil Change, Tire Rotation, Air Filter, Cabin Air Filter, Brake Inspection, Transmission Service, Coolant Flush, Spark Plugs, Battery Check.
+imageUrl: A publicly accessible URL to a stock photo or press image of this exact vehicle (year, make, model, trim if possible). Must be a real image URL. If not found, use empty string.
+
+Return ONLY JSON, no markdown, no commentary.`;
+
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+    const payload = {
+        contents: [{ parts: [{ text: prompt }] }],
+        tools: [{ googleSearch: {} }],
+        generationConfig: { temperature: 0.3 },
+    };
+
+    let attempts = 0, delay = 800;
+    while (attempts < 4) {
+        try {
+            const res = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            if (res.status === 429 || res.status >= 500) {
+                await new Promise(r => setTimeout(r, delay));
+                delay *= 2; attempts++; continue;
+            }
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+            let raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+            raw = raw.replace(/```json\s*/gi, '').replace(/```\s*/gi, '').trim();
+            const parsed = JSON.parse(raw);
+
+            if (parsed.youtubeGuides?.length) v.youtubeGuides = parsed.youtubeGuides;
+            if (parsed.commonIssues?.length) v.commonIssues = parsed.commonIssues;
+            if (parsed.tips) v.tips = parsed.tips;
+            if (parsed.serviceIntervals?.length) {
+                // Merge AI intervals into existing, preserving lastDate/lastMileage
+                parsed.serviceIntervals.forEach(aiInt => {
+                    const existing = v.serviceIntervals?.find(e => e.id === aiInt.id || e.name === aiInt.name);
+                    if (existing) {
+                        existing.mileageInterval = aiInt.mileageInterval;
+                        existing.monthInterval = aiInt.monthInterval;
+                        existing.name = aiInt.name;
+                    } else {
+                        if (!v.serviceIntervals) v.serviceIntervals = [];
+                        v.serviceIntervals.push({ ...aiInt, lastDate: null, lastMileage: null });
+                    }
+                });
+            }
+            if (parsed.imageUrl && parsed.imageUrl.startsWith('http') && (!v.imageUrl || !v.imageUrl.startsWith('data:'))) {
+                v.imageUrl = parsed.imageUrl;
+            }
+
+            save();
+            renderAll();
+            showToast('Enriched!', `${v.make} ${v.model} updated with AI-researched data.`, 'violet');
+            break;
+        } catch (err) {
+            attempts++;
+            if (attempts >= 4) {
+                showToast('Enrich Failed', 'Gemini could not enrich this vehicle. Check your API key.', 'rose');
+            } else {
+                await new Promise(r => setTimeout(r, delay));
+                delay *= 2;
+            }
+        }
+    }
+
+    if (btn) { btn.innerHTML = '<i class="fa-solid fa-wand-magic-sparkles text-[10px]"></i> AI Enrich'; btn.disabled = false; }
+}
+
+// ── Settings Modal ────────────────────────────────────────
+function openSettingsModal() {
+    const modal = document.getElementById('settingsModal');
+    const input = document.getElementById('settingsApiKeyInput');
+    if (input) { input.value = apiKey || ''; input.type = 'password'; }
+    const eye = document.getElementById('eye-icon');
+    if (eye) { eye.classList.remove('fa-eye-slash'); eye.classList.add('fa-eye'); }
+    document.getElementById('key-status').classList.add('hidden');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+}
+
+function closeSettingsModal() {
+    const modal = document.getElementById('settingsModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+}
+
+function toggleKeyVisibility() {
+    const input = document.getElementById('settingsApiKeyInput');
+    const icon = document.getElementById('eye-icon');
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.replace('fa-eye', 'fa-eye-slash');
+    } else {
+        input.type = 'password';
+        icon.classList.replace('fa-eye-slash', 'fa-eye');
+    }
+}
+
+function saveApiKey() {
+    const input = document.getElementById('settingsApiKeyInput');
+    const statusEl = document.getElementById('key-status');
+    const val = input?.value.trim() || '';
+    if (!val) {
+        apiKey = ''; localStorage.removeItem('vv_gemini_api_key');
+        statusEl.textContent = 'API key cleared.'; statusEl.className = 'mt-2 text-[11px] text-center font-medium text-slate-400';
+        statusEl.classList.remove('hidden'); updateApiKeyDot(); return;
+    }
+    if (val.length < 20) {
+        statusEl.textContent = 'That doesn\'t look like a valid API key.';
+        statusEl.className = 'mt-2 text-[11px] text-center font-medium text-rose-400';
+        statusEl.classList.remove('hidden'); return;
+    }
+    apiKey = val; localStorage.setItem('vv_gemini_api_key', val);
+    statusEl.textContent = '✓ API key saved — AI Enrich is ready!';
+    statusEl.className = 'mt-2 text-[11px] text-center font-medium text-emerald-400';
+    statusEl.classList.remove('hidden');
+    updateApiKeyDot();
+    setTimeout(() => closeSettingsModal(), 1200);
+}
+
+function updateApiKeyDot() {
+    const dot = document.getElementById('api-key-dot');
+    if (dot) dot.classList.toggle('hidden', !!apiKey);
+}
+
+// Close modals on backdrop click
+['settingsModal','vehicle-modal','log-modal','mileage-modal'].forEach(id => {
+    document.getElementById(id)?.addEventListener('click', function(e) {
+        if (e.target === this) {
+            if (id === 'settingsModal') closeSettingsModal();
+            else if (id === 'vehicle-modal') closeAddModal();
+            else if (id === 'log-modal') closeLogModal();
+            else if (id === 'mileage-modal') closeMileageModal();
+        }
+    });
+});
+
+// ── Toast Notifications ───────────────────────────────────
+function showToast(title, msg, color = 'cyan') {
+    const colors = {
+        cyan:   'border-cyan-500/30 bg-cyan-500/10',
+        amber:  'border-amber-500/30 bg-amber-500/10',
+        rose:   'border-rose-500/30 bg-rose-500/10',
+        emerald:'border-emerald-500/30 bg-emerald-500/10',
+        violet: 'border-violet-500/30 bg-violet-500/10',
+    };
+    const dots = { cyan:'bg-cyan-400', amber:'bg-amber-400', rose:'bg-rose-400', emerald:'bg-emerald-400', violet:'bg-violet-400' };
+    const id = 'toast-' + Date.now();
+    const el = document.createElement('div');
+    el.id = id;
+    el.className = `pointer-events-auto flex items-start gap-3 px-4 py-3 rounded-xl border shadow-xl ${colors[color] || colors.cyan} max-w-xs fade-in`;
+    el.innerHTML = `<span class="mt-1 h-2 w-2 rounded-full flex-shrink-0 ${dots[color] || dots.cyan}"></span>
+        <div><p class="text-xs font-bold text-slate-100">${esc(title)}</p><p class="text-[11px] text-slate-400 mt-0.5">${esc(msg)}</p></div>`;
+    document.getElementById('toast-container').appendChild(el);
+    setTimeout(() => el.remove(), 4000);
+}
+
+// ── Utilities ─────────────────────────────────────────────
+function esc(str) {
+    if (str == null) return '';
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+</script>
+</body>
+</html>
