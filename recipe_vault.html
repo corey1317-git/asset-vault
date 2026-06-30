@@ -254,7 +254,7 @@
             <i class="fa-solid fa-xmark text-lg"></i>
         </button>
         <div id="detailPhotoWrap" class="hidden h-56 w-full overflow-hidden rounded-t-3xl bg-slate-950">
-            <img id="detailPhoto" class="w-full h-full object-cover">
+            <img id="detailPhoto" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&q=80';" class="w-full h-full object-cover">
         </div>
         <div class="p-6">
             <div class="flex items-center gap-2 mb-2">
@@ -563,7 +563,7 @@
 
     function recipeCardHtml(r) {
         const photo = r.photo
-            ? `<img src="${r.photo}" class="w-full h-full object-cover">`
+            ? `<img src="${r.photo}" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&q=80';" class="w-full h-full object-cover">`
             : `<div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-800 to-slate-900"><i class="fa-solid fa-utensils text-slate-700 text-3xl"></i></div>`;
         const tagChips = (r.tags || []).slice(0, 3).map(t => `<span class="text-[9px] font-semibold bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded">${escapeHtml(t)}</span>`).join('');
         return `
@@ -1267,7 +1267,7 @@
             return;
         }
 
-        const schemaHint = `Return ONLY a raw JSON object (no markdown fences, no commentary) matching exactly this shape: {"title": string, "ingredients": string[], "instructions": string[], "prepTimeMinutes": number, "cookTimeMinutes": number, "servings": number, "category": one of ["Breakfast","Lunch","Dinner","Dessert","Snack","Drink","Other"], "tags": string[], "extractionConfidence": "high" or "low"}. Separate ingredients into individual line items with quantities, and instructions into individual discrete steps without numbering prefixes. Set extractionConfidence to "low" if the source did not clearly contain a real recipe.`;
+        const schemaHint = `Return ONLY a raw JSON object (no markdown fences, no commentary) matching exactly this shape: {"title": string, "ingredients": string[], "instructions": string[], "prepTimeMinutes": number, "cookTimeMinutes": number, "servings": number, "category": one of ["Breakfast","Lunch","Dinner","Dessert","Snack","Drink","Other"], "tags": string[], "photo": string (MUST be a direct, hotlink-safe image URL of this dish, or a high-quality Unsplash food image representing the category of this recipe, e.g. a pizza photo for pizza, salad photo for salad, etc.), "extractionConfidence": "high" or "low"}. Separate ingredients into individual line items with quantities, and instructions into individual discrete steps without numbering prefixes. Set extractionConfidence to "low" if the source did not clearly contain a real recipe.`;
         let promptText = '';
         let sourceUrlVal = '';
 
@@ -1298,6 +1298,10 @@
             if (recipeObj.ingredients && recipeObj.ingredients.length) { formIngredients = recipeObj.ingredients; renderIngredientRows(); }
             if (recipeObj.instructions && recipeObj.instructions.length) { formInstructions = recipeObj.instructions; renderInstructionRows(); }
             if (recipeObj.tags && recipeObj.tags.length) { formTags = recipeObj.tags; renderTagChips(); }
+            if (recipeObj.photo) {
+                formPhotoDataUrl = recipeObj.photo;
+                showPhotoPreview(recipeObj.photo);
+            }
             if (sourceUrlVal) formSourceUrl = sourceUrlVal;
 
             if (overlay) overlay.classList.add('hidden');

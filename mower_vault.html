@@ -205,7 +205,7 @@
                 <div class="flex items-center gap-3">
                     <!-- Image Clickable Upload Block -->
                     <div class="relative group/thumb h-12 w-12 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center overflow-hidden flex-shrink-0 cursor-pointer" onclick="triggerMowerPhotoUpload()" title="Click to upload custom photo">
-                        <img id="detail-thumb" src="" class="h-full w-full object-cover hidden">
+                        <img id="detail-thumb" src="" onerror="this.onerror=null; this.src='mower.jpg';" class="h-full w-full object-cover hidden">
                         <div id="detail-thumb-fallback" class="h-full w-full flex items-center justify-center bg-slate-950 text-slate-500 group-hover/thumb:text-slate-350 transition">
                             <i class="fa-solid fa-camera text-sm"></i>
                         </div>
@@ -835,7 +835,7 @@
         card.onclick = () => selectMower(m.id);
 
         const imgHtml = m.imageUrl 
-            ? `<img src="${m.imageUrl}" class="h-8 w-8 rounded-lg object-cover flex-shrink-0 border border-slate-800">`
+            ? `<img src="${m.imageUrl}" onerror="this.onerror=null; this.src='mower.jpg';" class="h-8 w-8 rounded-lg object-cover flex-shrink-0 border border-slate-800">`
             : `<div class="h-8 w-8 rounded-lg bg-slate-900 flex items-center justify-center border border-slate-800 flex-shrink-0"><i class="fa-solid fa-tractor text-slate-500 text-xs"></i></div>`;
 
         card.innerHTML = `

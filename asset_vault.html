@@ -1037,6 +1037,17 @@
             });
         });
 
+        function handleImageError(imgEl, category) {
+            imgEl.onerror = null; // Prevent infinite loop if fallback fails
+            const fallbacks = {
+                "Yard Tools": "https://images.unsplash.com/photo-1592878904946-b3cd8ae243d0?w=600&auto=format&fit=crop&q=60",
+                "Electronics": "https://images.unsplash.com/photo-1498049794561-7780e7231661?w=600&auto=format&fit=crop&q=60",
+                "Appliances": "https://images.unsplash.com/photo-1556911220-e15b29be8c8f?w=600&auto=format&fit=crop&q=60",
+                "Home Utilities": "https://images.unsplash.com/photo-1581094288338-2314dddb7ecc?w=600&auto=format&fit=crop&q=60"
+            };
+            imgEl.src = fallbacks[category] || "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?w=600&auto=format&fit=crop&q=60";
+        }
+
         // Trigger updates across UI elements
         function renderAll() {
             saveToStorage();
@@ -1611,7 +1622,7 @@
                 const imageSectionHtml = `
                     <div class="relative h-44 bg-slate-950 overflow-hidden border-b border-slate-800 flex items-center justify-center">
                         ${item.imageUrl ? `
-                            <img src="${item.imageUrl}" alt="${item.name}" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105">
+                            <img src="${item.imageUrl}" alt="${item.name}" onerror="handleImageError(this, '${item.category}')" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105">
                         ` : ''}
                         <div class="absolute inset-0 ${item.imageUrl ? 'hidden' : 'flex'} flex-col items-center justify-center bg-gradient-to-br from-slate-900 to-slate-950" style="${item.imageUrl ? 'display: none;' : ''}">
                             <i class="${item.icon || 'fa-solid fa-box'} text-slate-800 text-5xl mb-2"></i>
@@ -2264,7 +2275,7 @@
 
             showNotification("AI Researching...", `Fetching care data for ${asset.name}...`, "indigo");
 
-            const schemaHint = `Return ONLY a raw JSON object (no markdown fences, no commentary) matching exactly this shape: {"youtubeGuides": [{"label": string, "query": string}], "parts": string[], "manualUrl": string (prefer a matching manualslib.com page if one exists, otherwise the manufacturer's official manual page), "imageUrl": string, "tips": string}.`;
+            const schemaHint = `Return ONLY a raw JSON object (no markdown fences, no commentary) matching exactly this shape: {"youtubeGuides": [{"label": string, "query": string}], "parts": string[], "manualUrl": string (prefer a matching manualslib.com page if one exists, otherwise the manufacturer's official manual page), "imageUrl": string (MUST be a direct, hotlink-safe image URL that allows external loading in img tags, otherwise a generic Unsplash photo URL representing this category), "tips": string}.`;
             const promptText = `Research specific maintenance and care information for this home asset:
 Name: ${asset.name}
 Model Number: ${asset.model || 'unknown'}
@@ -2275,6 +2286,7 @@ Find accurate, model-specific information. Return:
 2. Specific replacement parts and consumables for this exact model, including part numbers where known
 3. The official manufacturer support or manual URL for this specific model
 4. Practical care tips, maintenance schedule, and storage advice tailored to this product
+5. For imageUrl, you MUST provide a direct, hotlink-safe product photo or a high-quality Unsplash image representing the item's category (e.g. a lawn mower image for Yard Tools) that resolves to a valid, loadable image file. Avoid URLs that block external embedding.
 
 ${schemaHint}`;
 
@@ -2360,8 +2372,8 @@ ${schemaHint}`;
             let successCount = 0, failCount = 0;
             showNotification("Enrich All Started", `Enriching ${assets.length} asset(s) one at a time. This may take a few minutes...`, "indigo");
 
-            const schemaHint = `Return ONLY a raw JSON object (no markdown fences, no commentary) matching exactly this shape: {"youtubeGuides": [{"label": string, "query": string}], "parts": string[], "manualUrl": string (prefer a matching manualslib.com page if one exists, otherwise the manufacturer's official manual page), "imageUrl": string, "tips": string}.`;
-            const systemText = "You are a home appliance and power tool maintenance expert. Provide accurate, model-specific care information. YouTube search queries must include the specific model number to avoid dead links. Verify real manufacturer URLs.";
+            const schemaHint = `Return ONLY a raw JSON object (no markdown fences, no commentary) matching exactly this shape: {"youtubeGuides": [{"label": string, "query": string}], "parts": string[], "manualUrl": string (prefer a matching manualslib.com page if one exists, otherwise the manufacturer's official manual page), "imageUrl": string (MUST be a direct, hotlink-safe image URL that allows external loading in img tags, otherwise a generic Unsplash photo URL representing this category), "tips": string}.`;
+            const systemText = "You are a home appliance and power tool maintenance expert. Provide accurate, model-specific care information. YouTube search queries must include the specific model number to avoid dead links. Verify real manufacturer URLs. For imageUrl, you MUST provide a direct, hotlink-safe product photo or a high-quality Unsplash image representing the item's category.";
 
             for (let i = 0; i < assets.length; i++) {
                 const asset = assets[i];
