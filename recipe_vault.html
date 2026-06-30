@@ -461,7 +461,53 @@
         } catch (e) {
             recipesCache = [];
         }
+        
+        // Add a premium sample recipe if database is empty
+        const activeRecipes = recipesCache.filter(r => !r.deleted);
+        if (activeRecipes.length === 0) {
+            const sample = getSampleRecipe();
+            if (!recipesCache.some(r => r.id === sample.id)) {
+                recipesCache.push(sample);
+                localStorage.setItem('rv_recipes', JSON.stringify(recipesCache));
+            }
+        }
         purgeOldTombstones();
+    }
+
+    function getSampleRecipe() {
+        return {
+            id: "sample-recipe-pizza",
+            title: "Crispy Cast Iron Pan Pizza",
+            photo: "https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&w=800&q=80",
+            ingredients: [
+                "1 batch store-bought or homemade pizza dough (at room temperature)",
+                "1/2 cup premium marinara or pizza sauce",
+                "1.5 cups shredded low-moisture mozzarella cheese",
+                "12-15 slices fresh pepperoni",
+                "1 tablespoon extra virgin olive oil (for coating the pan)",
+                "1 teaspoon dried oregano & garlic powder mix",
+                "Fresh basil leaves for garnish"
+            ],
+            instructions: [
+                "Preheat your oven to 500°F (260°C). Pour the olive oil into a 10-inch cast iron skillet and use your hands to coat the bottom and sides completely.",
+                "Place the room-temperature pizza dough into the skillet, pressing it gently to the edges. If it shrinks back, let it rest for 5 minutes and stretch again.",
+                "Spread the marinara sauce evenly over the dough, leaving a tiny border for the crust.",
+                "Sprinkle the oregano and garlic powder over the sauce, followed by an even layer of shredded mozzarella cheese.",
+                "Arrange pepperoni slices across the cheese layer.",
+                "Bake on the bottom rack for 12-15 minutes, or until the crust is deeply golden brown and the cheese is bubbly and charred at the edges.",
+                "Carefully slide the pizza out of the skillet onto a cutting board. Garnish with fresh basil, slice, and serve hot."
+            ],
+            prepTimeMinutes: 20,
+            cookTimeMinutes: 15,
+            servings: 4,
+            category: "Dinner",
+            tags: ["Pizza", "Cast Iron", "Dinner", "Italian", "Easy"],
+            sourceUrl: "https://www.seriouseats.com/foolproof-pan-pizza-recipe",
+            notes: "For the best crust texture, make sure the cast iron pan is well-oiled. You can also sprinkle grated parmesan cheese around the crust edge before baking to get a crispy cheese crown!",
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            deleted: false
+        };
     }
 
     function purgeOldTombstones() {
