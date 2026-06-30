@@ -18,6 +18,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
         body {
@@ -139,8 +141,8 @@
             <button onclick="exportDatabase()" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-750 hover:border-slate-755 text-xs font-bold rounded-xl transition flex items-center gap-1.5" title="Download Local JSON Backup">
                 <i class="fa-solid fa-download text-emerald-400"></i> Save Backup
             </button>
-            <button onclick="openCloudSyncModal()" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-750 hover:border-slate-755 text-xs font-bold rounded-xl transition flex items-center gap-1.5" title="Backup/Sync to Google Drive or OneDrive">
-                <i class="fa-solid fa-cloud text-indigo-400"></i> Cloud Sync
+            <button onclick="saveToGoogleDrive()" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-750 hover:border-slate-755 text-xs font-bold rounded-xl transition flex items-center gap-1.5" title="Backup database directly to Google Drive">
+                <i class="fa-brands fa-google-drive text-emerald-400"></i> Google Drive Save
             </button>
             <button onclick="openAddModal()" class="px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-slate-950 text-sm font-bold rounded-xl shadow-lg shadow-emerald-500/10 transition flex items-center gap-2">
                 <i class="fa-solid fa-plus text-sm"></i> Add Asset
@@ -196,14 +198,40 @@
                               <button onclick="exportDatabase()" title="Backup Database File" class="h-9 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 border border-slate-700 transition flex items-center gap-1.5">
                                   <i class="fa-solid fa-download text-emerald-400"></i> Save Backup
                               </button>
-                              <!-- Cloud Sync Action -->
-                              <button onclick="openCloudSyncModal()" title="Cloud Backup Sync Options" class="h-9 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 border border-slate-700 transition flex items-center gap-1.5">
-                                  <i class="fa-solid fa-cloud text-indigo-400"></i> Cloud Sync
+                              <!-- Google Drive Action -->
+                              <button onclick="saveToGoogleDrive()" title="Backup database directly to Google Drive" class="h-9 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 border border-slate-700 transition flex items-center gap-1.5">
+                                  <i class="fa-brands fa-google-drive text-emerald-400"></i> Google Drive Save
                               </button>
                         </div>
                     </div>
                     <div class="h-10 w-10 rounded-xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20 text-emerald-400">
                         <i class="fa-solid fa-database text-lg"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Analytics Dashboard -->
+            <div id="analyticsCard" class="bg-slate-900 border border-slate-800/80 rounded-2xl p-5 shadow-xl hidden">
+                <div class="flex justify-between items-center mb-4 pb-3 border-b border-slate-800/60">
+                    <div>
+                        <h3 class="font-bold text-slate-200 text-sm flex items-center gap-2">
+                            <i class="fa-solid fa-chart-line text-indigo-400"></i> Asset Analytics
+                        </h3>
+                        <p class="text-xs text-slate-400">Valuation breakdown and purchase timeline</p>
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="relative w-full h-56 flex flex-col items-center">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Category Distribution</span>
+                        <div class="relative w-full flex-1 min-h-0">
+                            <canvas id="analyticsPieChart"></canvas>
+                        </div>
+                    </div>
+                    <div class="relative w-full h-56 flex flex-col items-center">
+                        <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Spending by Purchase Year</span>
+                        <div class="relative w-full flex-1 min-h-0">
+                            <canvas id="analyticsBarChart"></canvas>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -839,7 +867,6 @@
 
         // Developer cloud API configurations (specify standard OAuth 2.0 app client IDs here)
         const googleClientId = "386561707147-fkqqbg1qeb7prudclclmcbg26ctcpgkb.apps.googleusercontent.com";
-        const onedriveClientId = ""; // e.g. "microsoft_app_client_id"
 
         // Core Database Initial state
         const initialAssetData = [
@@ -982,7 +1009,6 @@
         window.addEventListener('DOMContentLoaded', () => {
             renderAll();
             checkWelcomeSplash();
-            handleOAuthRedirectCallback();
             updateApiKeyDot(); // Show amber dot on gear icon if no API key is set
         });
 
@@ -994,6 +1020,7 @@
             filterAssets();
             renderTasks();
             updateStorageQuotaGauge();
+            renderCharts();
         }
 
         // Save state to Storage
@@ -1069,6 +1096,171 @@
                     </div>
                 `);
             });
+        }
+
+        // Analytics Chart Instances
+        let categoryPieChartInstance = null;
+        let purchaseBarChartInstance = null;
+
+        function renderCharts() {
+            const chartCard = document.getElementById('analyticsCard');
+            if (!chartCard) return;
+
+            // If there are no assets, hide the analytics card
+            if (!assetData || assetData.length === 0) {
+                chartCard.classList.add('hidden');
+                return;
+            }
+            chartCard.classList.remove('hidden');
+
+            // 1. Prepare Category Pie/Doughnut Chart Data
+            const categories = {};
+            assetData.forEach(item => {
+                if (!item) return;
+                const price = parseFloat(item.price || 0);
+                categories[item.category] = (categories[item.category] || 0) + price;
+            });
+
+            const categoryColors = {
+                "Yard Tools": "#10b981",       // emerald-500
+                "Electronics": "#6366f1",      // indigo-500
+                "Appliances": "#ec4899",       // pink-500
+                "Home Utilities": "#f59e0b"    // amber-500
+            };
+            const defaultColor = "#64748b";     // slate-500
+
+            const pieLabels = Object.keys(categories);
+            const pieData = Object.values(categories);
+            const pieBackgrounds = pieLabels.map(cat => categoryColors[cat] || defaultColor);
+
+            // Render/Update Pie Chart
+            const ctxPie = document.getElementById('analyticsPieChart')?.getContext('2d');
+            if (ctxPie) {
+                if (categoryPieChartInstance) {
+                    categoryPieChartInstance.destroy();
+                }
+                categoryPieChartInstance = new Chart(ctxPie, {
+                    type: 'doughnut',
+                    data: {
+                        labels: pieLabels,
+                        datasets: [{
+                            data: pieData,
+                            backgroundColor: pieBackgrounds,
+                            borderWidth: 1,
+                            borderColor: '#0f172a' // slate-900 border
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: {
+                                    color: '#94a3b8', // slate-400
+                                    font: { family: 'Plus Jakarta Sans', size: 10, weight: 'bold' },
+                                    padding: 10
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const val = context.raw || 0;
+                                        return ' ' + context.label + ': ' + new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);
+                                    }
+                                }
+                            }
+                        },
+                        cutout: '65%'
+                    }
+                });
+            }
+
+            // 2. Prepare Year Purchase Bar Chart Data
+            // Group value by year of purchase
+            const yearsData = {};
+            assetData.forEach(item => {
+                if (!item) return;
+                const price = parseFloat(item.price || 0);
+                let year = 'Unknown';
+                if (item.purchaseDate && item.purchaseDate.length >= 4) {
+                    const parsedYear = item.purchaseDate.substring(0, 4);
+                    if (!isNaN(parsedYear)) {
+                        year = parsedYear;
+                    }
+                }
+                yearsData[year] = (yearsData[year] || 0) + price;
+            });
+
+            // Sort years chronologically (Unknown at the end if exists)
+            const sortedYears = Object.keys(yearsData).sort((a, b) => {
+                if (a === 'Unknown') return 1;
+                if (b === 'Unknown') return -1;
+                return parseInt(a) - parseInt(b);
+            });
+            const barData = sortedYears.map(yr => yearsData[yr]);
+
+            // Render/Update Bar Chart
+            const ctxBar = document.getElementById('analyticsBarChart')?.getContext('2d');
+            if (ctxBar) {
+                if (purchaseBarChartInstance) {
+                    purchaseBarChartInstance.destroy();
+                }
+                purchaseBarChartInstance = new Chart(ctxBar, {
+                    type: 'bar',
+                    data: {
+                        labels: sortedYears,
+                        datasets: [{
+                            label: 'Spending by Year',
+                            data: barData,
+                            backgroundColor: 'rgba(99, 102, 241, 0.4)', // indigo-500 with opacity
+                            borderColor: '#6366f1', // indigo-500 solid
+                            borderWidth: 1.5,
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const val = context.raw || 0;
+                                        return ' Spent: ' + new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(val);
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                grid: {
+                                    display: false
+                                },
+                                ticks: {
+                                    color: '#94a3b8',
+                                    font: { family: 'Plus Jakarta Sans', size: 10 }
+                                }
+                            },
+                            y: {
+                                grid: {
+                                    color: 'rgba(255, 255, 255, 0.05)'
+                                },
+                                ticks: {
+                                    color: '#94a3b8',
+                                    font: { family: 'Plus Jakarta Sans', size: 10 },
+                                    callback: function(value) {
+                                        return '$' + value;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
         }
 
         // Live LocalStorage Footprint Tracker (Protects offline compression cache)
@@ -2508,31 +2700,15 @@ Use Google Search to find accurate, model-specific information. Return:
             if (e.target === this) closeSettingsModal();
         });
 
-        // Cloud Backup Hub Actions
+        // Google Drive Integration Actions
         let googleTokenClient = null;
-        
-        function openCloudSyncModal() {
-            document.getElementById('gdriveClientIdInput').value = googleClientId || localStorage.getItem('gdrive_client_id') || '';
-            document.getElementById('onedriveClientIdInput').value = onedriveClientId || localStorage.getItem('onedrive_client_id') || '';
-            
-            const modal = document.getElementById('cloudSyncModal');
-            if (modal) modal.classList.remove('hidden');
-        }
 
-        function closeCloudSyncModal() {
-            const modal = document.getElementById('cloudSyncModal');
-            if (modal) modal.classList.add('hidden');
-        }
-
-        // 1. Google Drive Integration
         function saveToGoogleDrive() {
-            const clientVal = googleClientId || document.getElementById('gdriveClientIdInput').value.trim();
+            const clientVal = googleClientId;
             if (!clientVal) {
-                showNotification("Config Required", "Please enter a Google OAuth Client ID to backup to Google Drive.", "amber");
+                showNotification("Config Required", "Google Client ID is not configured.", "amber");
                 return;
             }
-            
-            localStorage.setItem('gdrive_client_id', clientVal);
             
             if (googleTokenClient === null) {
                 googleTokenClient = google.accounts.oauth2.initTokenClient({
@@ -2595,87 +2771,12 @@ Use Google Search to find accurate, model-specific information. Return:
                 
                 if (response.ok) {
                     showNotification("Upload Complete", "Successfully backed up to your Google Drive!", "emerald");
-                    closeCloudSyncModal();
                 } else {
                     const errData = await response.json();
                     throw new Error(errData.error?.message || "Response failed");
                 }
             } catch (err) {
                 showNotification("Drive Error", "Could not complete upload: " + err.message, "rose");
-            }
-        }
-
-
-
-        // 3. OneDrive Integration
-        function saveToOneDrive() {
-            const clientVal = onedriveClientId || document.getElementById('onedriveClientIdInput').value.trim();
-            if (!clientVal) {
-                showNotification("Config Required", "Please enter a Microsoft Client ID to backup to OneDrive.", "amber");
-                return;
-            }
-            localStorage.setItem('onedrive_client_id', clientVal);
-            
-            const backupState = {
-                assets: assetData,
-                tasks: careTasks
-            };
-            localStorage.setItem('cloud_backup_pending_payload', JSON.stringify(backupState));
-            
-            const redirectUri = `${window.location.origin}${window.location.pathname}`;
-            const authUrl = `https://login.microsoftonline.com/common/oauth2/v2.0/authorize?client_id=${clientVal}&response_type=token&redirect_uri=${encodeURIComponent(redirectUri)}&scope=files.readwrite&state=onedrive&prompt=select_account`;
-            window.location.href = authUrl;
-        }
-
-        async function uploadToOneDrive(token) {
-            showNotification("Uploading...", "Pushing backup file to your OneDrive...", "indigo");
-            
-            const payloadStr = localStorage.getItem('cloud_backup_pending_payload');
-            if (!payloadStr) {
-                showNotification("Backup Failed", "No pending backup payload found.", "rose");
-                return;
-            }
-            
-            const filename = `Asset_Vault_Backup_${new Date().toISOString().slice(0,10)}.json`;
-            const uploadUrl = `https://graph.microsoft.com/v1.0/me/drive/root:/${filename}:/content`;
-            
-            try {
-                const response = await fetch(uploadUrl, {
-                    method: 'PUT',
-                    headers: {
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
-                    body: payloadStr
-                });
-                
-                if (response.ok) {
-                    showNotification("Upload Complete", "Successfully backed up to Microsoft OneDrive!", "emerald");
-                    localStorage.removeItem('cloud_backup_pending_payload');
-                } else {
-                    const errData = await response.json();
-                    throw new Error(errData.error?.message || "Upload failed");
-                }
-            } catch (err) {
-                showNotification("OneDrive Error", "Could not complete upload: " + err.message, "rose");
-            }
-        }
-
-        // 4. URL OAuth Callback Hash Listener
-        function handleOAuthRedirectCallback() {
-            const hash = window.location.hash;
-            if (!hash) return;
-            
-            const params = new URLSearchParams(hash.substring(1));
-            const token = params.get('access_token');
-            const state = params.get('state');
-            
-            if (token) {
-                history.replaceState("", document.title, window.location.pathname + window.location.search);
-                
-                if (state === 'onedrive') {
-                    uploadToOneDrive(token);
-                }
             }
         }
     </script>
@@ -2741,86 +2842,7 @@ Use Google Search to find accurate, model-specific information. Return:
         </div>
     </div>
 
-    <!-- Cloud Sync Hub Modal -->
-    <div id="cloudSyncModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-sm flex items-center justify-center p-4 z-50 hidden transition-opacity duration-200" onclick="closeCloudSyncModal()">
-        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-xl w-full p-6 md:p-8 shadow-2xl relative max-h-[90vh] overflow-y-auto" onclick="event.stopPropagation()">
-            <button onclick="closeCloudSyncModal()" class="absolute top-5 right-5 text-slate-400 hover:text-slate-200 transition">
-                <i class="fa-solid fa-xmark text-lg"></i>
-            </button>
-            
-            <div class="flex items-center gap-4 mb-6">
-                <div class="h-12 w-12 rounded-xl bg-gradient-to-tr from-indigo-500 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-500/10 flex-shrink-0">
-                    <i class="fa-solid fa-cloud-arrow-up text-white text-xl animate-pulse"></i>
-                </div>
-                <div>
-                    <h3 class="font-extrabold text-lg text-white tracking-tight">Cloud Backup Hub</h3>
-                    <p class="text-xs text-slate-400">Sync database backups directly to your personal cloud accounts.</p>
-                </div>
-            </div>
 
-            <div class="space-y-4">
-                <!-- Google Drive Card -->
-                <div class="bg-slate-950/50 border border-slate-850 p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div class="flex items-start gap-3">
-                        <div class="h-10 w-10 rounded-xl bg-emerald-500/10 flex items-center justify-center border border-emerald-500/20 text-emerald-400 flex-shrink-0 mt-0.5">
-                            <i class="fa-brands fa-google-drive text-xl"></i>
-                        </div>
-                        <div>
-                            <span class="text-sm font-bold text-slate-200 block">Google Drive</span>
-                            <span class="text-[11px] text-slate-400 leading-normal block">Sync backups directly to your personal Google Drive account.</span>
-                        </div>
-                    </div>
-                    <button onclick="saveToGoogleDrive()" class="h-9 px-4 bg-emerald-500 hover:bg-emerald-600 text-slate-950 text-xs font-bold rounded-lg transition whitespace-nowrap shadow flex items-center justify-center gap-1.5 w-full sm:w-auto">
-                        <i class="fa-brands fa-google-drive"></i> Backup to Drive
-                    </button>
-                </div>
-
-
-
-                <!-- Microsoft OneDrive Card -->
-                <div class="bg-slate-950/50 border border-slate-850 p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div class="flex items-start gap-3">
-                        <div class="h-10 w-10 rounded-xl bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 text-indigo-400 flex-shrink-0 mt-0.5">
-                            <i class="fa-brands fa-windows text-xl"></i>
-                        </div>
-                        <div>
-                            <span class="text-sm font-bold text-slate-200 block">OneDrive</span>
-                            <span class="text-[11px] text-slate-400 leading-normal block">Save backups directly to Microsoft OneDrive.</span>
-                        </div>
-                    </div>
-                    <button onclick="saveToOneDrive()" class="h-9 px-4 bg-indigo-500 hover:bg-indigo-600 text-white text-xs font-bold rounded-lg transition whitespace-nowrap shadow flex items-center justify-center gap-1.5 w-full sm:w-auto">
-                        <i class="fa-brands fa-windows"></i> Backup to OneDrive
-                    </button>
-                </div>
-            </div>
-
-            <!-- Collapsible Developer Settings Section -->
-            <details class="no-print mt-6 border-t border-slate-850 pt-4">
-                <summary class="cursor-pointer text-[10px] text-slate-500 hover:text-slate-400 font-bold uppercase tracking-wider select-none flex items-center gap-1">
-                    <i class="fa-solid fa-gear"></i> Developer API Settings (Optional Override)
-                </summary>
-                <div class="mt-4 space-y-4 bg-slate-950/50 border border-slate-850 p-4 rounded-2xl">
-                    <p class="text-[10px] text-slate-450 leading-relaxed">If you host this site on a custom domain, you can configure your own OAuth Client IDs here. These will save locally inside your browser storage.</p>
-                    <div>
-                        <label class="block text-[9px] font-semibold text-slate-500 uppercase tracking-wider mb-1 font-sans">Google OAuth Client ID</label>
-                        <input type="text" id="gdriveClientIdInput" placeholder="Enter google client ID..." class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-slate-200 focus:outline-none focus:border-emerald-500 transition">
-                    </div>
-
-                    <div>
-                        <label class="block text-[9px] font-semibold text-slate-500 uppercase tracking-wider mb-1 font-sans">Microsoft OneDrive Client ID</label>
-                        <input type="text" id="onedriveClientIdInput" placeholder="Enter Microsoft App ID..." class="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 text-xs text-slate-200 focus:outline-none focus:border-indigo-500 transition">
-                    </div>
-                </div>
-            </details>
-            
-            <div class="pt-5 border-t border-slate-850 flex justify-between items-center mt-5 text-[10px] text-slate-500">
-                <span>All OAuth authentications occur client-side.</span>
-                <button onclick="closeCloudSyncModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-lg transition text-[11px]">
-                    Close
-                </button>
-            </div>
-        </div>
-    </div>
 
     <!-- ═══════════════════════════════════════════════════════
          SETTINGS MODAL — Gemini API Key
