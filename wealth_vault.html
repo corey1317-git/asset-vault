@@ -659,6 +659,8 @@
             <a href="vehicle_vault.html" class="hover:text-slate-400 transition font-semibold">Vehicle Vault</a>
             <span class="text-slate-800">|</span>
             <a href="recipe_vault.html" class="hover:text-slate-400 transition font-semibold">Recipe Vault</a>
+            <span class="text-slate-800">|</span>
+            <a href="updates.html" class="hover:text-slate-400 transition font-semibold">Updates</a>
         </div>
     </footer>
 
@@ -1094,6 +1096,71 @@
                 <button onclick="closeImportReviewModal()" class="flex-1 px-3 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-xl transition">Cancel</button>
                 <button onclick="applyImportReview()" class="flex-1 px-3 py-2.5 bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-violet-600/20 transition flex items-center justify-center gap-1.5">
                     <i class="fa-solid fa-check"></i> Apply to Vault
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         SYSTEM LOG MODAL — Wealth Vault Changelog
+    ═══════════════════════════════════════════════════════ -->
+    <div id="changelogModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center p-6 z-[950] hidden transition-opacity duration-200" onclick="closeChangelog()">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-xl w-full p-6 shadow-2xl relative max-h-[85vh] overflow-y-auto flex flex-col" onclick="event.stopPropagation()">
+            <button onclick="closeChangelog()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-200 transition">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+
+            <div class="flex items-center gap-3 mb-6 pb-4 border-b border-slate-800">
+                <div class="h-10 w-10 rounded-xl bg-violet-500/10 text-violet-400 flex items-center justify-center border border-violet-500/20">
+                    <i class="fa-solid fa-code-branch text-lg"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg text-slate-100">System Log</h3>
+                    <p class="text-xs text-slate-400">Chronological history of Wealth Vault development</p>
+                </div>
+            </div>
+
+            <div class="space-y-6 relative border-l-2 border-slate-800 ml-3 pl-6 my-2 text-xs">
+                <div class="relative">
+                    <span class="absolute -left-[31px] top-1 bg-violet-500 ring-4 ring-slate-950 h-3 w-3 rounded-full animate-pulse"></span>
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="font-bold text-violet-400 text-xs">v1.2.0 — Statement Import (Latest)</span>
+                        <span class="text-[9px] text-slate-500 font-mono">July 2026</span>
+                    </div>
+                    <p class="text-slate-300 mt-1 leading-relaxed">
+                        Added credit/debit statement import — upload a CSV (free keyword categorization, or AI categorization automatically when a key is configured) or a screenshot of a statement/balance (Gemini vision extracts accounts and transactions). A new Import Review modal lets you confirm or re-categorize everything before it touches your data. Also fixed a bug where the budget sliders silently reset most categories on every re-render.
+                    </p>
+                </div>
+
+                <div class="relative">
+                    <span class="absolute -left-[31px] top-1 bg-violet-700 ring-4 ring-slate-950 h-3 w-3 rounded-full"></span>
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="font-bold text-slate-400 text-xs">v1.1.0 — AI Financial Coach</span>
+                        <span class="text-[9px] text-slate-500 font-mono">July 2026</span>
+                    </div>
+                    <p class="text-slate-300 mt-1 leading-relaxed">
+                        Added an AI Financial Coach ("Vera") that generates a personalized coaching report and answers follow-up questions grounded in your live ledger and budget, plus a Settings modal to manage your own Gemini/OpenRouter API keys. The onboarding wizard now supports AI Quick Start (describe your finances in plain English to auto-fill everything), home/mortgage fields, and an editable review step.
+                    </p>
+                </div>
+
+                <div class="relative">
+                    <span class="absolute -left-[31px] top-1 bg-slate-800 ring-4 ring-slate-950 h-3 w-3 rounded-full"></span>
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="font-bold text-slate-400 text-xs">v1.0.0 — Initial Release</span>
+                        <span class="text-[9px] text-slate-500 font-mono">July 2026</span>
+                    </div>
+                    <p class="text-slate-300 mt-1 leading-relaxed">
+                        Launched Wealth Vault — a financial advisor and net worth optimizer with asset/liability tracking, budget &amp; cash flow planning, a retirement growth simulator, and a rule-based Smart Advisor checklist.
+                    </p>
+                </div>
+            </div>
+
+            <div class="mt-4 pt-4 border-t border-slate-800 flex justify-between items-center">
+                <a href="updates.html" class="text-[11px] text-violet-400 hover:text-violet-300 font-semibold transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i> View All Portal Updates
+                </a>
+                <button onclick="closeChangelog()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-bold transition">
+                    Close
                 </button>
             </div>
         </div>
@@ -3377,9 +3444,15 @@
             reader.readAsDataURL(file);
         }
 
-        // Welcome / Changelog notification system
+        // System Log (Changelog) Modal
         function openChangelog() {
-            alert("Wealth Vault — v1.2.0 Changelog:\n\n- NEW: Import a credit/debit card CSV statement — auto-categorizes transactions into your budget for free, or with AI if you've added a key\n- NEW: Import a screenshot of a statement or account balance — Gemini vision extracts accounts and transactions automatically\n- NEW: Import Review modal to confirm/edit/re-categorize everything before it touches your vault\n- v1.1.0: AI Financial Coach with personalized reports + follow-up chat (Gemini/OpenRouter)\n- v1.1.0: AI Quick Start — describe your finances in plain English to auto-fill the wizard\n- v1.1.0: Home/property assets and mortgage liabilities in the wizard\n- v1.1.0: Editable Step 5 wizard review with assets/debts/savings breakdown and jump-to-step shortcuts\n- Settings modal for managing your own free AI API keys (stored locally only)\n- Client-Side secure calculations\n- Interactive Net Worth compose charts\n- Smart retirement trajectory simulations\n- Multi-factor advisory engines (Avalanche payoff checklists)\n- Offline JSON configuration migrations");
+            const modal = document.getElementById('changelogModal');
+            if (modal) { modal.classList.remove('hidden'); modal.classList.add('flex'); }
+        }
+
+        function closeChangelog() {
+            const modal = document.getElementById('changelogModal');
+            if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
         }
 
         // Close import review modal on backdrop click

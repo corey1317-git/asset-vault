@@ -92,7 +92,7 @@
         <div>
             <div class="flex items-center gap-2">
                 <h1 class="font-extrabold text-base tracking-tight bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">Mower Vault</h1>
-                <span class="text-[9px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-1.5 py-0.5 rounded-full">v1.0.0</span>
+                <span onclick="openChangelog(); event.preventDefault();" class="cursor-pointer text-[9px] font-bold bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-1.5 py-0.5 rounded-full transition select-none" title="View Changelog">v1.2.0</span>
             </div>
             <p class="text-[10px] text-emerald-400 font-semibold uppercase tracking-wider">Project Repair &amp; Flip Ledger</p>
         </div>
@@ -618,6 +618,69 @@
         <div class="px-6 py-4 border-t border-slate-800 flex justify-end sticky bottom-0 bg-slate-900 z-10">
             <button onclick="closeWelcomeModal()" class="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl transition text-xs flex items-center gap-1.5">
                 Get Started <i class="fa-solid fa-arrow-right text-[10px]"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ═══════════ SYSTEM LOG MODAL — Mower Vault Changelog ═══════════ -->
+<div id="changelogModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center p-6 z-[950] hidden transition-opacity duration-200" onclick="closeChangelog()">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-xl w-full p-6 shadow-2xl relative max-h-[85vh] overflow-y-auto flex flex-col" onclick="event.stopPropagation()">
+        <button onclick="closeChangelog()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-200 transition">
+            <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+
+        <div class="flex items-center gap-3 mb-6 pb-4 border-b border-slate-800">
+            <div class="h-10 w-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/20">
+                <i class="fa-solid fa-code-branch text-lg"></i>
+            </div>
+            <div>
+                <h3 class="font-bold text-lg text-slate-100">System Log</h3>
+                <p class="text-xs text-slate-400">Chronological history of Mower Vault development</p>
+            </div>
+        </div>
+
+        <div class="space-y-6 relative border-l-2 border-slate-800 ml-3 pl-6 my-2 text-xs">
+            <div class="relative">
+                <span class="absolute -left-[31px] top-1 bg-emerald-500 ring-4 ring-slate-950 h-3 w-3 rounded-full animate-pulse"></span>
+                <div class="flex items-center justify-between gap-2">
+                    <span class="font-bold text-emerald-400 text-xs">v1.2.0 — Demo Data &amp; Reliability Fixes (Latest)</span>
+                    <span class="text-[9px] text-slate-500 font-mono">June 2026</span>
+                </div>
+                <p class="text-slate-300 mt-1 leading-relaxed">
+                    Added (Demo) labeling and safe migration patches for pre-populated sample data, a real John Deere D140 photo, hotlink-safe AI image prompts with client-side fallbacks, and switched to the latest stable Gemini/OpenRouter models with instant quota-aware fallback. Fixed a dead parts-lookup link in the repair guides.
+                </p>
+            </div>
+
+            <div class="relative">
+                <span class="absolute -left-[31px] top-1 bg-slate-700 ring-4 ring-slate-950 h-3 w-3 rounded-full"></span>
+                <div class="flex items-center justify-between gap-2">
+                    <span class="font-bold text-slate-400 text-xs">v1.1.0 — AI Enrich &amp; ManualsLib</span>
+                    <span class="text-[9px] text-slate-500 font-mono">June 2026</span>
+                </div>
+                <p class="text-slate-300 mt-1 leading-relaxed">
+                    Added ManualsLib manual lookups, Test Key buttons for Gemini/OpenRouter in Settings, and repaired AI enrichment with an automatic OpenRouter backup provider.
+                </p>
+            </div>
+
+            <div class="relative">
+                <span class="absolute -left-[31px] top-1 bg-slate-800 ring-4 ring-slate-950 h-3 w-3 rounded-full"></span>
+                <div class="flex items-center justify-between gap-2">
+                    <span class="font-bold text-slate-400 text-xs">v1.0.0 — Initial Release</span>
+                    <span class="text-[9px] text-slate-500 font-mono">May 2026</span>
+                </div>
+                <p class="text-slate-300 mt-1 leading-relaxed">
+                    Launched Mower Vault — a repair &amp; flip ledger for tracking project mowers, with local image uploads, AI-assisted image search, and Google Drive backups.
+                </p>
+            </div>
+        </div>
+
+        <div class="mt-4 pt-4 border-t border-slate-800 flex justify-between items-center">
+            <a href="updates.html" class="text-[11px] text-emerald-400 hover:text-emerald-300 font-semibold transition flex items-center gap-1.5">
+                <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i> View All Portal Updates
+            </a>
+            <button onclick="closeChangelog()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-bold transition">
+                Close
             </button>
         </div>
     </div>
@@ -1498,6 +1561,16 @@ Return ONLY the raw JSON object. Do not include markdown formatting, backticks, 
         m.classList.add('hidden');
         m.classList.remove('flex');
         localStorage.setItem('mower_welcome_dismissed', 'true');
+    }
+
+    // ── System Log (Changelog) Modal ──────────────────────────
+    function openChangelog() {
+        const m = document.getElementById('changelogModal');
+        if (m) { m.classList.remove('hidden'); m.classList.add('flex'); }
+    }
+    function closeChangelog() {
+        const m = document.getElementById('changelogModal');
+        if (m) { m.classList.add('hidden'); m.classList.remove('flex'); }
     }
 
     // ── Settings Modal Handlers ───────────────────────────────
