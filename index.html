@@ -19,6 +19,11 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
         
+        html, body {
+            overflow-x: hidden;
+            width: 100%;
+        }
+
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
             background-color: #030712; /* slate-950 */
@@ -169,7 +174,7 @@
     <header class="border-b border-slate-900 bg-slate-950/40 backdrop-blur-md px-8 py-5 flex justify-between items-center z-10">
         <div class="flex items-center space-x-3">
             <div class="h-10 w-10 rounded-xl overflow-hidden shadow-lg shadow-indigo-500/10 border border-slate-800">
-                <img src="mascot.jpg" class="h-full w-full object-cover animate-pulse" alt="Mascot">
+                <img src="mascot.jpg" class="h-full w-full object-cover" alt="Mascot">
             </div>
             <div>
                 <h1 class="font-extrabold text-lg tracking-tight bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">Thorpe Tech</h1>
