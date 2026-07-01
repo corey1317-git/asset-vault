@@ -1,0 +1,2094 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wealth Vault — Thorpe Tech</title>
+    <!-- Google Analytics 4 — replace G-BG8QPL6TX6 with your Measurement ID -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-BG8QPL6TX6"></script>
+    <script>
+        window.dataLayer = window.dataLayer || [];
+        function gtag(){dataLayer.push(arguments);}
+        gtag('js', new Date());
+        gtag('config', 'G-BG8QPL6TX6');
+    </script>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+        
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #030712; /* slate-950 */
+        }
+
+        /* Ambient mesh background */
+        .mesh-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+            background: radial-gradient(circle at 15% 15%, rgba(139, 92, 246, 0.05) 0%, transparent 40%),
+                        radial-gradient(circle at 85% 85%, rgba(217, 70, 239, 0.04) 0%, transparent 45%),
+                        radial-gradient(circle at 50% 50%, rgba(99, 102, 241, 0.02) 0%, transparent 60%);
+        }
+
+        /* Subtle grid pattern overlay */
+        .grid-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background-image: linear-gradient(rgba(255, 255, 255, 0.005) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(255, 255, 255, 0.005) 1px, transparent 1px);
+            background-size: 50px 50px;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #090d16;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #334155;
+        }
+
+        /* Glassmorphism elements */
+        .glass-card {
+            background: rgba(15, 23, 42, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        .glow-violet:hover {
+            box-shadow: 0 0 30px rgba(139, 92, 246, 0.12);
+        }
+
+        /* Pulse aura indicator */
+        .status-dot {
+            position: relative;
+        }
+        .status-dot::after {
+            content: '';
+            position: absolute;
+            width: 100%; height: 100%;
+            border-radius: 50%;
+            background: inherit;
+            animation: pulse-ring 1.8s cubic-bezier(0.215, 0.61, 0.355, 1) infinite;
+            top: 0; left: 0;
+        }
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { opacity: 0.3; }
+            100% { transform: scale(2.2); opacity: 0; }
+        }
+
+        /* Custom range sliders */
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            background: #1e293b;
+            border-radius: 8px;
+            height: 6px;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #8b5cf6;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        input[type="range"]::-webkit-slider-thumb:hover {
+            background: #a78bfa;
+        }
+    </style>
+</head>
+<body class="text-slate-100 min-h-screen flex flex-col justify-between overflow-x-hidden relative">
+
+    <div class="mesh-bg"></div>
+    <div class="grid-overlay"></div>
+
+    <!-- ═══════════ HEADER ═══════════ -->
+    <header class="border-b border-slate-900 bg-slate-950/40 backdrop-blur sticky top-0 z-40 px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+        <div class="flex items-center space-x-3.5 self-start md:self-auto">
+            <div class="h-11 w-11 rounded-xl bg-gradient-to-tr from-violet-500 to-fuchsia-600 flex items-center justify-center shadow-lg shadow-violet-500/20">
+                <i class="fa-solid fa-chart-line text-slate-950 text-xl"></i>
+            </div>
+            <div>
+                <div class="flex items-center gap-2">
+                    <h1 class="font-extrabold text-xl leading-tight bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">Wealth Vault</h1>
+                    <span onclick="openChangelog()" class="cursor-pointer text-[10px] font-bold bg-violet-500/10 hover:bg-violet-500/20 text-violet-400 border border-violet-500/30 px-2 py-0.5 rounded-full transition flex items-center gap-1 select-none">v1.0.0</span>
+                </div>
+                <p class="text-[11px] text-slate-500 hidden md:block">Financial advisor &amp; net worth optimizer</p>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-2 flex-wrap justify-end">
+            <a href="index.html" class="px-3.5 py-2 bg-slate-900 hover:bg-slate-850 text-slate-400 hover:text-slate-200 border border-slate-800 hover:border-slate-750 text-xs font-semibold rounded-xl transition flex items-center gap-1.5">
+                <i class="fa-solid fa-house text-slate-500"></i> Home
+            </a>
+            <a href="asset_vault.html" class="px-3.5 py-2 bg-slate-900 hover:bg-slate-850 text-slate-400 hover:text-slate-200 border border-slate-800 hover:border-slate-750 text-xs font-semibold rounded-xl transition flex items-center gap-1.5">
+                <i class="fa-solid fa-box-open text-emerald-400"></i> Asset Vault
+            </a>
+            <a href="vehicle_vault.html" class="px-3.5 py-2 bg-slate-900 hover:bg-slate-850 text-slate-400 hover:text-slate-200 border border-slate-800 hover:border-slate-750 text-xs font-semibold rounded-xl transition flex items-center gap-1.5">
+                <i class="fa-solid fa-car text-cyan-400"></i> Vehicle Vault
+            </a>
+
+            <!-- Data Operations -->
+            <button onclick="document.getElementById('importBackupFile').click()" class="px-3 py-2 bg-slate-900 hover:bg-slate-850 text-slate-300 border border-slate-800 hover:border-slate-750 text-xs font-semibold rounded-xl transition flex items-center gap-1.5" title="Import backup data">
+                <i class="fa-solid fa-upload text-indigo-400"></i> Import
+            </button>
+            <input type="file" id="importBackupFile" accept=".json" class="hidden" onchange="importData(this)">
+            <button onclick="exportData()" class="px-3 py-2 bg-slate-900 hover:bg-slate-850 text-slate-300 border border-slate-800 hover:border-slate-750 text-xs font-semibold rounded-xl transition flex items-center gap-1.5" title="Export backup data">
+                <i class="fa-solid fa-download text-fuchsia-400"></i> Save Backup
+            </button>
+            <button onclick="openWizard(true)" class="px-3.5 py-2 bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-violet-600/20 transition flex items-center gap-1.5">
+                <i class="fa-solid fa-wand-magic-sparkles"></i> Restart Wizard
+            </button>
+            <button onclick="clearAllData()" class="h-9 w-9 bg-slate-900 hover:bg-rose-950 hover:text-rose-400 text-slate-500 border border-slate-800 hover:border-rose-900 rounded-xl transition flex items-center justify-center" title="Reset All Data">
+                <i class="fa-solid fa-trash-can text-sm"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- ═══════════ TOP METRICS BAR ═══════════ -->
+    <div id="metrics-bar" class="bg-slate-950/30 border-b border-slate-900/60 px-6 py-4 backdrop-blur-sm">
+        <div class="max-w-7xl mx-auto grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="flex items-center gap-3">
+                <div class="h-10 w-10 rounded-xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center flex-shrink-0">
+                    <i class="fa-solid fa-scale-balanced text-violet-400 text-sm"></i>
+                </div>
+                <div>
+                    <div id="metric-net-worth" class="text-lg md:text-xl font-extrabold text-white">$0</div>
+                    <div class="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Net Worth</div>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <div class="h-10 w-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center flex-shrink-0">
+                    <i class="fa-solid fa-wallet text-emerald-400 text-sm"></i>
+                </div>
+                <div>
+                    <div id="metric-liquid-cash" class="text-lg md:text-xl font-extrabold text-white">$0</div>
+                    <div class="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Liquid Cash</div>
+                </div>
+            </div>
+            <div class="flex items-center gap-3">
+                <div class="h-10 w-10 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center flex-shrink-0">
+                    <i class="fa-solid fa-hand-holding-dollar text-rose-400 text-sm"></i>
+                </div>
+                <div>
+                    <div id="metric-total-debt" class="text-lg md:text-xl font-extrabold text-white">$0</div>
+                    <div class="text-[10px] text-slate-500 uppercase tracking-wider font-semibold">Total Debt</div>
+                </div>
+            </div>
+            <div class="flex items-center gap-3 relative group">
+                <div class="h-10 w-10 rounded-xl bg-fuchsia-500/10 border border-fuchsia-500/20 flex items-center justify-center flex-shrink-0">
+                    <i class="fa-solid fa-heart-pulse text-fuchsia-400 text-sm animate-pulse"></i>
+                </div>
+                <div>
+                    <div class="flex items-center gap-1.5">
+                        <div id="metric-health-score" class="text-lg md:text-xl font-extrabold text-white">0</div>
+                        <span id="metric-health-badge" class="text-[9px] px-1.5 py-0.5 rounded font-bold uppercase select-none">Poor</span>
+                    </div>
+                    <div class="text-[10px] text-slate-500 uppercase tracking-wider font-semibold flex items-center gap-1 cursor-help">
+                        Wealth Score <i class="fa-solid fa-circle-info text-[9px]"></i>
+                    </div>
+                </div>
+                
+                <!-- Score Breakdown Tooltip -->
+                <div class="absolute top-12 left-0 w-64 bg-slate-900 border border-slate-800 rounded-xl p-3 shadow-2xl opacity-0 scale-95 pointer-events-none group-hover:opacity-100 group-hover:scale-100 transition-all duration-200 z-50 text-xs text-slate-300 space-y-2">
+                    <h4 class="font-bold text-white border-b border-slate-800 pb-1">Score Breakdown</h4>
+                    <div class="flex justify-between">
+                        <span>Emergency Fund (30%):</span>
+                        <span id="score-breakdown-ef" class="font-semibold text-slate-100">0/30</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Savings Rate (30%):</span>
+                        <span id="score-breakdown-sr" class="font-semibold text-slate-100">0/30</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Debt-to-Asset (20%):</span>
+                        <span id="score-breakdown-da" class="font-semibold text-slate-100">0/20</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Retirement Outlook (20%):</span>
+                        <span id="score-breakdown-rt" class="font-semibold text-slate-100">0/20</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════ MAIN CONTENT GRID ═══════════ -->
+    <main class="flex-1 p-6 max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-6 z-10">
+        
+        <!-- LEFT: Data Entry & Manager Column (Col-span 5) -->
+        <section class="lg:col-span-5 flex flex-col gap-4">
+            
+            <!-- Dashboard Tab Selection -->
+            <div class="flex bg-slate-950/60 p-1 border border-slate-900 rounded-xl">
+                <button onclick="switchLeftTab('assets-liabilities')" id="tab-btn-assets-liabilities" class="flex-1 py-2 text-xs font-bold rounded-lg transition-all bg-violet-600/10 text-violet-400 border border-violet-500/20">
+                    <i class="fa-solid fa-list-check mr-1.5"></i> Assets &amp; Liabilities
+                </button>
+                <button onclick="switchLeftTab('cashflow')" id="tab-btn-cashflow" class="flex-1 py-2 text-xs font-bold rounded-lg transition-all text-slate-400 hover:text-slate-200">
+                    <i class="fa-solid fa-sack-dollar mr-1.5"></i> Budget &amp; Cash Flow
+                </button>
+            </div>
+
+            <!-- TAB content: Assets & Liabilities -->
+            <div id="panel-assets-liabilities" class="space-y-4">
+                <!-- Add asset / liability quick controls -->
+                <div class="glass-card border border-slate-800 rounded-2xl p-4 space-y-3">
+                    <div class="flex justify-between items-center">
+                        <h3 class="font-extrabold text-sm text-slate-200 uppercase tracking-wider flex items-center gap-2">
+                            <span class="h-1.5 w-1.5 rounded-full bg-violet-500 inline-block"></span> Add Entry
+                        </h3>
+                    </div>
+                    
+                    <form id="entry-form" onsubmit="handleFormSubmit(event)" class="space-y-3">
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Type</label>
+                                <select id="form-type" onchange="adjustFormFields()" class="w-full bg-slate-950 border border-slate-800 focus:border-violet-500 focus:outline-none rounded-xl px-3 py-2 text-xs text-slate-100">
+                                    <option value="asset">Asset (+)</option>
+                                    <option value="liability">Liability (-)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Category</label>
+                                <select id="form-category" class="w-full bg-slate-950 border border-slate-800 focus:border-violet-500 focus:outline-none rounded-xl px-3 py-2 text-xs text-slate-100">
+                                    <!-- Options populated dynamically by JS based on type -->
+                                </select>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Name</label>
+                            <input type="text" id="form-name" placeholder="e.g. Chase Checking, Home Mortgage" required class="w-full bg-slate-950 border border-slate-800 focus:border-violet-500 focus:outline-none rounded-xl px-3 py-2 text-xs text-slate-100 placeholder-slate-800">
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2">
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Current Balance (<span class="currency-symbol">$</span>)</label>
+                                <input type="number" id="form-value" step="0.01" required min="0" placeholder="0.00" class="w-full bg-slate-950 border border-slate-800 focus:border-violet-500 focus:outline-none rounded-xl px-3 py-2 text-xs text-slate-100 placeholder-slate-850">
+                            </div>
+                            <div id="field-interest-rate">
+                                <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Interest Rate (%)</label>
+                                <input type="number" id="form-interest" step="0.01" min="0" placeholder="0.00" class="w-full bg-slate-950 border border-slate-800 focus:border-violet-500 focus:outline-none rounded-xl px-3 py-2 text-xs text-slate-100 placeholder-slate-850">
+                            </div>
+                        </div>
+
+                        <button type="submit" class="w-full py-2.5 bg-violet-600 hover:bg-violet-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-violet-600/10 hover:shadow-violet-600/20 transition duration-150 flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-plus"></i> Save to Ledger
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Interactive Data Table -->
+                <div class="glass-card border border-slate-800 rounded-2xl p-4 space-y-3">
+                    <div class="flex justify-between items-center">
+                        <h3 class="font-bold text-xs text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                            <i class="fa-solid fa-list text-violet-400"></i> Vault Ledger
+                        </h3>
+                        <div class="flex items-center gap-1.5">
+                            <button onclick="setLedgerFilter('all')" id="filter-btn-all" class="text-[9px] font-bold bg-violet-600/20 border border-violet-500/30 text-violet-400 px-2 py-0.5 rounded">All</button>
+                            <button onclick="setLedgerFilter('assets')" id="filter-btn-assets" class="text-[9px] font-bold bg-slate-950 border border-slate-850 text-slate-400 px-2 py-0.5 rounded">Assets</button>
+                            <button onclick="setLedgerFilter('liabilities')" id="filter-btn-liabilities" class="text-[9px] font-bold bg-slate-950 border border-slate-850 text-slate-400 px-2 py-0.5 rounded">Debts</button>
+                        </div>
+                    </div>
+
+                    <!-- Ledger entries wrap -->
+                    <div id="ledger-list" class="max-h-[350px] overflow-y-auto space-y-2 pr-1">
+                        <!-- Entries rendered dynamically by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB content: Budget & Cash Flow -->
+            <div id="panel-cashflow" class="space-y-4 hidden">
+                <div class="glass-card border border-slate-800 rounded-2xl p-4 space-y-4">
+                    <h3 class="font-extrabold text-sm text-slate-200 uppercase tracking-wider flex items-center gap-2 border-b border-slate-850 pb-2">
+                        <i class="fa-solid fa-hand-holding-dollar text-emerald-400"></i> Monthly Income Streams
+                    </h3>
+                    <div class="space-y-2">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wide mb-1">Primary Monthly Income (<span class="currency-symbol">$</span>)</label>
+                            <input type="number" id="cashflow-income" step="1" onchange="updateCashflowState()" class="w-full bg-slate-950 border border-slate-800 focus:border-violet-500 focus:outline-none rounded-xl px-3 py-2 text-xs text-slate-100 font-semibold">
+                            <p class="text-[9px] text-slate-500 mt-1">Post-tax / take-home household pay.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-card border border-slate-800 rounded-2xl p-4 space-y-4">
+                    <h3 class="font-extrabold text-sm text-slate-200 uppercase tracking-wider flex items-center gap-2 border-b border-slate-850 pb-2">
+                        <i class="fa-solid fa-file-invoice-dollar text-rose-400"></i> Monthly Expenses / Budget
+                    </h3>
+                    
+                    <div class="space-y-3 max-h-[350px] overflow-y-auto pr-1">
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Housing (Rent/Mortgage)</label>
+                                <span class="text-xs text-slate-500"><span class="currency-symbol">$</span><span id="budget-val-housing">0</span></span>
+                            </div>
+                            <input type="range" id="budget-housing" min="0" max="6000" step="50" oninput="syncRangeDisplay(this)" class="w-full cursor-pointer">
+                        </div>
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Groceries &amp; Food</label>
+                                <span class="text-xs text-slate-500"><span class="currency-symbol">$</span><span id="budget-val-food">0</span></span>
+                            </div>
+                            <input type="range" id="budget-food" min="0" max="2500" step="50" oninput="syncRangeDisplay(this)" class="w-full cursor-pointer">
+                        </div>
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Transportation &amp; Auto</label>
+                                <span class="text-xs text-slate-500"><span class="currency-symbol">$</span><span id="budget-val-trans">0</span></span>
+                            </div>
+                            <input type="range" id="budget-trans" min="0" max="1500" step="25" oninput="syncRangeDisplay(this)" class="w-full cursor-pointer">
+                        </div>
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Utilities &amp; Subscriptions</label>
+                                <span class="text-xs text-slate-500"><span class="currency-symbol">$</span><span id="budget-val-utils">0</span></span>
+                            </div>
+                            <input type="range" id="budget-utils" min="0" max="1200" step="25" oninput="syncRangeDisplay(this)" class="w-full cursor-pointer">
+                        </div>
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Debt Payments (Min Payments)</label>
+                                <span class="text-xs text-slate-500"><span class="currency-symbol">$</span><span id="budget-val-debt">0</span></span>
+                            </div>
+                            <input type="range" id="budget-debt" min="0" max="3000" step="50" oninput="syncRangeDisplay(this)" class="w-full cursor-pointer">
+                        </div>
+                        <div>
+                            <div class="flex justify-between mb-1">
+                                <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Lifestyle, Shopping &amp; Fun</label>
+                                <span class="text-xs text-slate-500"><span class="currency-symbol">$</span><span id="budget-val-lifestyle">0</span></span>
+                            </div>
+                            <input type="range" id="budget-lifestyle" min="0" max="4000" step="50" oninput="syncRangeDisplay(this)" class="w-full cursor-pointer">
+                        </div>
+                    </div>
+
+                    <!-- Flow summary status -->
+                    <div class="p-3 bg-slate-950 border border-slate-900 rounded-xl space-y-1.5">
+                        <div class="flex justify-between text-xs text-slate-400">
+                            <span>Total Budgeted Expenses:</span>
+                            <span class="font-semibold text-slate-100"><span class="currency-symbol">$</span><span id="budget-total-expenses">0</span></span>
+                        </div>
+                        <div class="flex justify-between text-xs text-slate-400">
+                            <span>Projected Monthly Savings:</span>
+                            <span class="font-semibold text-emerald-400"><span class="currency-symbol">$</span><span id="budget-projected-savings">0</span></span>
+                        </div>
+                        <div class="flex justify-between text-xs text-slate-400 border-t border-slate-900 pt-1">
+                            <span>Estimated Savings Rate:</span>
+                            <span id="budget-savings-rate" class="font-bold text-emerald-400">0%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- RIGHT: Dashboard Graphs & Advisors (Col-span 7) -->
+        <section class="lg:col-span-7 flex flex-col gap-4">
+            
+            <!-- Dashboard Tab Selection -->
+            <div class="flex bg-slate-950/60 p-1 border border-slate-900 rounded-xl">
+                <button onclick="switchRightTab('overview')" id="tab-btn-overview" class="flex-1 py-2 text-xs font-bold rounded-lg transition-all bg-violet-600/10 text-violet-400 border border-violet-500/20">
+                    <i class="fa-solid fa-chart-pie mr-1.5"></i> Allocation &amp; Charts
+                </button>
+                <button onclick="switchRightTab('retirement')" id="tab-btn-retirement" class="flex-1 py-2 text-xs font-bold rounded-lg transition-all text-slate-400 hover:text-slate-200">
+                    <i class="fa-solid fa-compass-drafting mr-1.5"></i> Retirement Simulator
+                </button>
+                <button onclick="switchRightTab('advisor')" id="tab-btn-advisor" class="flex-1 py-2 text-xs font-bold rounded-lg transition-all text-slate-400 hover:text-slate-200 relative">
+                    <i class="fa-solid fa-wand-magic-sparkles mr-1.5"></i> Smart Advisor
+                    <span id="advisor-pill" class="absolute -top-1 right-2 bg-rose-500 text-slate-950 font-black text-[9px] h-4 px-1.5 rounded-full flex items-center justify-center border border-slate-950">!</span>
+                </button>
+            </div>
+
+            <!-- PANEL: Overview & Allocation Charts -->
+            <div id="panel-overview" class="space-y-4">
+                <div class="glass-card border border-slate-800 rounded-3xl p-6">
+                    <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-3 mb-6">
+                        <div>
+                            <h3 class="font-bold text-base text-white">Wealth Composition</h3>
+                            <p class="text-xs text-slate-500">Asset classes vs debt liabilities balance breakdown</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+                        <div class="aspect-square max-w-[280px] mx-auto w-full relative">
+                            <canvas id="allocationChart"></canvas>
+                            <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                                <span class="text-xs text-slate-500 font-bold uppercase tracking-wider">Net Worth</span>
+                                <span id="chart-center-net-worth" class="text-lg font-black text-white">$0</span>
+                            </div>
+                        </div>
+                        <div class="space-y-3">
+                            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Category Totals</h4>
+                            <div id="composition-legend" class="space-y-2">
+                                <!-- Dynamic breakdown percentages -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Asset vs Debt balance visualization -->
+                <div class="glass-card border border-slate-800 rounded-2xl p-4 space-y-3">
+                    <div class="flex justify-between items-center text-xs font-bold">
+                        <span class="text-slate-400">Debt-to-Asset Ratio</span>
+                        <span id="ratio-display" class="text-emerald-400">0% (Excellent)</span>
+                    </div>
+                    <div class="w-full bg-slate-950 h-3 border border-slate-900 rounded-full overflow-hidden flex">
+                        <div id="ratio-bar-assets" class="h-full bg-emerald-500" style="width: 100%"></div>
+                        <div id="ratio-bar-debts" class="h-full bg-rose-500" style="width: 0%"></div>
+                    </div>
+                    <div class="flex justify-between text-[10px] text-slate-500 font-semibold uppercase">
+                        <span>Assets: <span id="ratio-value-assets">$0</span></span>
+                        <span>Liabilities: <span id="ratio-value-debts">$0</span></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANEL: Retirement Planner Simulator -->
+            <div id="panel-retirement" class="space-y-4 hidden">
+                <div class="glass-card border border-slate-800 rounded-3xl p-6 space-y-6">
+                    <div>
+                        <h3 class="font-bold text-base text-white">Retirement Growth Simulator</h3>
+                        <p class="text-xs text-slate-500 font-medium">Predict wealth generation curves over a multi-decade timeline</p>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 bg-slate-950/40 p-4 border border-slate-900 rounded-2xl">
+                        <div class="space-y-3.5">
+                            <div>
+                                <div class="flex justify-between mb-1">
+                                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Target Retirement Age</label>
+                                    <span class="text-xs text-slate-100 font-bold"><span id="slider-val-ret-age">65</span> yr</span>
+                                </div>
+                                <input type="range" id="slider-ret-age" min="40" max="80" step="1" oninput="updateRetirementAnalysis()" class="w-full cursor-pointer">
+                            </div>
+                            <div>
+                                <div class="flex justify-between mb-1">
+                                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Expected Growth Rate (%)</label>
+                                    <span class="text-xs text-slate-100 font-bold"><span id="slider-val-growth">7</span>%</span>
+                                </div>
+                                <input type="range" id="slider-growth" min="2" max="15" step="0.5" oninput="updateRetirementAnalysis()" class="w-full cursor-pointer">
+                            </div>
+                        </div>
+
+                        <div class="space-y-3.5">
+                            <div>
+                                <div class="flex justify-between mb-1">
+                                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Expected Inflation Rate (%)</label>
+                                    <span class="text-xs text-slate-100 font-bold"><span id="slider-val-inflation">2.5</span>%</span>
+                                </div>
+                                <input type="range" id="slider-inflation" min="0" max="8" step="0.1" oninput="updateRetirementAnalysis()" class="w-full cursor-pointer">
+                            </div>
+                            <div>
+                                <div class="flex justify-between mb-1">
+                                    <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Withdrawal Rate (%)</label>
+                                    <span class="text-xs text-slate-100 font-bold"><span id="slider-val-withdrawal">4.0</span>%</span>
+                                </div>
+                                <input type="range" id="slider-withdrawal" min="2" max="8" step="0.1" oninput="updateRetirementAnalysis()" class="w-full cursor-pointer">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Simulator Chart -->
+                    <div class="w-full min-h-[250px] relative">
+                        <canvas id="retirementChart"></canvas>
+                    </div>
+
+                    <!-- Projected status metrics card -->
+                    <div class="grid grid-cols-3 gap-2.5 border-t border-slate-850 pt-4 text-center">
+                        <div class="bg-slate-950/60 p-2.5 border border-slate-900 rounded-2xl">
+                            <span class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider">Required Target</span>
+                            <span id="ret-target-amt" class="text-xs md:text-sm font-extrabold text-white">$0</span>
+                        </div>
+                        <div class="bg-slate-950/60 p-2.5 border border-slate-900 rounded-2xl">
+                            <span class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider">Projected Capital</span>
+                            <span id="ret-projected-amt" class="text-xs md:text-sm font-extrabold text-violet-400">$0</span>
+                        </div>
+                        <div class="bg-slate-950/60 p-2.5 border border-slate-900 rounded-2xl">
+                            <span class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider">Retirement Status</span>
+                            <span id="ret-status-status" class="text-xs md:text-sm font-bold text-rose-400">—</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- PANEL: Smart Financial Advisor Suggestions -->
+            <div id="panel-advisor" class="space-y-4 hidden">
+                <div class="glass-card border border-slate-800 rounded-3xl p-6 space-y-6">
+                    <div>
+                        <h3 class="font-bold text-base text-white">Smart Wealth Advisor</h3>
+                        <p class="text-xs text-slate-500 font-medium">Automatic suggestions built directly from your financial profile</p>
+                    </div>
+
+                    <!-- Advisory suggestions lists -->
+                    <div id="advisor-cards-container" class="space-y-3">
+                        <!-- Dynamic advisor notifications injected here -->
+                    </div>
+
+                    <!-- Interactive Advisor Checklist -->
+                    <div class="bg-slate-950/40 border border-slate-900 rounded-2xl p-4 space-y-3">
+                        <h4 class="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
+                            <i class="fa-solid fa-list-check text-fuchsia-400"></i> Advisory Action Checklist
+                        </h4>
+                        <p class="text-[10px] text-slate-500">Track implementation of financial suggestions locally.</p>
+                        
+                        <div id="action-checklist" class="space-y-2.5 pt-1">
+                            <!-- Dynamic check items injected here -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- ═══════════ FOOTER ═══════════ -->
+    <footer class="border-t border-slate-900 bg-slate-950/60 py-6 text-center text-xs text-slate-600 z-10 flex flex-col items-center gap-2">
+        <p>&copy; 2026 Thorpe Tech. All rights reserved. Client-first secure designs.</p>
+        <div class="flex items-center gap-3">
+            <a href="index.html" class="hover:text-slate-400 transition font-semibold">Home</a>
+            <span class="text-slate-800">|</span>
+            <a href="asset_vault.html" class="hover:text-slate-400 transition font-semibold">Asset Vault</a>
+            <span class="text-slate-800">|</span>
+            <a href="vehicle_vault.html" class="hover:text-slate-400 transition font-semibold">Vehicle Vault</a>
+            <span class="text-slate-800">|</span>
+            <a href="recipe_vault.html" class="hover:text-slate-400 transition font-semibold">Recipe Vault</a>
+        </div>
+    </footer>
+
+    <!-- ═══════════ ONBOARDING WIZARD MODAL ═══════════ -->
+    <div id="wizardModal" class="fixed inset-0 bg-slate-950/95 backdrop-blur-md flex items-center justify-center p-4 z-50 hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-lg w-full p-6 md:p-8 shadow-2xl relative">
+            
+            <button onclick="closeWizard()" id="wizard-close-btn" class="absolute top-4 right-4 text-slate-500 hover:text-slate-300 transition">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+
+            <!-- Progress tracker -->
+            <div class="flex justify-between items-center mb-6">
+                <div class="flex items-center space-x-1">
+                    <div class="h-8 w-8 rounded-lg bg-violet-600 flex items-center justify-center">
+                        <i class="fa-solid fa-chart-line text-slate-950 text-sm"></i>
+                    </div>
+                    <span class="font-extrabold text-sm text-slate-100">Wealth Setup</span>
+                </div>
+                <div class="flex space-x-1.5" id="wizard-dots">
+                    <span class="h-2 w-2 rounded-full bg-violet-600 block"></span>
+                    <span class="h-2 w-2 rounded-full bg-slate-800 block"></span>
+                    <span class="h-2 w-2 rounded-full bg-slate-800 block"></span>
+                    <span class="h-2 w-2 rounded-full bg-slate-800 block"></span>
+                    <span class="h-2 w-2 rounded-full bg-slate-800 block"></span>
+                </div>
+            </div>
+
+            <!-- STEP 1: Basic Profile -->
+            <div id="wiz-step-1" class="space-y-4">
+                <div class="space-y-1">
+                    <h3 class="text-lg font-black text-white">Let's build your profile</h3>
+                    <p class="text-xs text-slate-400">Get set up to receive custom projections and financial advisor details.</p>
+                </div>
+                <div class="space-y-3 pt-2">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1.5">First Name</label>
+                        <input type="text" id="wiz-name" placeholder="John" class="w-full bg-slate-950 border border-slate-850 focus:border-violet-500 focus:outline-none rounded-xl p-3 text-xs text-slate-100 placeholder-slate-800">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1.5">Current Age</label>
+                            <input type="number" id="wiz-age" placeholder="30" value="30" class="w-full bg-slate-950 border border-slate-850 focus:border-violet-500 focus:outline-none rounded-xl p-3 text-xs text-slate-100">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1.5">Target Retirement Age</label>
+                            <input type="number" id="wiz-ret-age" placeholder="65" value="65" class="w-full bg-slate-950 border border-slate-850 focus:border-violet-500 focus:outline-none rounded-xl p-3 text-xs text-slate-100">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1.5">Currency Symbol</label>
+                        <select id="wiz-currency" class="w-full bg-slate-950 border border-slate-850 focus:border-violet-500 focus:outline-none rounded-xl p-3 text-xs text-slate-100">
+                            <option value="$">US Dollar ($)</option>
+                            <option value="€">Euro (€)</option>
+                            <option value="£">Pound Sterling (£)</option>
+                            <option value="¥">Yen / Yuan (¥)</option>
+                            <option value="₹">Rupee (₹)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP 2: Budget Setup -->
+            <div id="wiz-step-2" class="space-y-4 hidden">
+                <div class="space-y-1">
+                    <h3 class="text-lg font-black text-white">Monthly Cash Flow</h3>
+                    <p class="text-xs text-slate-400">Estimate your household incomes and standard budget spends.</p>
+                </div>
+                <div class="space-y-3 pt-2">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1.5">Net Monthly Income (<span class="currency-symbol">$</span>)</label>
+                        <input type="number" id="wiz-income" value="5000" class="w-full bg-slate-950 border border-slate-850 focus:border-violet-500 focus:outline-none rounded-xl p-3 text-xs text-slate-100">
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1.5">Housing/Rent Expense</label>
+                            <input type="number" id="wiz-exp-housing" value="1500" class="w-full bg-slate-950 border border-slate-850 focus:border-violet-500 focus:outline-none rounded-xl p-3 text-xs text-slate-100">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1.5">Groceries &amp; Food</label>
+                            <input type="number" id="wiz-exp-food" value="600" class="w-full bg-slate-950 border border-slate-850 focus:border-violet-500 focus:outline-none rounded-xl p-3 text-xs text-slate-100">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1.5">Auto &amp; Transport</label>
+                            <input type="number" id="wiz-exp-trans" value="400" class="w-full bg-slate-950 border border-slate-850 focus:border-violet-500 focus:outline-none rounded-xl p-3 text-xs text-slate-100">
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1.5">Utilities &amp; Bills</label>
+                            <input type="number" id="wiz-exp-utils" value="300" class="w-full bg-slate-950 border border-slate-850 focus:border-violet-500 focus:outline-none rounded-xl p-3 text-xs text-slate-100">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP 3: Basic Assets -->
+            <div id="wiz-step-3" class="space-y-4 hidden">
+                <div class="space-y-1">
+                    <h3 class="text-lg font-black text-white">Your Initial Assets</h3>
+                    <p class="text-xs text-slate-400">Check values that match your status to pre-populate your ledger.</p>
+                </div>
+                <div class="space-y-3 pt-2">
+                    <div class="flex items-center justify-between p-3.5 bg-slate-950/60 border border-slate-850 rounded-2xl">
+                        <label class="flex items-center space-x-3 cursor-pointer">
+                            <input type="checkbox" id="wiz-has-cash" checked class="h-4.5 w-4.5 rounded border-slate-800 text-violet-600 focus:ring-violet-500 bg-slate-950">
+                            <div>
+                                <span class="block text-xs font-bold text-slate-100">Checking &amp; Savings</span>
+                                <span class="text-[10px] text-slate-500">Liquid cash emergency fund</span>
+                            </div>
+                        </label>
+                        <input type="number" id="wiz-val-cash" value="12000" class="w-28 bg-slate-900 border border-slate-800 focus:border-violet-500 rounded-xl px-2.5 py-1.5 text-xs text-right text-slate-100 font-bold focus:outline-none">
+                    </div>
+                    <div class="flex items-center justify-between p-3.5 bg-slate-950/60 border border-slate-850 rounded-2xl">
+                        <label class="flex items-center space-x-3 cursor-pointer">
+                            <input type="checkbox" id="wiz-has-invest" checked class="h-4.5 w-4.5 rounded border-slate-800 text-violet-600 focus:ring-violet-500 bg-slate-950">
+                            <div>
+                                <span class="block text-xs font-bold text-slate-100">Retirement (401k/IRA)</span>
+                                <span class="text-[10px] text-slate-500">Brokerage &amp; investments</span>
+                            </div>
+                        </label>
+                        <input type="number" id="wiz-val-invest" value="25000" class="w-28 bg-slate-900 border border-slate-800 focus:border-violet-500 rounded-xl px-2.5 py-1.5 text-xs text-right text-slate-100 font-bold focus:outline-none">
+                    </div>
+                    <div class="flex items-center justify-between p-3.5 bg-slate-950/60 border border-slate-850 rounded-2xl">
+                        <label class="flex items-center space-x-3 cursor-pointer">
+                            <input type="checkbox" id="wiz-has-car" checked class="h-4.5 w-4.5 rounded border-slate-800 text-violet-600 focus:ring-violet-500 bg-slate-950">
+                            <div>
+                                <span class="block text-xs font-bold text-slate-100">Vehicle Value</span>
+                                <span class="text-[10px] text-slate-500">Resale value of current cars</span>
+                            </div>
+                        </label>
+                        <input type="number" id="wiz-val-car" value="15000" class="w-28 bg-slate-900 border border-slate-800 focus:border-violet-500 rounded-xl px-2.5 py-1.5 text-xs text-right text-slate-100 font-bold focus:outline-none">
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP 4: Basic Liabilities -->
+            <div id="wiz-step-4" class="space-y-4 hidden">
+                <div class="space-y-1">
+                    <h3 class="text-lg font-black text-white">Your Initial Debts</h3>
+                    <p class="text-xs text-slate-400">Check debts that you currently pay and provide interest rates.</p>
+                </div>
+                <div class="space-y-3 pt-2">
+                    <div class="p-3 bg-slate-950/60 border border-slate-850 rounded-2xl space-y-2">
+                        <div class="flex items-center justify-between">
+                            <label class="flex items-center space-x-3 cursor-pointer">
+                                <input type="checkbox" id="wiz-has-cc" checked class="h-4.5 w-4.5 rounded border-slate-800 text-violet-600 focus:ring-violet-500 bg-slate-950">
+                                <div>
+                                    <span class="block text-xs font-bold text-slate-100">Credit Card Balance</span>
+                                </div>
+                            </label>
+                            <input type="number" id="wiz-val-cc" value="1800" class="w-28 bg-slate-900 border border-slate-800 focus:border-violet-500 rounded-xl px-2.5 py-1.5 text-xs text-right text-slate-100 font-bold focus:outline-none">
+                        </div>
+                        <div class="flex justify-between items-center text-xs pl-7">
+                            <span class="text-[10px] text-slate-500">Estimated CC Interest Rate:</span>
+                            <div class="flex items-center gap-1">
+                                <input type="number" id="wiz-rate-cc" value="19.5" class="w-16 bg-slate-900 border border-slate-800 focus:border-violet-500 rounded px-2 py-0.5 text-xs text-right text-slate-100">
+                                <span class="text-slate-500">%</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="p-3 bg-slate-950/60 border border-slate-850 rounded-2xl space-y-2">
+                        <div class="flex items-center justify-between">
+                            <label class="flex items-center space-x-3 cursor-pointer">
+                                <input type="checkbox" id="wiz-has-loan" checked class="h-4.5 w-4.5 rounded border-slate-800 text-violet-600 focus:ring-violet-500 bg-slate-950">
+                                <div>
+                                    <span class="block text-xs font-bold text-slate-100">Car / Student Loan</span>
+                                </div>
+                            </label>
+                            <input type="number" id="wiz-val-loan" value="9500" class="w-28 bg-slate-900 border border-slate-800 focus:border-violet-500 rounded-xl px-2.5 py-1.5 text-xs text-right text-slate-100 font-bold focus:outline-none">
+                        </div>
+                        <div class="flex justify-between items-center text-xs pl-7">
+                            <span class="text-[10px] text-slate-500">Loan Interest Rate:</span>
+                            <div class="flex items-center gap-1">
+                                <input type="number" id="wiz-rate-loan" value="5.5" class="w-16 bg-slate-900 border border-slate-800 focus:border-violet-500 rounded px-2 py-0.5 text-xs text-right text-slate-100">
+                                <span class="text-slate-500">%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP 5: Final Review -->
+            <div id="wiz-step-5" class="space-y-4 hidden">
+                <div class="space-y-1">
+                    <h3 class="text-lg font-black text-white">All Set! Welcome to Wealth Vault</h3>
+                    <p class="text-xs text-slate-400 font-medium">Your initial metrics are compiled securely.</p>
+                </div>
+                
+                <div class="p-4 bg-slate-950/60 border border-slate-850 rounded-2xl text-center space-y-2">
+                    <span class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Estimated Initial Net Worth</span>
+                    <span id="wiz-final-net" class="text-3xl font-black text-violet-400">$0</span>
+                    <p class="text-[11px] text-slate-400 mt-2 px-4 leading-relaxed">
+                        Data has been locked inside local storage. Switch tabs to analyze retirement trajectories or debt payoff models.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Step Navigation Buttons -->
+            <div class="mt-6 flex justify-between items-center pt-4 border-t border-slate-850">
+                <button onclick="wizBack()" id="wiz-btn-back" class="px-4 py-2 bg-slate-950 hover:bg-slate-850 border border-slate-850 text-slate-300 font-bold text-xs rounded-xl transition disabled:opacity-0 disabled:pointer-events-none">
+                    Back
+                </button>
+                <button onclick="wizNext()" id="wiz-btn-next" class="px-5 py-2.5 bg-violet-600 hover:bg-violet-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-violet-600/10 hover:shadow-violet-600/20 transition">
+                    Continue
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Premium Toast Notifications -->
+    <div id="toast" class="fixed bottom-6 right-6 bg-slate-900 border border-slate-800 text-slate-100 px-4 py-3.5 rounded-2xl shadow-2xl shadow-violet-500/5 transition-all duration-300 translate-y-24 opacity-0 pointer-events-none z-50 flex items-center gap-3">
+        <div id="toast-icon-bg" class="h-8 w-8 rounded-lg flex items-center justify-center bg-violet-500/10 text-violet-400 border border-violet-500/20">
+            <i id="toast-icon" class="fa-solid fa-circle-check"></i>
+        </div>
+        <div>
+            <span id="toast-message" class="text-sm font-semibold block leading-tight text-white">Notification</span>
+            <span id="toast-subtext" class="text-xs text-slate-400">Details</span>
+        </div>
+    </div>
+
+    <!-- ═══════════ APPLICATION JAVASCRIPT ═══════════ -->
+    <script>
+        // Database State variables
+        let profile = {
+            name: "User",
+            currency: "$",
+            currentAge: 30,
+            targetAge: 65,
+            monthlyIncome: 5000
+        };
+
+        let budget = {
+            housing: 1500,
+            food: 600,
+            trans: 400,
+            utils: 300,
+            debt: 200,
+            lifestyle: 500
+        };
+
+        let assets = [];
+        let liabilities = [];
+        let checklist = []; // Saved state of checklist items
+
+        // Ledger State Filters
+        let ledgerFilter = 'all'; 
+        let activeLeftTab = 'assets-liabilities';
+        let activeRightTab = 'overview';
+        let currentWizStep = 1;
+
+        // Chart References
+        let allocationChart = null;
+        let retirementChart = null;
+
+        // Constant categories for Asset & Liabilities
+        const ASSET_CATEGORIES = {
+            'cash': { name: 'Cash / Bank Account', icon: 'fa-wallet', color: 'text-emerald-400' },
+            'invest': { name: 'Investment Account', icon: 'fa-chart-pie', color: 'text-indigo-400' },
+            'property': { name: 'Real Estate / Property', icon: 'fa-house', color: 'text-amber-400' },
+            'vehicle': { name: 'Vehicle Asset', icon: 'fa-car', color: 'text-cyan-400' },
+            'other_asset': { name: 'Other Asset', icon: 'fa-box', color: 'text-slate-400' }
+        };
+
+        const LIABILITY_CATEGORIES = {
+            'mortgage': { name: 'Mortgage Loan', icon: 'fa-house-lock', color: 'text-amber-500' },
+            'student_loan': { name: 'Student Loan', icon: 'fa-graduation-cap', color: 'text-indigo-500' },
+            'auto_loan': { name: 'Auto Loan', icon: 'fa-car-side', color: 'text-cyan-500' },
+            'credit_card': { name: 'Credit Card Debt', icon: 'fa-credit-card', color: 'text-rose-500' },
+            'other_debt': { name: 'Other Debt / Loan', icon: 'fa-hand-holding-dollar', color: 'text-slate-500' }
+        };
+
+        // Window Init
+        window.addEventListener('DOMContentLoaded', () => {
+            loadDatabase();
+            adjustFormFields();
+            
+            // Check if wizard completed
+            if (!localStorage.getItem('wealth_vault_wizard_completed')) {
+                openWizard(false);
+            } else {
+                renderAll();
+            }
+        });
+
+        // Load database from localStorage
+        function loadDatabase() {
+            try {
+                const stored = localStorage.getItem('thorpe_tech_wealth_vault');
+                if (stored) {
+                    const parsed = JSON.parse(stored);
+                    profile = parsed.profile || profile;
+                    budget = parsed.budget || budget;
+                    assets = parsed.assets || [];
+                    liabilities = parsed.liabilities || [];
+                    checklist = parsed.checklist || [];
+                }
+            } catch (err) {
+                console.error("Error parsing localStorage data:", err);
+            }
+        }
+
+        // Save database to localStorage
+        function saveDatabase() {
+            try {
+                const data = { profile, budget, assets, liabilities, checklist };
+                localStorage.setItem('thorpe_tech_wealth_vault', JSON.stringify(data));
+            } catch (err) {
+                console.error("Error saving data to localStorage:", err);
+            }
+        }
+
+        // Render Dashboard components
+        function renderAll() {
+            // Apply Currency Symbol
+            document.querySelectorAll('.currency-symbol').forEach(el => el.innerText = profile.currency);
+            
+            // Populate cashflow forms
+            document.getElementById('cashflow-income').value = profile.monthlyIncome;
+            
+            // Sync budget ranges
+            for (let cat in budget) {
+                const range = document.getElementById(`budget-${cat}`);
+                if (range) {
+                    range.value = budget[cat];
+                    syncRangeDisplay(range);
+                }
+            }
+
+            // Sync retirement sliders from profile values
+            document.getElementById('slider-ret-age').value = profile.targetAge;
+            document.getElementById('slider-val-ret-age').innerText = profile.targetAge;
+
+            calculateMetrics();
+            renderLedgerTable();
+            renderAllocationChart();
+            renderRetirementAnalysis();
+            renderAdvisorRecommendations();
+        }
+
+        // Calculate and Render top metrics
+        function calculateMetrics() {
+            // Calculate totals
+            const totalAssets = assets.reduce((sum, item) => sum + Number(item.value), 0);
+            const totalLiabilities = liabilities.reduce((sum, item) => sum + Number(item.value), 0);
+            const netWorth = totalAssets - totalLiabilities;
+
+            // Liquid Cash consists of category 'cash'
+            const liquidCash = assets
+                .filter(item => item.category === 'cash')
+                .reduce((sum, item) => sum + Number(item.value), 0);
+
+            // Print values
+            document.getElementById('metric-net-worth').innerText = formatCurrency(netWorth);
+            document.getElementById('metric-liquid-cash').innerText = formatCurrency(liquidCash);
+            document.getElementById('metric-total-debt').innerText = formatCurrency(totalLiabilities);
+
+            // Color adjustments for net worth
+            const netWorthEl = document.getElementById('metric-net-worth');
+            if (netWorth < 0) {
+                netWorthEl.className = "text-lg md:text-xl font-extrabold text-rose-500";
+            } else {
+                netWorthEl.className = "text-lg md:text-xl font-extrabold text-white";
+            }
+
+            // Calculations for ratios
+            const ratioVal = totalAssets > 0 ? Math.min(100, Math.round((totalLiabilities / totalAssets) * 100)) : (totalLiabilities > 0 ? 100 : 0);
+            const ratioDisplayEl = document.getElementById('ratio-display');
+            const ratioBarAssets = document.getElementById('ratio-bar-assets');
+            const ratioBarDebts = document.getElementById('ratio-bar-debts');
+
+            document.getElementById('ratio-value-assets').innerText = formatCurrency(totalAssets);
+            document.getElementById('ratio-value-debts').innerText = formatCurrency(totalLiabilities);
+
+            if (totalAssets === 0 && totalLiabilities === 0) {
+                ratioBarAssets.style.width = "100%";
+                ratioBarDebts.style.width = "0%";
+                ratioDisplayEl.innerText = "0% (No Records)";
+                ratioDisplayEl.className = "text-slate-500";
+            } else {
+                ratioBarAssets.style.width = `${100 - ratioVal}%`;
+                ratioBarDebts.style.width = `${ratioVal}%`;
+
+                if (ratioVal <= 25) {
+                    ratioDisplayEl.innerText = `${ratioVal}% (Excellent / Low Debt)`;
+                    ratioDisplayEl.className = "text-emerald-400";
+                } else if (ratioVal <= 50) {
+                    ratioDisplayEl.innerText = `${ratioVal}% (Moderate Debt)`;
+                    ratioDisplayEl.className = "text-amber-400";
+                } else {
+                    ratioDisplayEl.innerText = `${ratioVal}% (High Risk / Heavy Debt)`;
+                    ratioDisplayEl.className = "text-rose-400";
+                }
+            }
+
+            // Financial Health Score Calculation (out of 100)
+            let score = 0;
+            let efPoints = 0; // max 30
+            let srPoints = 0; // max 30
+            let daPoints = 0; // max 20
+            let rtPoints = 0; // max 20
+
+            // Emergency Fund (30 points): Target is 6 months of expenses
+            const monthlyExpenses = Object.values(budget).reduce((sum, item) => sum + Number(item), 0);
+            if (monthlyExpenses > 0) {
+                const coverageMonths = liquidCash / monthlyExpenses;
+                efPoints = Math.min(30, Math.round((coverageMonths / 6) * 30));
+            } else {
+                efPoints = 30; // No expenses means infinite coverage
+            }
+
+            // Savings Rate (30 points): target >= 20%
+            const savingsRate = calculateSavingsRate();
+            if (savingsRate > 0) {
+                srPoints = Math.min(30, Math.round((savingsRate / 20) * 30));
+            }
+
+            // Debt to Asset ratio (20 points): target <= 20%
+            if (totalAssets > 0) {
+                const daRatio = totalLiabilities / totalAssets;
+                if (daRatio <= 0.2) {
+                    daPoints = 20;
+                } else if (daRatio <= 0.5) {
+                    daPoints = Math.round((1 - (daRatio - 0.2) / 0.3) * 10 + 10);
+                } else {
+                    daPoints = Math.max(0, Math.round((1 - (daRatio - 0.5) / 0.5) * 10));
+                }
+            } else {
+                daPoints = totalLiabilities > 0 ? 0 : 20; // 20 points if debt-free and no assets
+            }
+
+            // Retirement outlook (20 points)
+            // Projected capital vs target capital
+            const retirementResults = runSimulatorProjections();
+            if (retirementResults.targetNeed > 0) {
+                const completionPct = retirementResults.projectedCapital / retirementResults.targetNeed;
+                rtPoints = Math.min(20, Math.round(completionPct * 20));
+            } else {
+                rtPoints = 20;
+            }
+
+            score = efPoints + srPoints + daPoints + rtPoints;
+
+            document.getElementById('metric-health-score').innerText = score;
+            document.getElementById('score-breakdown-ef').innerText = `${efPoints}/30`;
+            document.getElementById('score-breakdown-sr').innerText = `${srPoints}/30`;
+            document.getElementById('score-breakdown-da').innerText = `${daPoints}/20`;
+            document.getElementById('score-breakdown-rt').innerText = `${rtPoints}/20`;
+
+            const badge = document.getElementById('metric-health-badge');
+            if (score >= 80) {
+                badge.innerText = "Elite";
+                badge.className = "text-[9px] px-1.5 py-0.5 rounded font-bold uppercase select-none bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
+            } else if (score >= 60) {
+                badge.innerText = "Good";
+                badge.className = "text-[9px] px-1.5 py-0.5 rounded font-bold uppercase select-none bg-indigo-500/10 text-indigo-400 border border-indigo-500/20";
+            } else if (score >= 40) {
+                badge.innerText = "Warning";
+                badge.className = "text-[9px] px-1.5 py-0.5 rounded font-bold uppercase select-none bg-amber-500/10 text-amber-400 border border-amber-500/20";
+            } else {
+                badge.innerText = "Critical";
+                badge.className = "text-[9px] px-1.5 py-0.5 rounded font-bold uppercase select-none bg-rose-500/10 text-rose-400 border border-rose-500/20";
+            }
+        }
+
+        // Helper calculations
+        function calculateSavingsRate() {
+            const monthlyExpenses = Object.values(budget).reduce((sum, item) => sum + Number(item), 0);
+            if (profile.monthlyIncome > 0) {
+                return Math.max(0, Math.round(((profile.monthlyIncome - monthlyExpenses) / profile.monthlyIncome) * 100));
+            }
+            return 0;
+        }
+
+        // Sync inputs from range sliders
+        function syncRangeDisplay(el) {
+            const valEl = document.getElementById(`budget-val-${el.id.replace('budget-', '')}`);
+            if (valEl) valEl.innerText = Number(el.value).toLocaleString();
+            updateBudgetSummary();
+        }
+
+        function updateBudgetSummary() {
+            // Read values
+            for (let cat in budget) {
+                const el = document.getElementById(`budget-${cat}`);
+                if (el) budget[cat] = Number(el.value);
+            }
+
+            const monthlyExpenses = Object.values(budget).reduce((sum, item) => sum + Number(item), 0);
+            const savings = Math.max(0, profile.monthlyIncome - monthlyExpenses);
+            const rate = calculateSavingsRate();
+
+            document.getElementById('budget-total-expenses').innerText = monthlyExpenses.toLocaleString();
+            document.getElementById('budget-projected-savings').innerText = savings.toLocaleString();
+            
+            const rateEl = document.getElementById('budget-savings-rate');
+            rateEl.innerText = `${rate}%`;
+            
+            if (rate >= 20) {
+                rateEl.className = "font-bold text-emerald-400";
+            } else if (rate >= 10) {
+                rateEl.className = "font-bold text-indigo-400";
+            } else {
+                rateEl.className = "font-bold text-rose-400";
+            }
+        }
+
+        // On typing new primary income
+        function updateCashflowState() {
+            profile.monthlyIncome = Number(document.getElementById('cashflow-income').value) || 0;
+            saveDatabase();
+            updateBudgetSummary();
+            calculateMetrics();
+            renderRetirementAnalysis();
+            renderAdvisorRecommendations();
+        }
+
+        // Form Fields Adjustments (Assets vs Liabilities dropdown)
+        function adjustFormFields() {
+            const type = document.getElementById('form-type').value;
+            const categorySelect = document.getElementById('form-category');
+            const interestField = document.getElementById('field-interest-rate');
+            
+            categorySelect.innerHTML = '';
+            
+            if (type === 'asset') {
+                interestField.classList.add('hidden');
+                document.getElementById('form-interest').removeAttribute('required');
+                
+                for (let cat in ASSET_CATEGORIES) {
+                    const opt = document.createElement('option');
+                    opt.value = cat;
+                    opt.innerText = ASSET_CATEGORIES[cat].name;
+                    categorySelect.appendChild(opt);
+                }
+            } else {
+                interestField.classList.remove('hidden');
+                document.getElementById('form-interest').setAttribute('required', 'true');
+                
+                for (let cat in LIABILITY_CATEGORIES) {
+                    const opt = document.createElement('option');
+                    opt.value = cat;
+                    opt.innerText = LIABILITY_CATEGORIES[cat].name;
+                    categorySelect.appendChild(opt);
+                }
+            }
+        }
+
+        // Handle addition form submissions
+        function handleFormSubmit(e) {
+            e.preventDefault();
+            
+            const type = document.getElementById('form-type').value;
+            const category = document.getElementById('form-category').value;
+            const name = document.getElementById('form-name').value.trim();
+            const value = Number(document.getElementById('form-value').value) || 0;
+            const interest = Number(document.getElementById('form-interest').value) || 0;
+
+            const newItem = {
+                id: generateId(),
+                name,
+                category,
+                value
+            };
+
+            if (type === 'asset') {
+                assets.push(newItem);
+                showToast("Asset Recorded", `${name} added to your ledger.`, "emerald");
+            } else {
+                newItem.interestRate = interest;
+                liabilities.push(newItem);
+                showToast("Debt Recorded", `${name} logged with ${interest}% rate.`, "fuchsia");
+            }
+
+            saveDatabase();
+            renderAll();
+            
+            // Reset form
+            document.getElementById('form-name').value = '';
+            document.getElementById('form-value').value = '';
+            document.getElementById('form-interest').value = '';
+        }
+
+        // Generates random alphanumeric ID
+        function generateId() {
+            return Math.random().toString(36).substring(2, 9);
+        }
+
+        // Format currencies beautifully
+        function formatCurrency(val) {
+            const absVal = Math.abs(val);
+            const formatted = absVal.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+            return val < 0 ? `-${profile.currency}${formatted}` : `${profile.currency}${formatted}`;
+        }
+
+        // Render interactive table ledger list
+        function renderLedgerTable() {
+            const list = document.getElementById('ledger-list');
+            list.innerHTML = '';
+
+            let itemsToRender = [];
+
+            if (ledgerFilter === 'all' || ledgerFilter === 'assets') {
+                assets.forEach(item => {
+                    itemsToRender.push({ ...item, type: 'asset' });
+                });
+            }
+            if (ledgerFilter === 'all' || ledgerFilter === 'liabilities') {
+                liabilities.forEach(item => {
+                    itemsToRender.push({ ...item, type: 'liability' });
+                });
+            }
+
+            // Sort by value descending
+            itemsToRender.sort((a, b) => b.value - a.value);
+
+            if (itemsToRender.length === 0) {
+                list.innerHTML = `
+                    <div class="text-center py-8 text-xs text-slate-600">
+                        <i class="fa-solid fa-folder-open text-lg mb-2 block text-slate-700"></i>
+                        No accounts logged. Fill out form to begin.
+                    </div>
+                `;
+                return;
+            }
+
+            itemsToRender.forEach(item => {
+                const config = item.type === 'asset' ? ASSET_CATEGORIES[item.category] : LIABILITY_CATEGORIES[item.category];
+                if (!config) return;
+
+                const wrapper = document.createElement('div');
+                wrapper.className = "flex justify-between items-center bg-slate-950/40 hover:bg-slate-900 border border-slate-900 hover:border-slate-800 rounded-xl p-3 transition duration-150";
+
+                const left = document.createElement('div');
+                left.className = "flex items-center space-x-3";
+                
+                const iconBg = item.type === 'asset' ? 'bg-emerald-500/10 border-emerald-500/10' : 'bg-rose-500/10 border-rose-500/10';
+                left.innerHTML = `
+                    <div class="h-8.5 w-8.5 rounded-lg border ${iconBg} flex items-center justify-center flex-shrink-0">
+                        <i class="fa-solid ${config.icon} ${config.color} text-xs"></i>
+                    </div>
+                    <div>
+                        <span class="block text-xs font-bold text-slate-100">${item.name}</span>
+                        <div class="flex items-center gap-1.5 mt-0.5 text-[9px] font-semibold text-slate-500 uppercase">
+                            <span>${config.name}</span>
+                            ${item.interestRate !== undefined ? `<span>•</span><span class="text-rose-400 font-bold">${item.interestRate}% APR</span>` : ''}
+                        </div>
+                    </div>
+                `;
+
+                const right = document.createElement('div');
+                right.className = "flex items-center space-x-3";
+
+                const valClass = item.type === 'asset' ? 'text-emerald-400' : 'text-rose-400';
+                right.innerHTML = `
+                    <div class="text-right">
+                        <span class="block text-xs font-extrabold ${valClass}">${formatCurrency(item.value)}</span>
+                    </div>
+                    <button onclick="deleteLedgerItem('${item.id}', '${item.type}')" class="text-slate-600 hover:text-rose-400 p-1.5 rounded transition">
+                        <i class="fa-solid fa-trash-can text-[10px]"></i>
+                    </button>
+                `;
+
+                wrapper.appendChild(left);
+                wrapper.appendChild(right);
+                list.appendChild(wrapper);
+            });
+        }
+
+        // Switch between filtering modes for Ledger Table
+        function setLedgerFilter(filter) {
+            ledgerFilter = filter;
+            ['all', 'assets', 'liabilities'].forEach(f => {
+                const btn = document.getElementById(`filter-btn-${f}`);
+                if (f === filter) {
+                    btn.className = "text-[9px] font-bold bg-violet-600/20 border border-violet-500/30 text-violet-400 px-2 py-0.5 rounded";
+                } else {
+                    btn.className = "text-[9px] font-bold bg-slate-950 border border-slate-850 text-slate-400 px-2 py-0.5 rounded";
+                }
+            });
+            renderLedgerTable();
+        }
+
+        // Delete items from assets or liabilities
+        function deleteLedgerItem(id, type) {
+            if (type === 'asset') {
+                assets = assets.filter(item => item.id !== id);
+                showToast("Asset Deleted", "Ledger entry removed.", "rose");
+            } else {
+                liabilities = liabilities.filter(item => item.id !== id);
+                showToast("Debt Deleted", "Ledger entry removed.", "rose");
+            }
+            saveDatabase();
+            renderAll();
+        }
+
+        // Tab selection for Left Data Column
+        function switchLeftTab(tab) {
+            activeLeftTab = tab;
+            const pAssets = document.getElementById('panel-assets-liabilities');
+            const pCashflow = document.getElementById('panel-cashflow');
+            const btnAssets = document.getElementById('tab-btn-assets-liabilities');
+            const btnCashflow = document.getElementById('tab-btn-cashflow');
+
+            if (tab === 'assets-liabilities') {
+                pAssets.classList.remove('hidden');
+                pCashflow.classList.add('hidden');
+                btnAssets.className = "flex-1 py-2 text-xs font-bold rounded-lg transition-all bg-violet-600/10 text-violet-400 border border-violet-500/20";
+                btnCashflow.className = "flex-1 py-2 text-xs font-bold rounded-lg transition-all text-slate-400 hover:text-slate-200";
+            } else {
+                pAssets.classList.add('hidden');
+                pCashflow.classList.remove('hidden');
+                btnAssets.className = "flex-1 py-2 text-xs font-bold rounded-lg transition-all text-slate-400 hover:text-slate-200";
+                btnCashflow.className = "flex-1 py-2 text-xs font-bold rounded-lg transition-all bg-violet-600/10 text-violet-400 border border-violet-500/20";
+                updateBudgetSummary();
+            }
+        }
+
+        // Tab selection for Right Dashboard Charts/Advisors
+        function switchRightTab(tab) {
+            activeRightTab = tab;
+            const pOverview = document.getElementById('panel-overview');
+            const pRetirement = document.getElementById('panel-retirement');
+            const pAdvisor = document.getElementById('panel-advisor');
+            
+            const btnOverview = document.getElementById('tab-btn-overview');
+            const btnRetirement = document.getElementById('tab-btn-retirement');
+            const btnAdvisor = document.getElementById('tab-btn-advisor');
+
+            // Hide panels
+            pOverview.classList.add('hidden');
+            pRetirement.classList.add('hidden');
+            pAdvisor.classList.add('hidden');
+
+            // Reset buttons style
+            btnOverview.className = "flex-1 py-2 text-xs font-bold rounded-lg transition-all text-slate-400 hover:text-slate-200";
+            btnRetirement.className = "flex-1 py-2 text-xs font-bold rounded-lg transition-all text-slate-400 hover:text-slate-200";
+            btnAdvisor.className = "flex-1 py-2 text-xs font-bold rounded-lg transition-all text-slate-400 hover:text-slate-200 relative";
+
+            if (tab === 'overview') {
+                pOverview.classList.remove('hidden');
+                btnOverview.className = "flex-1 py-2 text-xs font-bold rounded-lg transition-all bg-violet-600/10 text-violet-400 border border-violet-500/20";
+                setTimeout(renderAllocationChart, 50);
+            } else if (tab === 'retirement') {
+                pRetirement.classList.remove('hidden');
+                btnRetirement.className = "flex-1 py-2 text-xs font-bold rounded-lg transition-all bg-violet-600/10 text-violet-400 border border-violet-500/20";
+                setTimeout(renderRetirementAnalysis, 50);
+            } else {
+                pAdvisor.classList.remove('hidden');
+                btnAdvisor.className = "flex-1 py-2 text-xs font-bold rounded-lg transition-all bg-violet-600/10 text-violet-400 border border-violet-500/20 relative";
+                renderAdvisorRecommendations();
+            }
+        }
+
+        // Render Allocation Doughnut Chart
+        function renderAllocationChart() {
+            const ctx = document.getElementById('allocationChart');
+            if (!ctx) return;
+
+            const categoryValues = {};
+            
+            // Add asset categories
+            for (let cat in ASSET_CATEGORIES) {
+                const val = assets
+                    .filter(item => item.category === cat)
+                    .reduce((sum, item) => sum + Number(item.value), 0);
+                if (val > 0) categoryValues[ASSET_CATEGORIES[cat].name] = { val, color: getCategoryColor(cat, 'asset') };
+            }
+            
+            // Add liability categories
+            for (let cat in LIABILITY_CATEGORIES) {
+                const val = liabilities
+                    .filter(item => item.category === cat)
+                    .reduce((sum, item) => sum + Number(item.value), 0);
+                if (val > 0) categoryValues[LIABILITY_CATEGORIES[cat].name] = { val: -val, color: getCategoryColor(cat, 'liability') };
+            }
+
+            const totalAssets = assets.reduce((sum, item) => sum + Number(item.value), 0);
+            const totalLiabilities = liabilities.reduce((sum, item) => sum + Number(item.value), 0);
+            const netWorth = totalAssets - totalLiabilities;
+
+            document.getElementById('chart-center-net-worth').innerText = formatCurrency(netWorth);
+
+            // Populate Legend list on the side
+            const legendEl = document.getElementById('composition-legend');
+            legendEl.innerHTML = '';
+
+            const keys = Object.keys(categoryValues);
+            if (keys.length === 0) {
+                legendEl.innerHTML = '<span class="text-xs text-slate-600">No composition recorded. Add assets or debts to display.</span>';
+                if (allocationChart) {
+                    allocationChart.destroy();
+                    allocationChart = null;
+                }
+                return;
+            }
+
+            keys.sort((a,b) => Math.abs(categoryValues[b].val) - Math.abs(categoryValues[a].val));
+
+            keys.forEach(k => {
+                const item = categoryValues[k];
+                const percentage = totalAssets > 0 ? Math.round((Math.abs(item.val) / totalAssets) * 100) : 0;
+                
+                const legendRow = document.createElement('div');
+                legendRow.className = "flex justify-between items-center text-xs";
+                legendRow.innerHTML = `
+                    <div class="flex items-center space-x-2">
+                        <span class="h-2.5 w-2.5 rounded-full inline-block" style="background-color: ${item.color}"></span>
+                        <span class="text-slate-300 font-medium">${k}</span>
+                    </div>
+                    <span class="font-extrabold text-slate-100">${formatCurrency(item.val)} <span class="text-[9px] text-slate-500 ml-1 font-semibold">(${item.val > 0 ? '+' : ''}${percentage}%)</span></span>
+                `;
+                legendEl.appendChild(legendRow);
+            });
+
+            // Prepare Data for chart
+            const labels = keys;
+            const dataValues = keys.map(k => Math.abs(categoryValues[k].val));
+            const backgroundColors = keys.map(k => categoryValues[k].color);
+
+            if (allocationChart) {
+                allocationChart.destroy();
+            }
+
+            allocationChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: dataValues,
+                        backgroundColor: backgroundColors,
+                        borderWidth: 2,
+                        borderColor: '#0f172a',
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    cutout: '72%',
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return ` ${context.label}: ${formatCurrency(context.raw)}`;
+                                }
+                            }
+                        }
+                    },
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+        }
+
+        // Map categories to specific chart hex colors
+        function getCategoryColor(cat, type) {
+            if (type === 'asset') {
+                switch(cat) {
+                    case 'cash': return '#34d399'; // emerald-400
+                    case 'invest': return '#6366f1'; // indigo-500
+                    case 'property': return '#f59e0b'; // amber-500
+                    case 'vehicle': return '#06b6d4'; // cyan-500
+                    default: return '#64748b'; // slate-500
+                }
+            } else {
+                switch(cat) {
+                    case 'mortgage': return '#b45309'; // amber-700
+                    case 'student_loan': return '#4338ca'; // indigo-700
+                    case 'auto_loan': return '#0e7490'; // cyan-700
+                    case 'credit_card': return '#e11d48'; // rose-600
+                    default: return '#475569'; // slate-600
+                }
+            }
+        }
+
+        // RUN PROJECTIONS FOR SIMULATOR
+        function runSimulatorProjections() {
+            const retAge = Number(document.getElementById('slider-ret-age').value) || profile.targetAge;
+            const growthRate = (Number(document.getElementById('slider-growth').value) || 7) / 100;
+            const inflationRate = (Number(document.getElementById('slider-inflation').value) || 2.5) / 100;
+            const withdrawalRate = (Number(document.getElementById('slider-withdrawal').value) || 4.0) / 100;
+
+            const netGrowthRate = Math.max(0, growthRate - inflationRate);
+
+            const yearsToRetire = Math.max(0, retAge - profile.currentAge);
+            
+            const totalAssets = assets.reduce((sum, item) => sum + Number(item.value), 0);
+            const totalLiabilities = liabilities.reduce((sum, item) => sum + Number(item.value), 0);
+            let currentCapital = totalAssets - totalLiabilities; // Start with Net Worth
+
+            const monthlyExpenses = Object.values(budget).reduce((sum, item) => sum + Number(item), 0);
+            const annualSavings = Math.max(0, (profile.monthlyIncome - monthlyExpenses) * 12);
+            
+            // Calculate target retirement need: safe withdrawal rule
+            // Target capital = Annual Expenses / Safe Withdrawal Rate
+            const annualExpenses = monthlyExpenses * 12;
+            const targetNeed = withdrawalRate > 0 ? (annualExpenses / withdrawalRate) : 0;
+
+            // Generate growth trajectory
+            let timelineLabels = [];
+            let projectedCurve = [];
+            let contributionsCurve = [];
+
+            let runningCapital = currentCapital;
+            let runningContributions = currentCapital;
+
+            for (let i = 0; i <= yearsToRetire; i++) {
+                const age = Number(profile.currentAge) + i;
+                timelineLabels.push(`Age ${age}`);
+                projectedCurve.push(Math.round(runningCapital));
+                contributionsCurve.push(Math.round(runningContributions));
+
+                // Compound for next year
+                runningCapital = runningCapital * (1 + netGrowthRate) + annualSavings;
+                runningContributions += annualSavings;
+            }
+
+            return {
+                labels: timelineLabels,
+                projectedCurve,
+                contributionsCurve,
+                projectedCapital: projectedCurve[projectedCurve.length - 1] || currentCapital,
+                targetNeed
+            };
+        }
+
+        // Render Retirement Line Graph
+        function renderRetirementAnalysis() {
+            const ctx = document.getElementById('retirementChart');
+            if (!ctx) return;
+
+            const res = runSimulatorProjections();
+
+            document.getElementById('ret-target-amt').innerText = formatCurrency(res.targetNeed);
+            document.getElementById('ret-projected-amt').innerText = formatCurrency(res.projectedCapital);
+
+            const statusEl = document.getElementById('ret-status-status');
+            if (res.projectedCapital >= res.targetNeed) {
+                statusEl.innerText = "On Track";
+                statusEl.className = "text-xs md:text-sm font-bold text-emerald-400";
+            } else {
+                const deficit = res.targetNeed - res.projectedCapital;
+                const pct = res.targetNeed > 0 ? Math.round((res.projectedCapital / res.targetNeed) * 100) : 0;
+                statusEl.innerText = `${pct}% Funded`;
+                statusEl.className = "text-xs md:text-sm font-bold text-rose-400";
+            }
+
+            if (retirementChart) {
+                retirementChart.destroy();
+            }
+
+            retirementChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: res.labels,
+                    datasets: [
+                        {
+                            label: 'Projected Net Worth',
+                            data: res.projectedCurve,
+                            borderColor: '#8b5cf6', // violet-500
+                            backgroundColor: 'rgba(139, 92, 246, 0.08)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.2,
+                            pointRadius: res.labels.length > 20 ? 0 : 2
+                        },
+                        {
+                            label: 'Your Contributions',
+                            data: res.contributionsCurve,
+                            borderColor: '#4b5563', // slate-600
+                            borderDash: [5, 5],
+                            borderWidth: 1.5,
+                            fill: false,
+                            tension: 0.1,
+                            pointRadius: 0
+                        }
+                    ]
+                },
+                options: {
+                    plugins: {
+                        legend: {
+                            labels: { color: '#94a3b8', font: { family: 'Plus Jakarta Sans', size: 10 } }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return ` ${context.dataset.label}: ${formatCurrency(context.raw)}`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { color: '#1e293b' },
+                            ticks: { color: '#64748b', font: { size: 9 } }
+                        },
+                        y: {
+                            grid: { color: '#1e293b' },
+                            ticks: {
+                                color: '#64748b',
+                                font: { size: 9 },
+                                callback: function(value) { return formatCurrency(value); }
+                            }
+                        }
+                    },
+                    responsive: true,
+                    maintainAspectRatio: false
+                }
+            });
+        }
+
+        // Trigger updates when retirement inputs sliders change
+        function updateRetirementAnalysis() {
+            document.getElementById('slider-val-ret-age').innerText = document.getElementById('slider-ret-age').value;
+            document.getElementById('slider-val-growth').innerText = document.getElementById('slider-growth').value;
+            document.getElementById('slider-val-inflation').innerText = document.getElementById('slider-inflation').value;
+            document.getElementById('slider-val-withdrawal').innerText = document.getElementById('slider-withdrawal').value;
+
+            profile.targetAge = Number(document.getElementById('slider-ret-age').value);
+            saveDatabase();
+            calculateMetrics();
+            renderRetirementAnalysis();
+            renderAdvisorRecommendations();
+        }
+
+        // CLIENT-SIDE ADVISORY ENGINE SUGGESTIONS
+        function renderAdvisorRecommendations() {
+            const container = document.getElementById('advisor-cards-container');
+            const checklistContainer = document.getElementById('action-checklist');
+            const statusPill = document.getElementById('advisor-pill');
+            
+            container.innerHTML = '';
+            checklistContainer.innerHTML = '';
+
+            let suggestions = [];
+            let activeWarnings = 0;
+
+            const totalAssets = assets.reduce((sum, item) => sum + Number(item.value), 0);
+            const totalLiabilities = liabilities.reduce((sum, item) => sum + Number(item.value), 0);
+            const liquidCash = assets
+                .filter(item => item.category === 'cash')
+                .reduce((sum, item) => sum + Number(item.value), 0);
+            
+            const monthlyExpenses = Object.values(budget).reduce((sum, item) => sum + Number(item), 0);
+            const savingsRate = calculateSavingsRate();
+
+            // 1. Check Emergency Fund (Emergency cash / expenses)
+            const efTarget = monthlyExpenses * 6;
+            if (liquidCash < efTarget) {
+                activeWarnings++;
+                const gap = efTarget - liquidCash;
+                suggestions.push({
+                    id: 'adv-ef-fund',
+                    title: 'Emergency Fund Shortfall',
+                    description: `Your liquid cash covers only ${monthlyExpenses > 0 ? (liquidCash / monthlyExpenses).toFixed(1) : 0} months of expenses. We recommend a 6-month target of <strong>${formatCurrency(efTarget)}</strong>.`,
+                    action: `Save an additional ${formatCurrency(gap)} in Checking or Savings`,
+                    status: 'critical',
+                    icon: 'fa-triangle-exclamation'
+                });
+            } else {
+                suggestions.push({
+                    id: 'adv-ef-fund',
+                    title: 'Emergency Reserve Healthy',
+                    description: `Great job! Your current liquid cash reserves cover ${(liquidCash / monthlyExpenses).toFixed(1)} months of average living expenses (Target: 6 months).`,
+                    status: 'healthy',
+                    icon: 'fa-circle-check'
+                });
+            }
+
+            // 2. High Interest Debt Check (Interest rate >= 7%)
+            const highInterestDebts = liabilities.filter(item => item.interestRate >= 6.0);
+            if (highInterestDebts.length > 0) {
+                activeWarnings++;
+                // Avalanche (sort rate descending)
+                const avalanche = [...highInterestDebts].sort((a,b) => b.interestRate - a.interestRate);
+                const firstDebt = avalanche[0];
+
+                suggestions.push({
+                    id: 'adv-debt-paydown',
+                    title: 'High-Interest Debt Alert',
+                    description: `You have ${highInterestDebts.length} active debt accounts exceeding a 6% APR. We advise allocating extra capital using the <strong>Debt Avalanche</strong> method.`,
+                    action: `Prioritize paying off <strong>${firstDebt.name}</strong> (${firstDebt.interestRate}% APR)`,
+                    status: 'critical',
+                    icon: 'fa-hand-holding-dollar',
+                    details: avalanche
+                });
+            }
+
+            // 3. Savings Rate Check (Target >= 15%)
+            if (savingsRate < 10) {
+                activeWarnings++;
+                suggestions.push({
+                    id: 'adv-savings-rate',
+                    title: 'Savings Margin Critical',
+                    description: `Your monthly savings rate is currently <strong>${savingsRate}%</strong>. Standard guidelines recommend setting aside 15% to 20% of net income for retirement.`,
+                    action: 'Review lifestyle/subscription expenses to recover 10% margin',
+                    status: 'critical',
+                    icon: 'fa-percent'
+                });
+            } else if (savingsRate < 20) {
+                suggestions.push({
+                    id: 'adv-savings-rate',
+                    title: 'Savings Margin Healthy',
+                    description: `Your savings rate of <strong>${savingsRate}%</strong> is solid! Consider scaling to 20%+ to accelerate your timeline.`,
+                    status: 'healthy',
+                    icon: 'fa-circle-check'
+                });
+            } else {
+                suggestions.push({
+                    id: 'adv-savings-rate',
+                    title: 'Savings Margin Elite',
+                    description: `Excellent! Saving <strong>${savingsRate}%</strong> of income puts you in the top tier of wealth builders. Optimize via tax-advantaged accounts.`,
+                    status: 'healthy',
+                    icon: 'fa-circle-check'
+                });
+            }
+
+            // 4. Retirement Outlook Projection Gap
+            const sim = runSimulatorProjections();
+            if (sim.projectedCapital < sim.targetNeed) {
+                const deficit = sim.targetNeed - sim.projectedCapital;
+                suggestions.push({
+                    id: 'adv-retirement-gap',
+                    title: 'Retirement Timeline Gap',
+                    description: `At age ${profile.targetAge}, your projected wealth of <strong>${formatCurrency(sim.projectedCapital)}</strong> falls short of the safe withdrawal target: <strong>${formatCurrency(sim.targetNeed)}</strong>.`,
+                    action: `Increase savings rate or delay retirement age`,
+                    status: 'warning',
+                    icon: 'fa-hourglass-half'
+                });
+            }
+
+            // Update Notification Pill
+            if (activeWarnings > 0) {
+                statusPill.innerText = activeWarnings;
+                statusPill.classList.remove('hidden');
+            } else {
+                statusPill.classList.add('hidden');
+            }
+
+            // Draw advisory panels
+            suggestions.forEach(s => {
+                const el = document.createElement('div');
+                const borderCol = s.status === 'critical' ? 'border-rose-500/25 bg-rose-500/5' : (s.status === 'warning' ? 'border-amber-500/25 bg-amber-500/5' : 'border-emerald-500/25 bg-emerald-500/5');
+                const textCol = s.status === 'critical' ? 'text-rose-400' : (s.status === 'warning' ? 'text-amber-400' : 'text-emerald-400');
+                const iconBg = s.status === 'critical' ? 'bg-rose-500/10 text-rose-400' : (s.status === 'warning' ? 'bg-amber-500/10 text-amber-400' : 'bg-emerald-500/10 text-emerald-400');
+
+                el.className = `p-4 border ${borderCol} rounded-2xl flex items-start gap-3.5`;
+                
+                let extraDetails = '';
+                if (s.details) {
+                    extraDetails = `
+                        <div class="mt-2.5 pt-2.5 border-t border-slate-800 space-y-1.5">
+                            <span class="block text-[10px] font-bold text-slate-500 uppercase">Avalanche Payoff Priority:</span>
+                            ${s.details.map((d, index) => `
+                                <div class="flex justify-between text-[11px] font-mono">
+                                    <span class="text-slate-400">${index + 1}. ${d.name} (${d.interestRate}% APR)</span>
+                                    <span class="text-slate-200 font-bold">${formatCurrency(d.value)}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    `;
+                }
+
+                el.innerHTML = `
+                    <div class="h-9 w-9 rounded-xl ${iconBg} flex items-center justify-center flex-shrink-0">
+                        <i class="fa-solid ${s.icon} text-sm"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h4 class="text-xs font-bold text-slate-100 flex items-center gap-1.5">
+                            ${s.title}
+                        </h4>
+                        <p class="text-xs text-slate-400 mt-1 leading-relaxed">${s.description}</p>
+                        ${extraDetails}
+                    </div>
+                `;
+                container.appendChild(el);
+
+                // Add checklist item if it has an actionable suggestion
+                if (s.action) {
+                    const isChecked = checklist.includes(s.id);
+                    const chkRow = document.createElement('label');
+                    chkRow.className = "flex items-start gap-2.5 p-2.5 rounded-xl hover:bg-slate-900 border border-transparent hover:border-slate-850 cursor-pointer transition select-none";
+                    chkRow.innerHTML = `
+                        <input type="checkbox" onchange="toggleChecklistItem('${s.id}')" ${isChecked ? 'checked' : ''} class="h-4.5 w-4.5 rounded border-slate-800 text-violet-600 focus:ring-violet-500 bg-slate-950 mt-0.5">
+                        <div class="min-w-0">
+                            <span class="block text-xs font-bold text-slate-200 leading-tight ${isChecked ? 'line-through text-slate-500' : ''}">${s.action}</span>
+                            <span class="text-[9px] text-slate-500 font-medium">${s.title}</span>
+                        </div>
+                    `;
+                    checklistContainer.appendChild(chkRow);
+                }
+            });
+
+            if (checklistContainer.innerHTML === '') {
+                checklistContainer.innerHTML = '<span class="text-xs text-slate-600">All metrics look stellar. No active steps required!</span>';
+            }
+        }
+
+        // Toggle checkbox in advisor lists
+        function toggleChecklistItem(id) {
+            if (checklist.includes(id)) {
+                checklist = checklist.filter(i => i !== id);
+            } else {
+                checklist.push(id);
+            }
+            saveDatabase();
+            renderAdvisorRecommendations();
+        }
+
+        // ═══════════ DATA IMPORT/EXPORT BACKUPS ═══════════
+        function exportData() {
+            try {
+                const stateExport = {
+                    metadata: {
+                        vaultName: "Wealth Vault",
+                        exportTimestamp: new Date().toISOString(),
+                        version: "1.0.0"
+                    },
+                    profile,
+                    budget,
+                    assets,
+                    liabilities,
+                    checklist
+                };
+
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(stateExport, null, 2));
+                const downloadAnchor = document.createElement('a');
+                downloadAnchor.setAttribute("href", dataStr);
+                downloadAnchor.setAttribute("download", `Wealth_Vault_Backup_${new Date().toISOString().slice(0,10)}.json`);
+                document.body.appendChild(downloadAnchor);
+                downloadAnchor.click();
+                downloadAnchor.remove();
+
+                showToast("Export Complete", "Local backup JSON file generated.", "emerald");
+            } catch (err) {
+                showToast("Export Failed", "Error compiling file payload.", "rose");
+            }
+        }
+
+        function importData(input) {
+            const file = input.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const parsed = JSON.parse(e.target.result);
+                    if (!parsed.profile || !parsed.assets || !parsed.liabilities) {
+                        throw new Error("Invalid structure. Missing elements.");
+                    }
+                    
+                    profile = parsed.profile;
+                    budget = parsed.budget || budget;
+                    assets = parsed.assets;
+                    liabilities = parsed.liabilities;
+                    checklist = parsed.checklist || [];
+
+                    saveDatabase();
+                    localStorage.setItem('wealth_vault_wizard_completed', 'true');
+                    
+                    renderAll();
+                    showToast("Import Complete", "Wealth Vault data updated.", "emerald");
+                } catch (err) {
+                    showToast("Import Failed", "Invalid backup JSON file.", "rose");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function clearAllData() {
+            if (confirm("Are you absolutely sure you want to clear your local Wealth Vault records? This cannot be undone.")) {
+                localStorage.removeItem('thorpe_tech_wealth_vault');
+                localStorage.removeItem('wealth_vault_wizard_completed');
+                
+                profile = {
+                    name: "User",
+                    currency: "$",
+                    currentAge: 30,
+                    targetAge: 65,
+                    monthlyIncome: 5000
+                };
+                budget = { housing: 1500, food: 600, trans: 400, utils: 300, debt: 200, lifestyle: 500 };
+                assets = [];
+                liabilities = [];
+                checklist = [];
+
+                showToast("Ledger Cleared", "Local database reset successfully.", "rose");
+                openWizard(false);
+            }
+        }
+
+        // ═══════════ ONBOARDING WIZARD NAVIGATION ═══════════
+        function openWizard(manual = false) {
+            currentWizStep = 1;
+            
+            // Set wizard form default inputs from profile/budget states if manual restart
+            if (manual) {
+                document.getElementById('wiz-name').value = profile.name;
+                document.getElementById('wiz-age').value = profile.currentAge;
+                document.getElementById('wiz-ret-age').value = profile.targetAge;
+                document.getElementById('wiz-currency').value = profile.currency;
+                document.getElementById('wiz-income').value = profile.monthlyIncome;
+                document.getElementById('wiz-exp-housing').value = budget.housing;
+                document.getElementById('wiz-exp-food').value = budget.food;
+                document.getElementById('wiz-exp-trans').value = budget.trans;
+                document.getElementById('wiz-exp-utils').value = budget.utils;
+            }
+
+            document.getElementById('wizard-close-btn').style.display = manual ? 'block' : 'none';
+            document.getElementById('wizardModal').classList.remove('hidden');
+            showWizStep(1);
+        }
+
+        function closeWizard() {
+            document.getElementById('wizardModal').classList.add('hidden');
+        }
+
+        function showWizStep(step) {
+            for (let i = 1; i <= 5; i++) {
+                const el = document.getElementById(`wiz-step-${i}`);
+                if (el) {
+                    if (i === step) el.classList.remove('hidden');
+                    else el.classList.add('hidden');
+                }
+            }
+
+            // Sync dots
+            const dots = document.getElementById('wizard-dots').children;
+            for (let i = 0; i < dots.length; i++) {
+                if (i < step) dots[i].className = "h-2 w-2 rounded-full bg-violet-600 block";
+                else dots[i].className = "h-2 w-2 rounded-full bg-slate-800 block";
+            }
+
+            // Set button styles
+            const backBtn = document.getElementById('wiz-btn-back');
+            const nextBtn = document.getElementById('wiz-btn-next');
+
+            backBtn.disabled = step === 1;
+
+            if (step === 5) {
+                nextBtn.innerText = "Finish & Load Dashboard";
+                // Compile wizard numbers for step 5 display
+                calculateWizNetWorth();
+            } else {
+                nextBtn.innerText = "Continue";
+            }
+        }
+
+        function wizBack() {
+            if (currentWizStep > 1) {
+                currentWizStep--;
+                showWizStep(currentWizStep);
+            }
+        }
+
+        function wizNext() {
+            if (currentWizStep < 5) {
+                currentWizStep++;
+                showWizStep(currentWizStep);
+            } else {
+                // Finish wizard
+                completeWizard();
+            }
+        }
+
+        // Calculate visual preview for step 5 in wizard
+        function calculateWizNetWorth() {
+            let tempAssets = 0;
+            let tempLiabilities = 0;
+
+            const wizCurrency = document.getElementById('wiz-currency').value;
+            document.querySelectorAll('.currency-symbol').forEach(el => el.innerText = wizCurrency);
+
+            if (document.getElementById('wiz-has-cash').checked) tempAssets += Number(document.getElementById('wiz-val-cash').value) || 0;
+            if (document.getElementById('wiz-has-invest').checked) tempAssets += Number(document.getElementById('wiz-val-invest').value) || 0;
+            if (document.getElementById('wiz-has-car').checked) tempAssets += Number(document.getElementById('wiz-val-car').value) || 0;
+
+            if (document.getElementById('wiz-has-cc').checked) tempLiabilities += Number(document.getElementById('wiz-val-cc').value) || 0;
+            if (document.getElementById('wiz-has-loan').checked) tempLiabilities += Number(document.getElementById('wiz-val-loan').value) || 0;
+
+            const finalNW = tempAssets - tempLiabilities;
+            
+            // Render inside text
+            const formatted = Math.abs(finalNW).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+            document.getElementById('wiz-final-net').innerText = finalNW < 0 ? `-${wizCurrency}${formatted}` : `${wizCurrency}${formatted}`;
+            
+            const netWorthText = document.getElementById('wiz-final-net');
+            if (finalNW < 0) netWorthText.className = "text-3xl font-black text-rose-500";
+            else netWorthText.className = "text-3xl font-black text-violet-400";
+        }
+
+        function completeWizard() {
+            // Read all wizard states
+            profile.name = document.getElementById('wiz-name').value.trim() || "User";
+            profile.currentAge = Number(document.getElementById('wiz-age').value) || 30;
+            profile.targetAge = Number(document.getElementById('wiz-ret-age').value) || 65;
+            profile.currency = document.getElementById('wiz-currency').value;
+            profile.monthlyIncome = Number(document.getElementById('wiz-income').value) || 5000;
+
+            budget.housing = Number(document.getElementById('wiz-exp-housing').value) || 0;
+            budget.food = Number(document.getElementById('wiz-exp-food').value) || 0;
+            budget.trans = Number(document.getElementById('wiz-exp-trans').value) || 0;
+            budget.utils = Number(document.getElementById('wiz-exp-utils').value) || 0;
+            budget.lifestyle = 500; // default initial padding
+            budget.debt = 0; // set below from wizard entries
+
+            // Clear arrays
+            assets = [];
+            liabilities = [];
+
+            // Add assets if checked
+            if (document.getElementById('wiz-has-cash').checked) {
+                assets.push({
+                    id: generateId(),
+                    name: 'Primary Checking / Savings',
+                    category: 'cash',
+                    value: Number(document.getElementById('wiz-val-cash').value) || 0
+                });
+            }
+            if (document.getElementById('wiz-has-invest').checked) {
+                assets.push({
+                    id: generateId(),
+                    name: 'Retirement Brokerage',
+                    category: 'invest',
+                    value: Number(document.getElementById('wiz-val-invest').value) || 0
+                });
+            }
+            if (document.getElementById('wiz-has-car').checked) {
+                assets.push({
+                    id: generateId(),
+                    name: 'Household Vehicle',
+                    category: 'vehicle',
+                    value: Number(document.getElementById('wiz-val-car').value) || 0
+                });
+            }
+
+            // Add debts if checked
+            let ccPay = 0;
+            let loanPay = 0;
+
+            if (document.getElementById('wiz-has-cc').checked) {
+                const ccBal = Number(document.getElementById('wiz-val-cc').value) || 0;
+                liabilities.push({
+                    id: generateId(),
+                    name: 'Credit Card Balance',
+                    category: 'credit_card',
+                    value: ccBal,
+                    interestRate: Number(document.getElementById('wiz-rate-cc').value) || 19.5
+                });
+                ccPay = Math.round(ccBal * 0.03); // estimate 3% minimum payment
+            }
+            if (document.getElementById('wiz-has-loan').checked) {
+                const loanBal = Number(document.getElementById('wiz-val-loan').value) || 0;
+                liabilities.push({
+                    id: generateId(),
+                    name: 'Car / Student Loan',
+                    category: 'other_debt',
+                    value: loanBal,
+                    interestRate: Number(document.getElementById('wiz-rate-loan').value) || 5.5
+                });
+                loanPay = Math.round(loanBal * 0.015); // estimate 1.5% payment
+            }
+
+            budget.debt = ccPay + loanPay;
+
+            saveDatabase();
+            localStorage.setItem('wealth_vault_wizard_completed', 'true');
+            
+            closeWizard();
+            renderAll();
+
+            showToast("Vault Locked", "All wizard values pre-filled successfully.", "emerald");
+        }
+
+        // Welcome / Changelog notification system
+        function openChangelog() {
+            alert("Wealth Vault — v1.0.0 Changelog:\n\n- Client-Side secure calculations\n- Interactive Net Worth compose charts\n- Smart retirement trajectory simulations\n- Multi-factor advisory engines (Avalanche payoff checklists)\n- Offline JSON configuration migrations");
+        }
+
+        // Premium Toast Alerts
+        function showToast(title, subtext, color = "emerald") {
+            const toast = document.getElementById('toast');
+            const iconBg = document.getElementById('toast-icon-bg');
+            const icon = document.getElementById('toast-icon');
+            const mainText = document.getElementById('toast-message');
+            const descText = document.getElementById('toast-subtext');
+
+            if (!toast) return;
+
+            if (color === "rose") {
+                if (iconBg) iconBg.className = "h-8 w-8 rounded-lg flex items-center justify-center bg-rose-500/10 text-rose-400 border border-rose-500/20";
+                if (icon) icon.className = "fa-solid fa-circle-exclamation";
+            } else if (color === "fuchsia") {
+                if (iconBg) iconBg.className = "h-8 w-8 rounded-lg flex items-center justify-center bg-fuchsia-500/10 text-fuchsia-400 border border-fuchsia-500/20";
+                if (icon) icon.className = "fa-solid fa-hand-holding-dollar";
+            } else {
+                if (iconBg) iconBg.className = "h-8 w-8 rounded-lg flex items-center justify-center bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
+                if (icon) icon.className = "fa-solid fa-circle-check";
+            }
+
+            if (mainText) mainText.innerText = title;
+            if (descText) descText.innerText = subtext;
+
+            toast.classList.remove('translate-y-24', 'opacity-0', 'pointer-events-none');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-24', 'opacity-0', 'pointer-events-none');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
