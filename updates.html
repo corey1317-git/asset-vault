@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Updates - Thorpe Tech</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #030712; /* slate-950 */
+        }
+
+        .mesh-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            overflow: hidden;
+            background: radial-gradient(circle at 10% 20%, rgba(99, 102, 241, 0.04) 0%, transparent 40%),
+                        radial-gradient(circle at 90% 80%, rgba(16, 185, 129, 0.04) 0%, transparent 40%);
+        }
+
+        .grid-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background-image: linear-gradient(rgba(255, 255, 255, 0.007) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(255, 255, 255, 0.007) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        .glass-card {
+            background: rgba(17, 24, 39, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        .glow-blob {
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.05) 0%, rgba(16, 185, 129, 0.01) 60%, transparent 100%);
+            filter: blur(60px);
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .filter-pill {
+            transition: all 0.15s;
+        }
+        .filter-pill.active {
+            background-color: rgba(99, 102, 241, 0.15);
+            color: #a5b4fc;
+            border-color: rgba(99, 102, 241, 0.4);
+        }
+    </style>
+</head>
+<body class="text-slate-100 min-h-screen flex flex-col justify-between overflow-x-hidden relative">
+
+    <div class="mesh-bg"></div>
+    <div class="grid-overlay"></div>
+    <div class="glow-blob top-10 -left-48"></div>
+
+    <!-- Header Section -->
+    <header class="border-b border-slate-900 bg-slate-950/40 backdrop-blur-md px-8 py-5 flex justify-between items-center z-10">
+        <a href="index.html" class="flex items-center space-x-3 hover:opacity-90 transition">
+            <div class="h-10 w-10 rounded-xl overflow-hidden shadow-lg shadow-indigo-500/10 border border-slate-800 flex items-center justify-center bg-slate-900">
+                <i class="fa-solid fa-house-laptop text-indigo-400 text-lg"></i>
+            </div>
+            <div>
+                <h1 class="font-extrabold text-lg tracking-tight bg-gradient-to-r from-white to-slate-400 bg-clip-text text-transparent">Thorpe Tech</h1>
+                <p class="text-[10px] text-indigo-400 font-semibold uppercase tracking-wider">Software Labs</p>
+            </div>
+        </a>
+        <div>
+            <a href="index.html" class="px-4 py-2 bg-slate-900 hover:bg-slate-850 border border-slate-800 text-xs font-bold rounded-xl transition flex items-center gap-1.5 text-slate-300">
+                <i class="fa-solid fa-arrow-left"></i> Back to Home
+            </a>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="flex-1 max-w-3xl mx-auto w-full px-6 py-12 z-10">
+
+        <div class="text-center space-y-2 mb-8">
+            <div class="h-12 w-12 rounded-2xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center border border-indigo-500/20 mx-auto mb-3">
+                <i class="fa-solid fa-code-branch text-lg"></i>
+            </div>
+            <h2 class="text-3xl font-extrabold text-white tracking-tight">Product Updates</h2>
+            <p class="text-sm text-slate-500 max-w-lg mx-auto">A running changelog of everything shipped across the Thorpe Tech vault apps, all in one place.</p>
+        </div>
+
+        <!-- Filter Pills -->
+        <div id="filter-bar" class="flex flex-wrap justify-center gap-2 mb-10">
+            <button data-filter="all" onclick="setUpdatesFilter('all')" class="filter-pill active px-3 py-1.5 rounded-full text-[11px] font-bold border border-slate-800 bg-slate-900 text-slate-400">All Updates</button>
+            <button data-filter="portal" onclick="setUpdatesFilter('portal')" class="filter-pill px-3 py-1.5 rounded-full text-[11px] font-bold border border-slate-800 bg-slate-900 text-slate-400"><i class="fa-solid fa-house-laptop mr-1"></i> Portal</button>
+            <button data-filter="wealth" onclick="setUpdatesFilter('wealth')" class="filter-pill px-3 py-1.5 rounded-full text-[11px] font-bold border border-slate-800 bg-slate-900 text-slate-400"><i class="fa-solid fa-chart-line mr-1"></i> Wealth Vault</button>
+            <button data-filter="vehicle" onclick="setUpdatesFilter('vehicle')" class="filter-pill px-3 py-1.5 rounded-full text-[11px] font-bold border border-slate-800 bg-slate-900 text-slate-400"><i class="fa-solid fa-car mr-1"></i> Vehicle Vault</button>
+            <button data-filter="asset" onclick="setUpdatesFilter('asset')" class="filter-pill px-3 py-1.5 rounded-full text-[11px] font-bold border border-slate-800 bg-slate-900 text-slate-400"><i class="fa-solid fa-box-open mr-1"></i> Asset Vault</button>
+            <button data-filter="mower" onclick="setUpdatesFilter('mower')" class="filter-pill px-3 py-1.5 rounded-full text-[11px] font-bold border border-slate-800 bg-slate-900 text-slate-400"><i class="fa-solid fa-screwdriver-wrench mr-1"></i> Mower Vault</button>
+            <button data-filter="recipe" onclick="setUpdatesFilter('recipe')" class="filter-pill px-3 py-1.5 rounded-full text-[11px] font-bold border border-slate-800 bg-slate-900 text-slate-400"><i class="fa-solid fa-utensils mr-1"></i> Recipe Vault</button>
+        </div>
+
+        <!-- Timeline -->
+        <div class="glass-card border border-slate-900/80 rounded-2xl p-6 md:p-8">
+            <div id="updates-timeline" class="space-y-7 relative border-l-2 border-slate-800 ml-3 pl-6">
+
+                <!-- Jul 2026 -->
+                <div class="update-entry relative" data-app="wealth">
+                    <span class="absolute -left-[31px] top-1 bg-violet-500 ring-4 ring-slate-950 h-3 w-3 rounded-full animate-pulse"></span>
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+                        <div class="flex items-center gap-2">
+                            <span class="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-violet-500/10 text-violet-400 border border-violet-500/25"><i class="fa-solid fa-chart-line mr-1"></i>Wealth Vault</span>
+                            <span class="font-bold text-violet-300 text-xs">v1.2.0 — Statement Import (Latest)</span>
+                        </div>
+                        <span class="text-[9px] text-slate-500 font-mono">July 2026</span>
+                    </div>
+                    <p class="text-slate-300 text-xs leading-relaxed">
+                        Added credit/debit statement import — upload a CSV (free keyword categorization, or AI categorization automatically when a key is configured) or a screenshot of a statement/balance (Gemini vision extracts accounts and transactions). A new Import Review modal lets you confirm or re-categorize everything before it touches your data. Also fixed a bug where the budget sliders silently reset most categories on every re-render.
+                    </p>
+                </div>
+
+                <!-- Jul 2026 -->
+                <div class="update-entry relative" data-app="wealth">
+                    <span class="absolute -left-[31px] top-1 bg-violet-700 ring-4 ring-slate-950 h-3 w-3 rounded-full"></span>
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+                        <div class="flex items-center gap-2">
+                            <span class="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-violet-500/10 text-violet-400 border border-violet-500/25"><i class="fa-solid fa-chart-line mr-1"></i>Wealth Vault</span>
+                            <span class="font-bold text-slate-300 text-xs">v1.1.0 — AI Financial Coach</span>
+                        </div>
+                        <span class="text-[9px] text-slate-500 font-mono">July 2026</span>
+                    </div>
+                    <p class="text-slate-300 text-xs leading-relaxed">
+                        Added an AI Financial Coach ("Vera") that generates a personalized coaching report and answers follow-up questions grounded in your live ledger and budget, plus a Settings modal to manage your own Gemini/OpenRouter API keys. The onboarding wizard now supports AI Quick Start (describe your finances in plain English to auto-fill everything), home/mortgage fields, and an editable review step.
+                    </p>
+                </div>
+
+                <!-- Jul 2026 -->
+                <div class="update-entry relative" data-app="portal">
+                    <span class="absolute -left-[31px] top-1 bg-indigo-500 ring-4 ring-slate-950 h-3 w-3 rounded-full"></span>
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+                        <div class="flex items-center gap-2">
+                            <span class="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/25"><i class="fa-solid fa-house-laptop mr-1"></i>Portal</span>
+                            <span class="font-bold text-slate-300 text-xs">Wealth Vault Launched</span>
+                        </div>
+                        <span class="text-[9px] text-slate-500 font-mono">July 2026</span>
+                    </div>
+                    <p class="text-slate-300 text-xs leading-relaxed">
+                        Launched <strong>Wealth Vault v1.0.0</strong> — a financial advisor and net worth optimizer with asset/liability tracking, budget &amp; cash flow planning, a retirement growth simulator, and a Smart Advisor checklist. Featured on the homepage with a dedicated showcase section.
+                    </p>
+                </div>
+
+                <!-- Jun 2026 -->
+                <div class="update-entry relative" data-app="portal">
+                    <span class="absolute -left-[31px] top-1 bg-slate-700 ring-4 ring-slate-950 h-3 w-3 rounded-full"></span>
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+                        <div class="flex items-center gap-2">
+                            <span class="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/25"><i class="fa-solid fa-house-laptop mr-1"></i>Portal</span>
+                            <span class="font-bold text-slate-300 text-xs">Site-Wide Reliability Pass</span>
+                        </div>
+                        <span class="text-[9px] text-slate-500 font-mono">June 2026</span>
+                    </div>
+                    <p class="text-slate-300 text-xs leading-relaxed">
+                        Retroactively labeled every pre-populated sample record as <strong>(Demo)</strong> across all vaults with safe database migrations, added hotlink-safe AI image prompts with client-side image fallbacks, and standardized every vault on <code class="bg-slate-800 px-1 rounded text-[10px]">gemini-flash-latest</code> with instant quota-aware fallback to a free OpenRouter model.
+                    </p>
+                </div>
+
+                <!-- Jun 2026 -->
+                <div class="update-entry relative" data-app="mower vehicle">
+                    <span class="absolute -left-[31px] top-1 bg-lime-500 ring-4 ring-slate-950 h-3 w-3 rounded-full"></span>
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+                        <div class="flex items-center gap-2">
+                            <span class="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-lime-500/10 text-lime-400 border border-lime-500/25"><i class="fa-solid fa-screwdriver-wrench mr-1"></i>Mower Vault</span>
+                            <span class="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/25"><i class="fa-solid fa-car mr-1"></i>Vehicle Vault</span>
+                            <span class="font-bold text-slate-300 text-xs">Demo Assets &amp; Dead Link Fixes</span>
+                        </div>
+                        <span class="text-[9px] text-slate-500 font-mono">June 2026</span>
+                    </div>
+                    <p class="text-slate-300 text-xs leading-relaxed">
+                        Added a real John Deere D140 sample photo and fixed a dead parts-lookup link in Mower Vault. Added a Tacoma demo image plus a sample fake ID and mock insurance/registration paperwork to the Vehicle Vault digital glovebox.
+                    </p>
+                </div>
+
+                <!-- Jun 2026 -->
+                <div class="update-entry relative" data-app="vehicle">
+                    <span class="absolute -left-[31px] top-1 bg-cyan-500 ring-4 ring-slate-950 h-3 w-3 rounded-full"></span>
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+                        <div class="flex items-center gap-2">
+                            <span class="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/25"><i class="fa-solid fa-car mr-1"></i>Vehicle Vault</span>
+                            <span class="font-bold text-slate-300 text-xs">v1.2.0 — Cost Analytics &amp; Redesign</span>
+                        </div>
+                        <span class="text-[9px] text-slate-500 font-mono">June 2026</span>
+                    </div>
+                    <p class="text-slate-300 text-xs leading-relaxed">
+                        Redesigned into a sidebar list + details/dashboard layout. Added Fleet Cost Analytics with insurance vs. maintenance charts, local/Google Drive backups, a high-contrast Emergency Accident dashboard, and digital document scan views.
+                    </p>
+                </div>
+
+                <!-- Jun 2026 -->
+                <div class="update-entry relative" data-app="vehicle">
+                    <span class="absolute -left-[31px] top-1 bg-rose-500 ring-4 ring-slate-950 h-3 w-3 rounded-full"></span>
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+                        <div class="flex items-center gap-2">
+                            <span class="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/25"><i class="fa-solid fa-car mr-1"></i>Vehicle Vault</span>
+                            <span class="font-bold text-slate-300 text-xs">v1.1.0 — Document Scans &amp; Digital Glovebox</span>
+                        </div>
+                        <span class="text-[9px] text-slate-500 font-mono">June 2026</span>
+                    </div>
+                    <p class="text-slate-300 text-xs leading-relaxed">
+                        Added a client-side smart canvas compressor for card uploads, with fields to store Driver's License, Insurance, and Registration cards, plus a Digital Glovebox modal with accident safety procedures.
+                    </p>
+                </div>
+
+                <!-- Jun 2026 -->
+                <div class="update-entry relative" data-app="vehicle">
+                    <span class="absolute -left-[31px] top-1 bg-slate-700 ring-4 ring-slate-950 h-3 w-3 rounded-full"></span>
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+                        <div class="flex items-center gap-2">
+                            <span class="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/25"><i class="fa-solid fa-car mr-1"></i>Vehicle Vault</span>
+                            <span class="font-bold text-slate-300 text-xs">v1.0.0 — Initial Release</span>
+                        </div>
+                        <span class="text-[9px] text-slate-500 font-mono">June 2026</span>
+                    </div>
+                    <p class="text-slate-300 text-xs leading-relaxed">
+                        Launched Vehicle Vault — mileage logging, maintenance service history, insurance/registration expiry alerts, VIN tracking, AI Enrich via Gemini, and NHTSA recall lookups.
+                    </p>
+                </div>
+
+                <!-- Jun 2026 -->
+                <div class="update-entry relative" data-app="portal">
+                    <span class="absolute -left-[31px] top-1 bg-slate-700 ring-4 ring-slate-950 h-3 w-3 rounded-full"></span>
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+                        <div class="flex items-center gap-2">
+                            <span class="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/25"><i class="fa-solid fa-house-laptop mr-1"></i>Portal</span>
+                            <span class="font-bold text-slate-300 text-xs">Homepage Showcases</span>
+                        </div>
+                        <span class="text-[9px] text-slate-500 font-mono">June 2026</span>
+                    </div>
+                    <p class="text-slate-300 text-xs leading-relaxed">
+                        Published Mower Vault on the homepage with a dedicated showcase section and replaced the Recipe Vault placeholder with a real live screenshot.
+                    </p>
+                </div>
+
+                <!-- Jun 2026 -->
+                <div class="update-entry relative" data-app="asset">
+                    <span class="absolute -left-[31px] top-1 bg-emerald-500 ring-4 ring-slate-950 h-3 w-3 rounded-full"></span>
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+                        <div class="flex items-center gap-2">
+                            <span class="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/25"><i class="fa-solid fa-box-open mr-1"></i>Asset Vault</span>
+                            <span class="font-bold text-slate-300 text-xs">v6.4.0 — Thorpe Tech Portal Expansion</span>
+                        </div>
+                        <span class="text-[9px] text-slate-500 font-mono">June 2026</span>
+                    </div>
+                    <p class="text-slate-300 text-xs leading-relaxed">
+                        Launched Vehicle Vault v1.0 alongside a revamped portal index featuring both apps with dedicated launch buttons, and added a Home button to every tool.
+                    </p>
+                </div>
+
+                <!-- Jun 2026 -->
+                <div class="update-entry relative" data-app="asset">
+                    <span class="absolute -left-[31px] top-1 bg-violet-500 ring-4 ring-slate-950 h-3 w-3 rounded-full"></span>
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+                        <div class="flex items-center gap-2">
+                            <span class="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/25"><i class="fa-solid fa-box-open mr-1"></i>Asset Vault</span>
+                            <span class="font-bold text-slate-300 text-xs">v6.3.0 — Gemini API Key Settings UI</span>
+                        </div>
+                        <span class="text-[9px] text-slate-500 font-mono">June 2026</span>
+                    </div>
+                    <p class="text-slate-300 text-xs leading-relaxed">
+                        Replaced the hardcoded API key with a localStorage-backed Settings modal, with an amber indicator dot when no key is set and a direct link to a free Google AI Studio key.
+                    </p>
+                </div>
+
+                <!-- Jun 2026 -->
+                <div class="update-entry relative" data-app="asset mower recipe">
+                    <span class="absolute -left-[31px] top-1 bg-indigo-500 ring-4 ring-slate-950 h-3 w-3 rounded-full"></span>
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+                        <div class="flex items-center gap-2">
+                            <span class="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/25"><i class="fa-solid fa-box-open mr-1"></i>Asset Vault</span>
+                            <span class="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-lime-500/10 text-lime-400 border border-lime-500/25"><i class="fa-solid fa-screwdriver-wrench mr-1"></i>Mower Vault</span>
+                            <span class="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/25"><i class="fa-solid fa-utensils mr-1"></i>Recipe Vault</span>
+                            <span class="font-bold text-slate-300 text-xs">AI Enrich, ManualsLib &amp; Settings Testing</span>
+                        </div>
+                        <span class="text-[9px] text-slate-500 font-mono">June 2026</span>
+                    </div>
+                    <p class="text-slate-300 text-xs leading-relaxed">
+                        Added the AI Enrich button (Gemini + Google Search grounding) to Asset Vault, ManualsLib lookups to Asset Vault and Mower Vault, and Test Key buttons for both Gemini and OpenRouter across every vault's Settings panel.
+                    </p>
+                </div>
+
+                <!-- Jun 2026 -->
+                <div class="update-entry relative" data-app="portal">
+                    <span class="absolute -left-[31px] top-1 bg-slate-700 ring-4 ring-slate-950 h-3 w-3 rounded-full"></span>
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+                        <div class="flex items-center gap-2">
+                            <span class="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/25"><i class="fa-solid fa-house-laptop mr-1"></i>Portal</span>
+                            <span class="font-bold text-slate-300 text-xs">Staff, Privacy &amp; Terms Pages</span>
+                        </div>
+                        <span class="text-[9px] text-slate-500 font-mono">June 2026</span>
+                    </div>
+                    <p class="text-slate-300 text-xs leading-relaxed">
+                        Added the Staff page, a refreshed homepage navigation bar, a Privacy Policy, and Terms of Service.
+                    </p>
+                </div>
+
+                <!-- May 2026 -->
+                <div class="update-entry relative" data-app="asset">
+                    <span class="absolute -left-[31px] top-1 bg-slate-800 ring-4 ring-slate-950 h-3 w-3 rounded-full"></span>
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+                        <div class="flex items-center gap-2">
+                            <span class="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/25"><i class="fa-solid fa-box-open mr-1"></i>Asset Vault</span>
+                            <span class="font-bold text-slate-300 text-xs">v3.0.0 – v5.0.0 — AI Parsing &amp; Claim Binder</span>
+                        </div>
+                        <span class="text-[9px] text-slate-500 font-mono">May 2026</span>
+                    </div>
+                    <p class="text-slate-300 text-xs leading-relaxed">
+                        Integrated Gemini multimodal receipt scanning with Google Search Grounding for product images, then added the Insurance Claim Binder Generator with print-to-PDF layouts and model-specific YouTube care guides.
+                    </p>
+                </div>
+
+                <!-- May 2026 -->
+                <div class="update-entry relative" data-app="recipe mower">
+                    <span class="absolute -left-[31px] top-1 bg-amber-500 ring-4 ring-slate-950 h-3 w-3 rounded-full"></span>
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+                        <div class="flex items-center gap-2">
+                            <span class="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/25"><i class="fa-solid fa-utensils mr-1"></i>Recipe Vault</span>
+                            <span class="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-lime-500/10 text-lime-400 border border-lime-500/25"><i class="fa-solid fa-screwdriver-wrench mr-1"></i>Mower Vault</span>
+                            <span class="font-bold text-slate-300 text-xs">Initial Releases</span>
+                        </div>
+                        <span class="text-[9px] text-slate-500 font-mono">May 2026</span>
+                    </div>
+                    <p class="text-slate-300 text-xs leading-relaxed">
+                        Launched Recipe Vault v1.0.0 — an AI-assisted recipe manager with real Google Drive sync — and Mower Vault v1.0.0, a repair &amp; flip ledger for tracking project mowers with local image uploads and AI-assisted image search.
+                    </p>
+                </div>
+
+                <!-- May 2026 -->
+                <div class="update-entry relative" data-app="asset">
+                    <span class="absolute -left-[31px] top-1 bg-slate-800 ring-4 ring-slate-950 h-3 w-3 rounded-full"></span>
+                    <div class="flex flex-wrap items-center justify-between gap-2 mb-1">
+                        <div class="flex items-center gap-2">
+                            <span class="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/25"><i class="fa-solid fa-box-open mr-1"></i>Asset Vault</span>
+                            <span class="font-bold text-slate-300 text-xs">v1.0.0 — Initial Release</span>
+                        </div>
+                        <span class="text-[9px] text-slate-500 font-mono">May 2026</span>
+                    </div>
+                    <p class="text-slate-300 text-xs leading-relaxed">
+                        Launched Asset Vault with a centralized JSON database schema for home electronics, appliances, and yard tool purchase records.
+                    </p>
+                </div>
+
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-900 bg-slate-950/60 py-6 text-center text-xs text-slate-600 z-10 flex flex-col items-center gap-2">
+        <p>&copy; 2026 Thorpe Tech. All rights reserved. Client-first secure designs.</p>
+        <div class="flex items-center gap-3">
+            <a href="index.html" class="hover:text-slate-400 transition font-semibold">Home</a>
+            <span class="text-slate-800">|</span>
+            <a href="staff.html" class="hover:text-slate-400 transition font-semibold">Staff</a>
+            <span class="text-slate-800">|</span>
+            <a href="updates.html" class="text-indigo-400 hover:text-indigo-300 font-semibold transition">Updates</a>
+            <span class="text-slate-800">|</span>
+            <a href="privacy.html" class="hover:text-slate-400 transition font-semibold">Privacy Policy</a>
+            <span class="text-slate-800">|</span>
+            <a href="terms.html" class="hover:text-slate-400 transition font-semibold">Terms of Service</a>
+        </div>
+    </footer>
+
+    <script>
+        function setUpdatesFilter(filter) {
+            document.querySelectorAll('.filter-pill').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.filter === filter);
+            });
+            document.querySelectorAll('.update-entry').forEach(entry => {
+                const apps = entry.dataset.app.split(' ');
+                entry.style.display = (filter === 'all' || apps.includes(filter)) ? '' : 'none';
+            });
+        }
+    </script>
+
+</body>
+</html>

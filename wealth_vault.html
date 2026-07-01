@@ -136,7 +136,7 @@
             <div>
                 <div class="flex items-center gap-2">
                     <h1 class="font-extrabold text-xl leading-tight bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">Wealth Vault</h1>
-                    <span onclick="openChangelog()" class="cursor-pointer text-[10px] font-bold bg-violet-500/10 hover:bg-violet-500/20 text-violet-400 border border-violet-500/30 px-2 py-0.5 rounded-full transition flex items-center gap-1 select-none">v1.0.0</span>
+                    <span onclick="openChangelog()" class="cursor-pointer text-[10px] font-bold bg-violet-500/10 hover:bg-violet-500/20 text-violet-400 border border-violet-500/30 px-2 py-0.5 rounded-full transition flex items-center gap-1 select-none">v1.2.0</span>
                 </div>
                 <p class="text-[11px] text-slate-500 hidden md:block">Financial advisor &amp; net worth optimizer</p>
             </div>
@@ -163,6 +163,10 @@
             </button>
             <button onclick="openWizard(true)" class="px-3.5 py-2 bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-violet-600/20 transition flex items-center gap-1.5">
                 <i class="fa-solid fa-wand-magic-sparkles"></i> Restart Wizard
+            </button>
+            <button onclick="openSettingsModal()" id="settings-btn" class="h-9 w-9 bg-slate-900 hover:bg-slate-850 text-slate-400 hover:text-slate-200 border border-slate-800 hover:border-slate-750 rounded-xl transition flex items-center justify-center relative" title="Settings (AI API Key)">
+                <i class="fa-solid fa-gear text-sm"></i>
+                <span id="api-key-dot" class="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-amber-400 border-2 border-slate-950 hidden"></span>
             </button>
             <button onclick="clearAllData()" class="h-9 w-9 bg-slate-900 hover:bg-rose-950 hover:text-rose-400 text-slate-500 border border-slate-800 hover:border-rose-900 rounded-xl transition flex items-center justify-center" title="Reset All Data">
                 <i class="fa-solid fa-trash-can text-sm"></i>
@@ -325,6 +329,25 @@
 
             <!-- TAB content: Budget & Cash Flow -->
             <div id="panel-cashflow" class="space-y-4 hidden">
+                <!-- Statement Import -->
+                <div class="glass-card border border-slate-800 rounded-2xl p-4 space-y-3">
+                    <h3 class="font-extrabold text-sm text-slate-200 uppercase tracking-wider flex items-center gap-2 border-b border-slate-850 pb-2">
+                        <i class="fa-solid fa-file-import text-cyan-400"></i> Import Statement
+                    </h3>
+                    <p class="text-[10px] text-slate-500 leading-relaxed">Import a credit/debit card CSV export, or a screenshot of a statement or account balance, and auto-fill your budget categories.</p>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="document.getElementById('importCsvFile').click()" class="py-2.5 bg-slate-950 hover:bg-slate-900 border border-slate-800 hover:border-cyan-500/40 text-slate-200 text-[11px] font-bold rounded-xl transition flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-file-csv text-cyan-400"></i> Import CSV
+                        </button>
+                        <input type="file" id="importCsvFile" accept=".csv,text/csv" class="hidden" onchange="handleCsvFileSelected(this)">
+                        <button onclick="document.getElementById('importScreenshotFile').click()" class="py-2.5 bg-slate-950 hover:bg-slate-900 border border-slate-800 hover:border-violet-500/40 text-slate-200 text-[11px] font-bold rounded-xl transition flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-camera text-violet-400"></i> Import Screenshot
+                        </button>
+                        <input type="file" id="importScreenshotFile" accept="image/*" class="hidden" onchange="handleScreenshotFileSelected(this)">
+                    </div>
+                    <p class="text-[9px] text-slate-600 leading-relaxed"><i class="fa-solid fa-circle-info mr-1"></i>CSV import works instantly with free built-in categorization, or smarter AI categorization if you've added an API key in Settings. Screenshot import always requires your own Gemini API key (for image recognition) — add one for free in Settings.</p>
+                </div>
+
                 <div class="glass-card border border-slate-800 rounded-2xl p-4 space-y-4">
                     <h3 class="font-extrabold text-sm text-slate-200 uppercase tracking-wider flex items-center gap-2 border-b border-slate-850 pb-2">
                         <i class="fa-solid fa-hand-holding-dollar text-emerald-400"></i> Monthly Income Streams
@@ -411,16 +434,19 @@
         <section class="lg:col-span-7 flex flex-col gap-4">
             
             <!-- Dashboard Tab Selection -->
-            <div class="flex bg-slate-950/60 p-1 border border-slate-900 rounded-xl">
-                <button onclick="switchRightTab('overview')" id="tab-btn-overview" class="flex-1 py-2 text-xs font-bold rounded-lg transition-all bg-violet-600/10 text-violet-400 border border-violet-500/20">
-                    <i class="fa-solid fa-chart-pie mr-1.5"></i> Allocation &amp; Charts
+            <div class="flex bg-slate-950/60 p-1 border border-slate-900 rounded-xl overflow-x-auto">
+                <button onclick="switchRightTab('overview')" id="tab-btn-overview" class="flex-1 py-2 px-1.5 text-[11px] font-bold rounded-lg transition-all bg-violet-600/10 text-violet-400 border border-violet-500/20 whitespace-nowrap">
+                    <i class="fa-solid fa-chart-pie mr-1"></i> Allocation
                 </button>
-                <button onclick="switchRightTab('retirement')" id="tab-btn-retirement" class="flex-1 py-2 text-xs font-bold rounded-lg transition-all text-slate-400 hover:text-slate-200">
-                    <i class="fa-solid fa-compass-drafting mr-1.5"></i> Retirement Simulator
+                <button onclick="switchRightTab('retirement')" id="tab-btn-retirement" class="flex-1 py-2 px-1.5 text-[11px] font-bold rounded-lg transition-all text-slate-400 hover:text-slate-200 whitespace-nowrap">
+                    <i class="fa-solid fa-compass-drafting mr-1"></i> Retirement
                 </button>
-                <button onclick="switchRightTab('advisor')" id="tab-btn-advisor" class="flex-1 py-2 text-xs font-bold rounded-lg transition-all text-slate-400 hover:text-slate-200 relative">
-                    <i class="fa-solid fa-wand-magic-sparkles mr-1.5"></i> Smart Advisor
-                    <span id="advisor-pill" class="absolute -top-1 right-2 bg-rose-500 text-slate-950 font-black text-[9px] h-4 px-1.5 rounded-full flex items-center justify-center border border-slate-950">!</span>
+                <button onclick="switchRightTab('advisor')" id="tab-btn-advisor" class="flex-1 py-2 px-1.5 text-[11px] font-bold rounded-lg transition-all text-slate-400 hover:text-slate-200 relative whitespace-nowrap">
+                    <i class="fa-solid fa-list-check mr-1"></i> Advisor
+                    <span id="advisor-pill" class="absolute -top-1 right-1 bg-rose-500 text-slate-950 font-black text-[9px] h-4 px-1.5 rounded-full flex items-center justify-center border border-slate-950">!</span>
+                </button>
+                <button onclick="switchRightTab('coach')" id="tab-btn-coach" class="flex-1 py-2 px-1.5 text-[11px] font-bold rounded-lg transition-all text-slate-400 hover:text-slate-200 whitespace-nowrap">
+                    <i class="fa-solid fa-robot mr-1"></i> AI Coach
                 </button>
             </div>
 
@@ -561,6 +587,63 @@
                     </div>
                 </div>
             </div>
+
+            <!-- PANEL: AI Financial Coach -->
+            <div id="panel-coach" class="space-y-4 hidden">
+                <div class="glass-card border border-slate-800 rounded-3xl p-6 space-y-5">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div>
+                            <h3 class="font-bold text-base text-white flex items-center gap-2">
+                                <i class="fa-solid fa-robot text-violet-400"></i> AI Financial Coach
+                            </h3>
+                            <p class="text-xs text-slate-500 font-medium">Personalized, generative coaching grounded in your real numbers</p>
+                        </div>
+                        <button onclick="generateCoachReport()" id="coach-generate-btn" class="px-3.5 py-2 bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-violet-600/20 transition flex items-center justify-center gap-1.5 flex-shrink-0">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> Get Coaching Report
+                        </button>
+                    </div>
+
+                    <div id="coach-report-empty" class="text-center py-8 text-xs text-slate-600 border border-dashed border-slate-800 rounded-2xl">
+                        <i class="fa-solid fa-comments text-lg mb-2 block text-slate-700"></i>
+                        Click "Get Coaching Report" for a personalized breakdown of your finances, written for you by AI.
+                    </div>
+
+                    <div id="coach-report-container" class="space-y-4 hidden">
+                        <div class="p-4 bg-violet-500/5 border border-violet-500/20 rounded-2xl space-y-1.5">
+                            <div class="flex items-center justify-between">
+                                <span class="text-[10px] font-bold text-violet-400 uppercase tracking-wider">Coach's Assessment</span>
+                                <span id="coach-provider-tag" class="text-[9px] text-slate-500"></span>
+                            </div>
+                            <h4 id="coach-headline" class="text-sm font-extrabold text-white"></h4>
+                            <p id="coach-summary" class="text-xs text-slate-300 leading-relaxed"></p>
+                        </div>
+
+                        <div>
+                            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Top Priorities</h4>
+                            <div id="coach-priorities-list" class="space-y-2.5"></div>
+                        </div>
+
+                        <div class="p-3.5 bg-emerald-500/5 border border-emerald-500/20 rounded-2xl">
+                            <p id="coach-encouragement" class="text-xs text-emerald-300 leading-relaxed font-medium"></p>
+                        </div>
+                    </div>
+
+                    <!-- Coach Chat -->
+                    <div class="border-t border-slate-850 pt-4 space-y-3">
+                        <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider flex items-center gap-2">
+                            <i class="fa-solid fa-message text-fuchsia-400"></i> Ask a Follow-Up Question
+                        </h4>
+                        <div id="coach-chat-list" class="space-y-2.5 max-h-[280px] overflow-y-auto pr-1"></div>
+                        <div class="flex gap-2">
+                            <input type="text" id="coach-chat-input" placeholder="e.g. Should I pay off my car loan early?" class="flex-1 bg-slate-950 border border-slate-800 focus:border-violet-500 focus:outline-none rounded-xl px-3 py-2.5 text-xs text-slate-100 placeholder-slate-700">
+                            <button onclick="sendCoachChatMessage()" id="coach-chat-send-btn" class="px-4 py-2.5 bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold rounded-xl transition flex items-center justify-center flex-shrink-0">
+                                <i class="fa-solid fa-paper-plane"></i>
+                            </button>
+                        </div>
+                        <p class="text-[9px] text-slate-600 leading-relaxed">Vera, your AI coach, sees a live snapshot of your ledger, budget, and projections — never sent anywhere except directly to your configured AI provider.</p>
+                    </div>
+                </div>
+            </div>
         </section>
 
     </main>
@@ -576,6 +659,8 @@
             <a href="vehicle_vault.html" class="hover:text-slate-400 transition font-semibold">Vehicle Vault</a>
             <span class="text-slate-800">|</span>
             <a href="recipe_vault.html" class="hover:text-slate-400 transition font-semibold">Recipe Vault</a>
+            <span class="text-slate-800">|</span>
+            <a href="updates.html" class="hover:text-slate-400 transition font-semibold">Updates</a>
         </div>
     </footer>
 
@@ -610,6 +695,19 @@
                     <h3 class="text-lg font-black text-white">Let's build your profile</h3>
                     <p class="text-xs text-slate-400">Get set up to receive custom projections and financial advisor details.</p>
                 </div>
+
+                <div class="border border-dashed border-violet-500/30 bg-violet-500/5 rounded-2xl p-3.5 space-y-2.5">
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-wand-magic-sparkles text-violet-400 text-xs"></i>
+                        <span class="text-[11px] font-bold text-violet-300 uppercase tracking-wide">AI Quick Start (optional)</span>
+                    </div>
+                    <p class="text-[10px] text-slate-500 leading-relaxed">Describe your finances in plain English and AI will pre-fill the entire wizard for you.</p>
+                    <textarea id="wiz-ai-prompt" rows="2" placeholder="e.g. I'm 29, make $5,500/month, have $8k savings, $30k in my 401k, a $12k car loan at 6% interest, and $2k of credit card debt at 22%..." class="w-full bg-slate-950 border border-slate-850 focus:border-violet-500 focus:outline-none rounded-xl p-2.5 text-[11px] text-slate-100 placeholder-slate-800 resize-none"></textarea>
+                    <button type="button" onclick="autoFillWizardWithAI()" id="wiz-ai-btn" class="w-full py-2 bg-violet-600/20 hover:bg-violet-600/30 border border-violet-500/30 text-violet-300 text-[11px] font-bold rounded-xl transition flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-sparkles"></i> Auto-Fill With AI
+                    </button>
+                </div>
+
                 <div class="space-y-3 pt-2">
                     <div>
                         <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1.5">First Name</label>
@@ -709,6 +807,16 @@
                         </label>
                         <input type="number" id="wiz-val-car" value="15000" class="w-28 bg-slate-900 border border-slate-800 focus:border-violet-500 rounded-xl px-2.5 py-1.5 text-xs text-right text-slate-100 font-bold focus:outline-none">
                     </div>
+                    <div class="flex items-center justify-between p-3.5 bg-slate-950/60 border border-slate-850 rounded-2xl">
+                        <label class="flex items-center space-x-3 cursor-pointer">
+                            <input type="checkbox" id="wiz-has-property" class="h-4.5 w-4.5 rounded border-slate-800 text-violet-600 focus:ring-violet-500 bg-slate-950">
+                            <div>
+                                <span class="block text-xs font-bold text-slate-100">Home / Property Value</span>
+                                <span class="text-[10px] text-slate-500">Estimated market value, if you own</span>
+                            </div>
+                        </label>
+                        <input type="number" id="wiz-val-property" value="0" class="w-28 bg-slate-900 border border-slate-800 focus:border-violet-500 rounded-xl px-2.5 py-1.5 text-xs text-right text-slate-100 font-bold focus:outline-none">
+                    </div>
                 </div>
             </div>
 
@@ -756,6 +864,25 @@
                             </div>
                         </div>
                     </div>
+
+                    <div class="p-3 bg-slate-950/60 border border-slate-850 rounded-2xl space-y-2">
+                        <div class="flex items-center justify-between">
+                            <label class="flex items-center space-x-3 cursor-pointer">
+                                <input type="checkbox" id="wiz-has-mortgage" class="h-4.5 w-4.5 rounded border-slate-800 text-violet-600 focus:ring-violet-500 bg-slate-950">
+                                <div>
+                                    <span class="block text-xs font-bold text-slate-100">Mortgage Balance</span>
+                                </div>
+                            </label>
+                            <input type="number" id="wiz-val-mortgage" value="0" class="w-28 bg-slate-900 border border-slate-800 focus:border-violet-500 rounded-xl px-2.5 py-1.5 text-xs text-right text-slate-100 font-bold focus:outline-none">
+                        </div>
+                        <div class="flex justify-between items-center text-xs pl-7">
+                            <span class="text-[10px] text-slate-500">Mortgage Interest Rate:</span>
+                            <div class="flex items-center gap-1">
+                                <input type="number" id="wiz-rate-mortgage" value="6.5" class="w-16 bg-slate-900 border border-slate-800 focus:border-violet-500 rounded px-2 py-0.5 text-xs text-right text-slate-100">
+                                <span class="text-slate-500">%</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -769,9 +896,31 @@
                 <div class="p-4 bg-slate-950/60 border border-slate-850 rounded-2xl text-center space-y-2">
                     <span class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">Estimated Initial Net Worth</span>
                     <span id="wiz-final-net" class="text-3xl font-black text-violet-400">$0</span>
-                    <p class="text-[11px] text-slate-400 mt-2 px-4 leading-relaxed">
-                        Data has been locked inside local storage. Switch tabs to analyze retirement trajectories or debt payoff models.
-                    </p>
+                </div>
+
+                <div class="grid grid-cols-3 gap-2">
+                    <div class="p-2.5 bg-slate-950/60 border border-slate-850 rounded-xl text-center">
+                        <span class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider">Assets</span>
+                        <span id="wiz-review-assets" class="text-xs font-extrabold text-emerald-400">$0</span>
+                    </div>
+                    <div class="p-2.5 bg-slate-950/60 border border-slate-850 rounded-xl text-center">
+                        <span class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider">Debts</span>
+                        <span id="wiz-review-debts" class="text-xs font-extrabold text-rose-400">$0</span>
+                    </div>
+                    <div class="p-2.5 bg-slate-950/60 border border-slate-850 rounded-xl text-center">
+                        <span class="block text-[9px] font-bold text-slate-500 uppercase tracking-wider">Monthly Savings</span>
+                        <span id="wiz-review-savings" class="text-xs font-extrabold text-violet-400">$0</span>
+                    </div>
+                </div>
+
+                <p class="text-[11px] text-slate-400 px-1 leading-relaxed">
+                    Data is stored locally on this device. Need to fix something?
+                </p>
+                <div class="flex flex-wrap gap-1.5">
+                    <button type="button" onclick="jumpToWizStep(1)" class="px-2.5 py-1.5 bg-slate-950 hover:bg-slate-850 border border-slate-850 text-slate-300 text-[10px] font-bold rounded-lg transition">Edit Profile</button>
+                    <button type="button" onclick="jumpToWizStep(2)" class="px-2.5 py-1.5 bg-slate-950 hover:bg-slate-850 border border-slate-850 text-slate-300 text-[10px] font-bold rounded-lg transition">Edit Budget</button>
+                    <button type="button" onclick="jumpToWizStep(3)" class="px-2.5 py-1.5 bg-slate-950 hover:bg-slate-850 border border-slate-850 text-slate-300 text-[10px] font-bold rounded-lg transition">Edit Assets</button>
+                    <button type="button" onclick="jumpToWizStep(4)" class="px-2.5 py-1.5 bg-slate-950 hover:bg-slate-850 border border-slate-850 text-slate-300 text-[10px] font-bold rounded-lg transition">Edit Debts</button>
                 </div>
             </div>
 
@@ -796,6 +945,224 @@
         <div>
             <span id="toast-message" class="text-sm font-semibold block leading-tight text-white">Notification</span>
             <span id="toast-subtext" class="text-xs text-slate-400">Details</span>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         SETTINGS MODAL — AI Provider API Keys
+    ═══════════════════════════════════════════════════════ -->
+    <div id="settingsModal" class="fixed inset-0 z-[900] hidden items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-md p-6 relative max-h-[90vh] overflow-y-auto">
+            <button onclick="closeSettingsModal()" class="absolute top-4 right-4 text-slate-500 hover:text-slate-300 transition">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <div class="flex items-center gap-3 mb-5">
+                <div class="h-10 w-10 rounded-xl bg-gradient-to-tr from-violet-600 to-fuchsia-500 flex items-center justify-center shadow-lg">
+                    <i class="fa-solid fa-gear text-white text-base"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-white text-base leading-tight">Settings</h3>
+                    <p class="text-[11px] text-slate-400">AI Coach configuration</p>
+                </div>
+            </div>
+
+            <!-- API Key Section -->
+            <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 mb-4">
+                <div class="flex items-center gap-2 mb-3">
+                    <i class="fa-solid fa-key text-amber-400 text-sm"></i>
+                    <span class="text-xs font-bold text-slate-200 uppercase tracking-wider">Gemini API Key</span>
+                    <span class="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-1.5 py-0.5 rounded-full font-semibold">FREE</span>
+                </div>
+                <p class="text-[11px] text-slate-400 mb-3 leading-relaxed">Required for the AI Coaching Report, chat, and AI wizard auto-fill. Google's free tier gives you plenty of usage with no credit card needed.</p>
+                <div class="flex gap-2 mb-3">
+                    <input type="password" id="settingsApiKeyInput" placeholder="Paste your Gemini API key here..."
+                        class="flex-1 bg-slate-900 border border-slate-700 focus:border-violet-500 rounded-lg px-3 py-2 text-sm text-slate-200 placeholder-slate-600 focus:outline-none transition font-mono">
+                    <button onclick="toggleApiKeyVisibility()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 border border-slate-700 rounded-lg transition text-xs" title="Show/hide key">
+                        <i id="apiKeyEyeIcon" class="fa-solid fa-eye"></i>
+                    </button>
+                </div>
+                <div class="flex gap-2 mb-2">
+                    <a href="https://aistudio.google.com/apikey" target="_blank"
+                        class="flex-1 text-center px-3 py-2 bg-slate-800 hover:bg-slate-700 text-indigo-400 hover:text-indigo-300 border border-slate-700 text-xs font-semibold rounded-lg transition flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i> Get Free Key at AI Studio
+                    </a>
+                    <button onclick="testGeminiKey()" id="testGeminiKeyBtn" class="flex-1 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-bold rounded-lg transition flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-vial"></i> Test Key
+                    </button>
+                </div>
+                <button onclick="saveApiKey()" class="w-full px-3 py-2 bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold rounded-lg transition flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-floppy-disk"></i> Save Key
+                </button>
+                <div id="apiKeyStatus" class="mt-2.5 hidden">
+                    <p id="apiKeyStatusText" class="text-[11px] text-center font-medium"></p>
+                </div>
+            </div>
+
+            <!-- Backup Provider Section -->
+            <div class="bg-slate-950 border border-slate-800 rounded-xl p-4 mb-4">
+                <div class="flex items-center gap-2 mb-3">
+                    <i class="fa-solid fa-life-ring text-indigo-400 text-sm"></i>
+                    <span class="text-xs font-bold text-slate-200 uppercase tracking-wider">Backup Provider (OpenRouter)</span>
+                    <span class="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-1.5 py-0.5 rounded-full font-semibold">FREE</span>
+                </div>
+                <p class="text-[11px] text-slate-400 mb-3 leading-relaxed">Optional. If Gemini fails or isn't configured, the AI Coach and wizard auto-fill automatically retry with this provider instead.</p>
+                <div class="flex gap-2 mb-3">
+                    <input type="password" id="settingsOpenRouterKeyInput" placeholder="Paste your OpenRouter API key here..."
+                        class="flex-1 bg-slate-900 border border-slate-700 focus:border-violet-500 rounded-lg px-3 py-2 text-sm text-slate-200 placeholder-slate-600 focus:outline-none transition font-mono">
+                    <button onclick="toggleOpenRouterKeyVisibility()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 border border-slate-700 rounded-lg transition text-xs" title="Show/hide key">
+                        <i id="openRouterKeyEyeIcon" class="fa-solid fa-eye"></i>
+                    </button>
+                </div>
+                <label class="block text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1.5">Model ID</label>
+                <input type="text" id="settingsOpenRouterModelInput" placeholder="qwen/qwen-2.5-72b-instruct:free"
+                    class="w-full bg-slate-900 border border-slate-700 focus:border-violet-500 rounded-lg px-3 py-2 text-sm text-slate-200 placeholder-slate-600 focus:outline-none transition font-mono mb-3">
+                <p class="text-[10px] text-slate-500 mb-3 leading-relaxed">Editable so a future model retirement doesn't break this again — swap in any model ID from <a href="https://openrouter.ai/models?max_price=0" target="_blank" class="text-indigo-400 hover:text-indigo-300">openrouter.ai's free model list</a>.</p>
+                <div class="flex gap-2 mb-2">
+                    <a href="https://openrouter.ai/keys" target="_blank"
+                        class="flex-1 text-center px-3 py-2 bg-slate-800 hover:bg-slate-700 text-indigo-400 hover:text-indigo-300 border border-slate-700 text-xs font-semibold rounded-lg transition flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i> Get Free Key at OpenRouter
+                    </a>
+                    <button onclick="testOpenRouterKey()" id="testOpenRouterKeyBtn" class="flex-1 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-bold rounded-lg transition flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-vial"></i> Test Key
+                    </button>
+                </div>
+                <button onclick="saveOpenRouterSettings()" class="w-full px-3 py-2 bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold rounded-lg transition flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-floppy-disk"></i> Save Backup
+                </button>
+                <div id="openRouterKeyStatus" class="mt-2.5 hidden">
+                    <p id="openRouterKeyStatusText" class="text-[11px] text-center font-medium"></p>
+                </div>
+            </div>
+
+            <div class="bg-indigo-500/5 border border-indigo-500/20 rounded-xl p-3">
+                <p class="text-[11px] text-indigo-300 leading-relaxed">
+                    <i class="fa-solid fa-shield-halved mr-1"></i>
+                    <strong>Privacy:</strong> Your API keys are stored only in this browser's localStorage. They never leave your device and are never sent anywhere except directly to Google's or OpenRouter's API.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         IMPORT REVIEW MODAL — CSV / Screenshot Statement Import
+    ═══════════════════════════════════════════════════════ -->
+    <div id="importReviewModal" class="fixed inset-0 z-[900] hidden items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 relative">
+            <button onclick="closeImportReviewModal()" class="absolute top-4 right-4 text-slate-500 hover:text-slate-300 transition">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <div class="flex items-center gap-3 mb-4">
+                <div class="h-10 w-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-violet-600 flex items-center justify-center shadow-lg flex-shrink-0">
+                    <i class="fa-solid fa-file-import text-white text-base"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-white text-base leading-tight">Review Import</h3>
+                    <p id="import-review-subtext" class="text-[11px] text-slate-400">Confirm what to add before it touches your vault</p>
+                </div>
+            </div>
+
+            <!-- Detected Accounts (screenshot only) -->
+            <div id="import-accounts-section" class="mb-5 hidden">
+                <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-2 flex items-center gap-2">
+                    <i class="fa-solid fa-vault text-emerald-400"></i> Detected Accounts
+                </h4>
+                <div id="import-accounts-list" class="space-y-2 max-h-[200px] overflow-y-auto pr-1"></div>
+            </div>
+
+            <!-- Detected Transactions -->
+            <div id="import-transactions-section" class="hidden">
+                <div class="flex items-center justify-between mb-2">
+                    <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-receipt text-rose-400"></i> Detected Transactions
+                    </h4>
+                    <span id="import-txn-count" class="text-[10px] text-slate-500 font-semibold"></span>
+                </div>
+                <div id="import-transactions-list" class="space-y-1.5 max-h-[280px] overflow-y-auto pr-1 mb-3"></div>
+
+                <div class="bg-slate-950 border border-slate-800 rounded-xl p-3 space-y-1.5 mb-3">
+                    <span class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Category Totals (this statement)</span>
+                    <div id="import-category-totals" class="space-y-1"></div>
+                </div>
+
+                <label class="flex items-center gap-2 mb-3 cursor-pointer select-none">
+                    <input type="checkbox" id="import-update-income" class="h-4 w-4 rounded border-slate-700 text-violet-600 focus:ring-violet-500 bg-slate-950">
+                    <span id="import-update-income-label" class="text-[11px] text-slate-400">Also update my monthly income from detected deposits</span>
+                </label>
+
+                <p class="text-[10px] text-slate-500 mb-3 leading-relaxed"><i class="fa-solid fa-circle-info mr-1"></i>Applying will set your monthly budget sliders to these category totals (assumes this statement covers about one month). You can re-adjust sliders afterward, and re-categorize any row above first.</p>
+            </div>
+
+            <div class="flex gap-2 pt-2 border-t border-slate-850">
+                <button onclick="closeImportReviewModal()" class="flex-1 px-3 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-xl transition">Cancel</button>
+                <button onclick="applyImportReview()" class="flex-1 px-3 py-2.5 bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-violet-600/20 transition flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-check"></i> Apply to Vault
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════════════════════════════════════════════════
+         SYSTEM LOG MODAL — Wealth Vault Changelog
+    ═══════════════════════════════════════════════════════ -->
+    <div id="changelogModal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-md flex flex-col items-center justify-center p-6 z-[950] hidden transition-opacity duration-200" onclick="closeChangelog()">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-xl w-full p-6 shadow-2xl relative max-h-[85vh] overflow-y-auto flex flex-col" onclick="event.stopPropagation()">
+            <button onclick="closeChangelog()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-200 transition">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+
+            <div class="flex items-center gap-3 mb-6 pb-4 border-b border-slate-800">
+                <div class="h-10 w-10 rounded-xl bg-violet-500/10 text-violet-400 flex items-center justify-center border border-violet-500/20">
+                    <i class="fa-solid fa-code-branch text-lg"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-lg text-slate-100">System Log</h3>
+                    <p class="text-xs text-slate-400">Chronological history of Wealth Vault development</p>
+                </div>
+            </div>
+
+            <div class="space-y-6 relative border-l-2 border-slate-800 ml-3 pl-6 my-2 text-xs">
+                <div class="relative">
+                    <span class="absolute -left-[31px] top-1 bg-violet-500 ring-4 ring-slate-950 h-3 w-3 rounded-full animate-pulse"></span>
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="font-bold text-violet-400 text-xs">v1.2.0 — Statement Import (Latest)</span>
+                        <span class="text-[9px] text-slate-500 font-mono">July 2026</span>
+                    </div>
+                    <p class="text-slate-300 mt-1 leading-relaxed">
+                        Added credit/debit statement import — upload a CSV (free keyword categorization, or AI categorization automatically when a key is configured) or a screenshot of a statement/balance (Gemini vision extracts accounts and transactions). A new Import Review modal lets you confirm or re-categorize everything before it touches your data. Also fixed a bug where the budget sliders silently reset most categories on every re-render.
+                    </p>
+                </div>
+
+                <div class="relative">
+                    <span class="absolute -left-[31px] top-1 bg-violet-700 ring-4 ring-slate-950 h-3 w-3 rounded-full"></span>
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="font-bold text-slate-400 text-xs">v1.1.0 — AI Financial Coach</span>
+                        <span class="text-[9px] text-slate-500 font-mono">July 2026</span>
+                    </div>
+                    <p class="text-slate-300 mt-1 leading-relaxed">
+                        Added an AI Financial Coach ("Vera") that generates a personalized coaching report and answers follow-up questions grounded in your live ledger and budget, plus a Settings modal to manage your own Gemini/OpenRouter API keys. The onboarding wizard now supports AI Quick Start (describe your finances in plain English to auto-fill everything), home/mortgage fields, and an editable review step.
+                    </p>
+                </div>
+
+                <div class="relative">
+                    <span class="absolute -left-[31px] top-1 bg-slate-800 ring-4 ring-slate-950 h-3 w-3 rounded-full"></span>
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="font-bold text-slate-400 text-xs">v1.0.0 — Initial Release</span>
+                        <span class="text-[9px] text-slate-500 font-mono">July 2026</span>
+                    </div>
+                    <p class="text-slate-300 mt-1 leading-relaxed">
+                        Launched Wealth Vault — a financial advisor and net worth optimizer with asset/liability tracking, budget &amp; cash flow planning, a retirement growth simulator, and a rule-based Smart Advisor checklist.
+                    </p>
+                </div>
+            </div>
+
+            <div class="mt-4 pt-4 border-t border-slate-800 flex justify-between items-center">
+                <a href="updates.html" class="text-[11px] text-violet-400 hover:text-violet-300 font-semibold transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i> View All Portal Updates
+                </a>
+                <button onclick="closeChangelog()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-bold transition">
+                    Close
+                </button>
+            </div>
         </div>
     </div>
 
@@ -824,7 +1191,7 @@
         let checklist = []; // Saved state of checklist items
 
         // Ledger State Filters
-        let ledgerFilter = 'all'; 
+        let ledgerFilter = 'all';
         let activeLeftTab = 'assets-liabilities';
         let activeRightTab = 'overview';
         let currentWizStep = 1;
@@ -832,6 +1199,15 @@
         // Chart References
         let allocationChart = null;
         let retirementChart = null;
+
+        // AI Provider Config — stored in localStorage, never hardcoded
+        let apiKey = localStorage.getItem('wv_gemini_api_key') || "";
+        let openrouterApiKey = localStorage.getItem('wv_openrouter_api_key') || "";
+        let openrouterModel = localStorage.getItem('wv_openrouter_model') || 'qwen/qwen-2.5-72b-instruct:free';
+
+        // AI Coach state
+        let coachReport = null;
+        let coachChatHistory = []; // [{ role: 'user'|'model', text }]
 
         // Constant categories for Asset & Liabilities
         const ASSET_CATEGORIES = {
@@ -854,7 +1230,18 @@
         window.addEventListener('DOMContentLoaded', () => {
             loadDatabase();
             adjustFormFields();
-            
+            updateApiKeyDot();
+
+            const coachChatInput = document.getElementById('coach-chat-input');
+            if (coachChatInput) {
+                coachChatInput.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        sendCoachChatMessage();
+                    }
+                });
+            }
+
             // Check if wizard completed
             if (!localStorage.getItem('wealth_vault_wizard_completed')) {
                 openWizard(false);
@@ -898,14 +1285,18 @@
             // Populate cashflow forms
             document.getElementById('cashflow-income').value = profile.monthlyIncome;
             
-            // Sync budget ranges
+            // Sync budget ranges — set every slider's value/label first, THEN recalculate the
+            // summary once. (Calling syncRangeDisplay() per-slider here would recompute the
+            // summary from partially-synced DOM values, clobbering categories not yet visited.)
             for (let cat in budget) {
                 const range = document.getElementById(`budget-${cat}`);
                 if (range) {
                     range.value = budget[cat];
-                    syncRangeDisplay(range);
+                    const valEl = document.getElementById(`budget-val-${cat}`);
+                    if (valEl) valEl.innerText = Number(range.value).toLocaleString();
                 }
             }
+            updateBudgetSummary();
 
             // Sync retirement sliders from profile values
             document.getElementById('slider-ret-age').value = profile.targetAge;
@@ -1302,33 +1693,42 @@
             const pOverview = document.getElementById('panel-overview');
             const pRetirement = document.getElementById('panel-retirement');
             const pAdvisor = document.getElementById('panel-advisor');
-            
+            const pCoach = document.getElementById('panel-coach');
+
             const btnOverview = document.getElementById('tab-btn-overview');
             const btnRetirement = document.getElementById('tab-btn-retirement');
             const btnAdvisor = document.getElementById('tab-btn-advisor');
+            const btnCoach = document.getElementById('tab-btn-coach');
 
             // Hide panels
             pOverview.classList.add('hidden');
             pRetirement.classList.add('hidden');
             pAdvisor.classList.add('hidden');
+            pCoach.classList.add('hidden');
 
             // Reset buttons style
-            btnOverview.className = "flex-1 py-2 text-xs font-bold rounded-lg transition-all text-slate-400 hover:text-slate-200";
-            btnRetirement.className = "flex-1 py-2 text-xs font-bold rounded-lg transition-all text-slate-400 hover:text-slate-200";
-            btnAdvisor.className = "flex-1 py-2 text-xs font-bold rounded-lg transition-all text-slate-400 hover:text-slate-200 relative";
+            const inactiveClass = "flex-1 py-2 px-1.5 text-[11px] font-bold rounded-lg transition-all text-slate-400 hover:text-slate-200 whitespace-nowrap";
+            const activeClass = "flex-1 py-2 px-1.5 text-[11px] font-bold rounded-lg transition-all bg-violet-600/10 text-violet-400 border border-violet-500/20 whitespace-nowrap";
+            btnOverview.className = inactiveClass;
+            btnRetirement.className = inactiveClass;
+            btnAdvisor.className = inactiveClass + " relative";
+            btnCoach.className = inactiveClass;
 
             if (tab === 'overview') {
                 pOverview.classList.remove('hidden');
-                btnOverview.className = "flex-1 py-2 text-xs font-bold rounded-lg transition-all bg-violet-600/10 text-violet-400 border border-violet-500/20";
+                btnOverview.className = activeClass;
                 setTimeout(renderAllocationChart, 50);
             } else if (tab === 'retirement') {
                 pRetirement.classList.remove('hidden');
-                btnRetirement.className = "flex-1 py-2 text-xs font-bold rounded-lg transition-all bg-violet-600/10 text-violet-400 border border-violet-500/20";
+                btnRetirement.className = activeClass;
                 setTimeout(renderRetirementAnalysis, 50);
-            } else {
+            } else if (tab === 'advisor') {
                 pAdvisor.classList.remove('hidden');
-                btnAdvisor.className = "flex-1 py-2 text-xs font-bold rounded-lg transition-all bg-violet-600/10 text-violet-400 border border-violet-500/20 relative";
+                btnAdvisor.className = activeClass + " relative";
                 renderAdvisorRecommendations();
+            } else {
+                pCoach.classList.remove('hidden');
+                btnCoach.className = activeClass;
             }
         }
 
@@ -1954,19 +2354,40 @@
             if (document.getElementById('wiz-has-cash').checked) tempAssets += Number(document.getElementById('wiz-val-cash').value) || 0;
             if (document.getElementById('wiz-has-invest').checked) tempAssets += Number(document.getElementById('wiz-val-invest').value) || 0;
             if (document.getElementById('wiz-has-car').checked) tempAssets += Number(document.getElementById('wiz-val-car').value) || 0;
+            if (document.getElementById('wiz-has-property').checked) tempAssets += Number(document.getElementById('wiz-val-property').value) || 0;
 
             if (document.getElementById('wiz-has-cc').checked) tempLiabilities += Number(document.getElementById('wiz-val-cc').value) || 0;
             if (document.getElementById('wiz-has-loan').checked) tempLiabilities += Number(document.getElementById('wiz-val-loan').value) || 0;
+            if (document.getElementById('wiz-has-mortgage').checked) tempLiabilities += Number(document.getElementById('wiz-val-mortgage').value) || 0;
 
             const finalNW = tempAssets - tempLiabilities;
-            
+
             // Render inside text
             const formatted = Math.abs(finalNW).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 });
             document.getElementById('wiz-final-net').innerText = finalNW < 0 ? `-${wizCurrency}${formatted}` : `${wizCurrency}${formatted}`;
-            
+
             const netWorthText = document.getElementById('wiz-final-net');
             if (finalNW < 0) netWorthText.className = "text-3xl font-black text-rose-500";
             else netWorthText.className = "text-3xl font-black text-violet-400";
+
+            // Review breakdown cards
+            const income = Number(document.getElementById('wiz-income').value) || 0;
+            const expenses = (Number(document.getElementById('wiz-exp-housing').value) || 0)
+                + (Number(document.getElementById('wiz-exp-food').value) || 0)
+                + (Number(document.getElementById('wiz-exp-trans').value) || 0)
+                + (Number(document.getElementById('wiz-exp-utils').value) || 0);
+            const monthlySavings = Math.max(0, income - expenses);
+
+            const fmt = (v) => `${wizCurrency}${Math.abs(v).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}`;
+            document.getElementById('wiz-review-assets').innerText = fmt(tempAssets);
+            document.getElementById('wiz-review-debts').innerText = fmt(tempLiabilities);
+            document.getElementById('wiz-review-savings').innerText = fmt(monthlySavings);
+        }
+
+        // Jump directly to a wizard step (used by the Step 5 "Edit" shortcuts)
+        function jumpToWizStep(step) {
+            currentWizStep = step;
+            showWizStep(step);
         }
 
         function completeWizard() {
@@ -2013,10 +2434,19 @@
                     value: Number(document.getElementById('wiz-val-car').value) || 0
                 });
             }
+            if (document.getElementById('wiz-has-property').checked) {
+                assets.push({
+                    id: generateId(),
+                    name: 'Primary Residence',
+                    category: 'property',
+                    value: Number(document.getElementById('wiz-val-property').value) || 0
+                });
+            }
 
             // Add debts if checked
             let ccPay = 0;
             let loanPay = 0;
+            let mortgagePay = 0;
 
             if (document.getElementById('wiz-has-cc').checked) {
                 const ccBal = Number(document.getElementById('wiz-val-cc').value) || 0;
@@ -2040,8 +2470,19 @@
                 });
                 loanPay = Math.round(loanBal * 0.015); // estimate 1.5% payment
             }
+            if (document.getElementById('wiz-has-mortgage').checked) {
+                const mortgageBal = Number(document.getElementById('wiz-val-mortgage').value) || 0;
+                liabilities.push({
+                    id: generateId(),
+                    name: 'Mortgage Balance',
+                    category: 'mortgage',
+                    value: mortgageBal,
+                    interestRate: Number(document.getElementById('wiz-rate-mortgage').value) || 6.5
+                });
+                mortgagePay = Math.round(mortgageBal * 0.006); // estimate 0.6% monthly payment (~30yr amortization)
+            }
 
-            budget.debt = ccPay + loanPay;
+            budget.debt = ccPay + loanPay + mortgagePay;
 
             saveDatabase();
             localStorage.setItem('wealth_vault_wizard_completed', 'true');
@@ -2052,10 +2493,972 @@
             showToast("Vault Locked", "All wizard values pre-filled successfully.", "emerald");
         }
 
-        // Welcome / Changelog notification system
-        function openChangelog() {
-            alert("Wealth Vault — v1.0.0 Changelog:\n\n- Client-Side secure calculations\n- Interactive Net Worth compose charts\n- Smart retirement trajectory simulations\n- Multi-factor advisory engines (Avalanche payoff checklists)\n- Offline JSON configuration migrations");
+        // ═══════════ AI PROVIDERS: Gemini (primary) + OpenRouter (automatic backup) ═══════════
+        // Chat-style calls (used by both the AI Coach conversation and the JSON-returning
+        // coaching report / wizard auto-fill, which just ask the model to reply with raw JSON).
+        async function callGeminiChat(messages, systemText) {
+            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`;
+            const contents = messages.map(m => ({ role: m.role === 'model' ? 'model' : 'user', parts: [{ text: m.text }] }));
+
+            const payload = {
+                contents,
+                systemInstruction: { parts: [{ text: systemText }] },
+                generationConfig: { temperature: 0.6 }
+            };
+
+            const retryDelays = [2000, 5000, 10000];
+            for (let attempt = 0; attempt <= retryDelays.length; attempt++) {
+                try {
+                    const response = await fetch(endpoint, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    if (response.status === 429 || response.status >= 500) {
+                        let detail = '';
+                        try { const errBody = await response.json(); detail = errBody.error?.message || ''; } catch (e) {}
+                        if (attempt >= retryDelays.length) throw new Error(`Gemini error: HTTP ${response.status} after retries${detail ? ' — ' + detail : ''}`);
+                        console.warn(`Gemini HTTP ${response.status}. Waiting ${retryDelays[attempt] / 1000}s before retry ${attempt + 1}/${retryDelays.length}...`);
+                        await new Promise(r => setTimeout(r, retryDelays[attempt]));
+                        continue;
+                    }
+
+                    if (!response.ok) {
+                        let detail = '';
+                        try { const errBody = await response.json(); detail = errBody.error?.message || ''; } catch (e) {}
+                        throw new Error(`Gemini error: HTTP ${response.status}${detail ? ' — ' + detail : ''}`);
+                    }
+
+                    const data = await response.json();
+                    const raw = (data.candidates && data.candidates[0] && data.candidates[0].content.parts[0].text) || '';
+                    if (!raw) throw new Error("Gemini returned an empty response.");
+                    return raw.trim();
+                } catch (err) {
+                    if (attempt >= retryDelays.length) throw err;
+                    await new Promise(r => setTimeout(r, retryDelays[attempt]));
+                }
+            }
+            throw new Error("Gemini error: exhausted retries");
         }
+
+        async function callOpenRouterChat(messages, systemText) {
+            const chatMessages = [{ role: 'system', content: systemText }].concat(
+                messages.map(m => ({ role: m.role === 'model' ? 'assistant' : 'user', content: m.text }))
+            );
+            const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${openrouterApiKey}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ model: openrouterModel, messages: chatMessages })
+            });
+            if (!response.ok) {
+                let detail = '';
+                try { const errBody = await response.json(); detail = errBody.error && errBody.error.message; } catch (e) {}
+                throw new Error(`OpenRouter error: HTTP ${response.status}${detail ? ' — ' + detail : ''}`);
+            }
+            const data = await response.json();
+            const raw = (data.choices && data.choices[0] && data.choices[0].message.content) || '';
+            if (!raw) throw new Error("OpenRouter returned an empty response.");
+            return raw.trim();
+        }
+
+        async function callCoachAI(messages, systemText) {
+            let geminiError = null;
+            if (apiKey) {
+                try { return { text: await callGeminiChat(messages, systemText), provider: 'Gemini' }; }
+                catch (err) { geminiError = err; }
+            }
+            if (openrouterApiKey) {
+                try { return { text: await callOpenRouterChat(messages, systemText), provider: 'OpenRouter (backup)' }; }
+                catch (err) {
+                    if (geminiError) throw new Error(`Both providers failed. ${geminiError.message} | ${err.message}`);
+                    throw err;
+                }
+            }
+            if (geminiError) throw geminiError;
+            throw new Error("No AI provider configured. Add a Gemini or OpenRouter key in Settings.");
+        }
+
+        // Compact JSON snapshot of the user's finances, fed to the AI on every Coach call
+        function buildFinancialSnapshot() {
+            const totalAssets = assets.reduce((sum, item) => sum + Number(item.value), 0);
+            const totalLiabilities = liabilities.reduce((sum, item) => sum + Number(item.value), 0);
+            const liquidCash = assets.filter(item => item.category === 'cash').reduce((sum, item) => sum + Number(item.value), 0);
+            const monthlyExpenses = Object.values(budget).reduce((sum, item) => sum + Number(item), 0);
+            const sim = runSimulatorProjections();
+
+            return {
+                name: profile.name,
+                currentAge: profile.currentAge,
+                targetRetirementAge: profile.targetAge,
+                currency: profile.currency,
+                monthlyIncome: profile.monthlyIncome,
+                monthlyBudget: budget,
+                monthlyExpensesTotal: monthlyExpenses,
+                monthlySavings: Math.max(0, profile.monthlyIncome - monthlyExpenses),
+                savingsRatePercent: calculateSavingsRate(),
+                assets: assets.map(a => ({ name: a.name, category: a.category, value: a.value })),
+                liabilities: liabilities.map(l => ({ name: l.name, category: l.category, value: l.value, interestRate: l.interestRate })),
+                netWorth: totalAssets - totalLiabilities,
+                liquidCash,
+                debtToAssetRatioPercent: totalAssets > 0 ? Math.round((totalLiabilities / totalAssets) * 100) : (totalLiabilities > 0 ? 100 : 0),
+                retirementProjection: {
+                    targetNeeded: Math.round(sim.targetNeed),
+                    projectedCapitalAtRetirement: Math.round(sim.projectedCapital),
+                    yearsToRetirement: Math.max(0, profile.targetAge - profile.currentAge)
+                }
+            };
+        }
+
+        function coachSystemPrompt() {
+            return `You are "Vera", an encouraging but direct AI financial coach embedded in a personal net worth app called Wealth Vault. You will receive a JSON snapshot of the user's real finances. Speak directly to them by first name, reference their actual numbers using the currency symbol "${profile.currency}", and never give generic filler advice — be specific to their real inputs. Do not add legal/tax/investment disclaimers beyond one short sentence maximum. Current financial snapshot as JSON:\n${JSON.stringify(buildFinancialSnapshot())}`;
+        }
+
+        // ═══════════ AI COACHING REPORT ═══════════
+        async function generateCoachReport() {
+            if (!apiKey && !openrouterApiKey) {
+                showToast("API Key Required", "Open Settings to add a free Gemini or OpenRouter key.", "rose");
+                openSettingsModal();
+                return;
+            }
+
+            const btn = document.getElementById('coach-generate-btn');
+            const originalHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> Analyzing your finances...';
+
+            const systemText = coachSystemPrompt() + `\n\nWhen asked for a coaching report, return ONLY raw JSON (no markdown fences, no commentary) matching exactly this shape: {"headline": string, "summary": string, "priorities": [{"title": string, "detail": string, "impact": "high"|"medium"|"low"}], "encouragement": string}. Provide 3 to 5 priorities ordered most urgent first.`;
+            const promptText = `Generate my personalized coaching report now based on the financial snapshot in your system instructions.`;
+
+            try {
+                const result = await callCoachAI([{ role: 'user', text: promptText }], systemText);
+                const raw = result.text.replace(/```json\s*/gi, '').replace(/```\s*/gi, '').trim();
+                coachReport = JSON.parse(raw);
+                renderCoachReport(result.provider);
+                showToast("Coaching Report Ready", `Generated via ${result.provider}.`, "emerald");
+            } catch (err) {
+                showToast("AI Coach Error", err.message, "rose");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }
+        }
+
+        function renderCoachReport(provider) {
+            const emptyState = document.getElementById('coach-report-empty');
+            const container = document.getElementById('coach-report-container');
+            if (!coachReport) { container.classList.add('hidden'); return; }
+
+            emptyState.classList.add('hidden');
+            container.classList.remove('hidden');
+
+            document.getElementById('coach-headline').innerText = coachReport.headline || '';
+            document.getElementById('coach-summary').innerText = coachReport.summary || '';
+            document.getElementById('coach-encouragement').innerText = coachReport.encouragement || '';
+            document.getElementById('coach-provider-tag').innerText = provider ? `via ${provider}` : '';
+
+            const list = document.getElementById('coach-priorities-list');
+            list.innerHTML = '';
+            (coachReport.priorities || []).forEach(p => {
+                const styles = p.impact === 'high'
+                    ? { border: 'border-rose-500/25 bg-rose-500/5', badge: 'bg-rose-500/10 text-rose-400' }
+                    : (p.impact === 'low'
+                        ? { border: 'border-emerald-500/25 bg-emerald-500/5', badge: 'bg-emerald-500/10 text-emerald-400' }
+                        : { border: 'border-amber-500/25 bg-amber-500/5', badge: 'bg-amber-500/10 text-amber-400' });
+
+                const row = document.createElement('div');
+                row.className = `p-3.5 border ${styles.border} rounded-2xl`;
+                row.innerHTML = `
+                    <div class="flex items-center justify-between gap-2 mb-1">
+                        <h5 class="text-xs font-bold text-slate-100">${p.title || ''}</h5>
+                        <span class="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${styles.badge}">${p.impact || 'medium'}</span>
+                    </div>
+                    <p class="text-xs text-slate-400 leading-relaxed">${p.detail || ''}</p>
+                `;
+                list.appendChild(row);
+            });
+        }
+
+        // ═══════════ AI COACH CHAT ═══════════
+        function renderCoachChat() {
+            const list = document.getElementById('coach-chat-list');
+            if (!list) return;
+            list.innerHTML = '';
+            coachChatHistory.forEach(m => {
+                const bubble = document.createElement('div');
+                bubble.className = m.role === 'user'
+                    ? "ml-auto max-w-[85%] bg-violet-600/20 border border-violet-500/30 text-slate-100 text-xs rounded-2xl rounded-tr-sm px-3.5 py-2.5 whitespace-pre-wrap"
+                    : "mr-auto max-w-[85%] bg-slate-950/60 border border-slate-800 text-slate-200 text-xs rounded-2xl rounded-tl-sm px-3.5 py-2.5 whitespace-pre-wrap";
+                bubble.innerText = m.text;
+                list.appendChild(bubble);
+            });
+            list.scrollTop = list.scrollHeight;
+        }
+
+        async function sendCoachChatMessage() {
+            const input = document.getElementById('coach-chat-input');
+            const text = input.value.trim();
+            if (!text) return;
+
+            if (!apiKey && !openrouterApiKey) {
+                showToast("API Key Required", "Open Settings to add a free Gemini or OpenRouter key.", "rose");
+                openSettingsModal();
+                return;
+            }
+
+            coachChatHistory.push({ role: 'user', text });
+            input.value = '';
+            renderCoachChat();
+
+            const sendBtn = document.getElementById('coach-chat-send-btn');
+            sendBtn.disabled = true;
+
+            coachChatHistory.push({ role: 'model', text: 'Thinking...' });
+            renderCoachChat();
+
+            const systemText = coachSystemPrompt() + `\n\nKeep answers conversational and concise (under 120 words unless explicitly asked for more detail).`;
+            const historyForCall = coachChatHistory.slice(0, -1); // drop the "Thinking..." placeholder
+
+            try {
+                const result = await callCoachAI(historyForCall, systemText);
+                coachChatHistory.pop();
+                coachChatHistory.push({ role: 'model', text: result.text });
+            } catch (err) {
+                coachChatHistory.pop();
+                coachChatHistory.push({ role: 'model', text: `Sorry, I hit an error: ${err.message}` });
+            } finally {
+                renderCoachChat();
+                sendBtn.disabled = false;
+            }
+        }
+
+        // ═══════════ AI WIZARD AUTO-FILL ═══════════
+        async function autoFillWizardWithAI() {
+            const promptVal = document.getElementById('wiz-ai-prompt').value.trim();
+            if (!promptVal) {
+                showToast("Description Needed", "Write a sentence or two about your finances first.", "rose");
+                return;
+            }
+            if (!apiKey && !openrouterApiKey) {
+                showToast("API Key Required", "Open Settings to add a free Gemini or OpenRouter key.", "rose");
+                openSettingsModal();
+                return;
+            }
+
+            const btn = document.getElementById('wiz-ai-btn');
+            const originalHtml = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> Reading your description...';
+
+            const systemText = `You are a data-extraction engine for a personal finance app onboarding wizard. Extract structured financial figures from the user's free-text description. If a figure isn't mentioned, infer a sensible estimate consistent with the rest of what they said (never leave a number at zero unless they imply they have none of that item). Set boolean "has" flags to false only if the person clearly doesn't have that item. Return ONLY raw JSON (no markdown fences, no commentary) matching exactly this shape: {"name": string, "age": number, "retirementAge": number, "currency": one of ["$","€","£","¥","₹"], "monthlyIncome": number, "expHousing": number, "expFood": number, "expTrans": number, "expUtils": number, "hasCash": boolean, "cashValue": number, "hasInvest": boolean, "investValue": number, "hasCar": boolean, "carValue": number, "hasProperty": boolean, "propertyValue": number, "hasCC": boolean, "ccValue": number, "ccRate": number, "hasLoan": boolean, "loanValue": number, "loanRate": number, "hasMortgage": boolean, "mortgageValue": number, "mortgageRate": number}`;
+            const promptText = `Extract structured wizard data from this description:\n"${promptVal}"`;
+
+            try {
+                const result = await callCoachAI([{ role: 'user', text: promptText }], systemText);
+                const raw = result.text.replace(/```json\s*/gi, '').replace(/```\s*/gi, '').trim();
+                const parsed = JSON.parse(raw);
+                applyWizardAIData(parsed);
+                showToast("Wizard Pre-Filled", `AI populated your profile via ${result.provider}. Review and continue.`, "emerald");
+            } catch (err) {
+                showToast("AI Auto-Fill Failed", err.message, "rose");
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalHtml;
+            }
+        }
+
+        function applyWizardAIData(d) {
+            if (d.name) document.getElementById('wiz-name').value = d.name;
+            if (d.age) document.getElementById('wiz-age').value = d.age;
+            if (d.retirementAge) document.getElementById('wiz-ret-age').value = d.retirementAge;
+            if (d.currency) document.getElementById('wiz-currency').value = d.currency;
+            if (d.monthlyIncome !== undefined) document.getElementById('wiz-income').value = d.monthlyIncome;
+            if (d.expHousing !== undefined) document.getElementById('wiz-exp-housing').value = d.expHousing;
+            if (d.expFood !== undefined) document.getElementById('wiz-exp-food').value = d.expFood;
+            if (d.expTrans !== undefined) document.getElementById('wiz-exp-trans').value = d.expTrans;
+            if (d.expUtils !== undefined) document.getElementById('wiz-exp-utils').value = d.expUtils;
+
+            document.getElementById('wiz-has-cash').checked = !!d.hasCash;
+            document.getElementById('wiz-val-cash').value = d.cashValue || 0;
+            document.getElementById('wiz-has-invest').checked = !!d.hasInvest;
+            document.getElementById('wiz-val-invest').value = d.investValue || 0;
+            document.getElementById('wiz-has-car').checked = !!d.hasCar;
+            document.getElementById('wiz-val-car').value = d.carValue || 0;
+            document.getElementById('wiz-has-property').checked = !!d.hasProperty;
+            document.getElementById('wiz-val-property').value = d.propertyValue || 0;
+
+            document.getElementById('wiz-has-cc').checked = !!d.hasCC;
+            document.getElementById('wiz-val-cc').value = d.ccValue || 0;
+            document.getElementById('wiz-rate-cc').value = d.ccRate || 19.5;
+            document.getElementById('wiz-has-loan').checked = !!d.hasLoan;
+            document.getElementById('wiz-val-loan').value = d.loanValue || 0;
+            document.getElementById('wiz-rate-loan').value = d.loanRate || 5.5;
+            document.getElementById('wiz-has-mortgage').checked = !!d.hasMortgage;
+            document.getElementById('wiz-val-mortgage').value = d.mortgageValue || 0;
+            document.getElementById('wiz-rate-mortgage').value = d.mortgageRate || 6.5;
+
+            jumpToWizStep(5);
+        }
+
+        // ═══════════ SETTINGS MODAL (AI Provider API Keys) ═══════════
+        function openSettingsModal() {
+            const modal = document.getElementById('settingsModal');
+            if (!modal) return;
+
+            const input = document.getElementById('settingsApiKeyInput');
+            if (input) { input.value = apiKey || ''; input.type = 'password'; }
+            const eye = document.getElementById('apiKeyEyeIcon');
+            if (eye) { eye.classList.remove('fa-eye-slash'); eye.classList.add('fa-eye'); }
+            const statusEl = document.getElementById('apiKeyStatus');
+            if (statusEl) statusEl.classList.add('hidden');
+
+            const orInput = document.getElementById('settingsOpenRouterKeyInput');
+            if (orInput) { orInput.value = openrouterApiKey || ''; orInput.type = 'password'; }
+            const orModelInput = document.getElementById('settingsOpenRouterModelInput');
+            if (orModelInput) orModelInput.value = openrouterModel || '';
+            const orEye = document.getElementById('openRouterKeyEyeIcon');
+            if (orEye) { orEye.classList.remove('fa-eye-slash'); orEye.classList.add('fa-eye'); }
+            const orStatusEl = document.getElementById('openRouterKeyStatus');
+            if (orStatusEl) orStatusEl.classList.add('hidden');
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeSettingsModal() {
+            const modal = document.getElementById('settingsModal');
+            if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+        }
+
+        async function testGeminiKey() {
+            const input = document.getElementById('settingsApiKeyInput');
+            const btn = document.getElementById('testGeminiKeyBtn');
+            const statusEl = document.getElementById('apiKeyStatus');
+            const statusText = document.getElementById('apiKeyStatusText');
+            const testKey = (input ? input.value.trim() : '');
+
+            if (!testKey) {
+                statusText.textContent = 'Paste a key first.';
+                statusText.className = 'text-[11px] text-center font-medium text-rose-400';
+                statusEl.classList.remove('hidden');
+                return;
+            }
+
+            const originalBtnHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> Testing...';
+            btn.disabled = true;
+            statusText.textContent = 'Pinging Gemini...';
+            statusText.className = 'text-[11px] text-center font-medium text-slate-400';
+            statusEl.classList.remove('hidden');
+
+            try {
+                const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${testKey}`;
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: 'Reply with exactly one word: OK' }] }] })
+                });
+                if (response.ok) {
+                    statusText.textContent = '✓ Key works! Gemini responded successfully.';
+                    statusText.className = 'text-[11px] text-center font-medium text-emerald-400';
+                } else {
+                    let detail = '';
+                    try { const err = await response.json(); detail = err.error && err.error.message; } catch (e) {}
+                    statusText.textContent = `✗ Key failed: HTTP ${response.status}${detail ? ' — ' + detail : ''}`;
+                    statusText.className = 'text-[11px] text-center font-medium text-rose-400';
+                }
+            } catch (err) {
+                statusText.textContent = `✗ Network error: ${err.message}`;
+                statusText.className = 'text-[11px] text-center font-medium text-rose-400';
+            }
+            statusEl.classList.remove('hidden');
+            btn.innerHTML = originalBtnHtml;
+            btn.disabled = false;
+        }
+
+        async function testOpenRouterKey() {
+            const input = document.getElementById('settingsOpenRouterKeyInput');
+            const modelInput = document.getElementById('settingsOpenRouterModelInput');
+            const btn = document.getElementById('testOpenRouterKeyBtn');
+            const statusEl = document.getElementById('openRouterKeyStatus');
+            const statusText = document.getElementById('openRouterKeyStatusText');
+            const testKey = (input ? input.value.trim() : '');
+            const testModel = (modelInput ? modelInput.value.trim() : '') || 'qwen/qwen-2.5-72b-instruct:free';
+
+            if (!testKey) {
+                statusText.textContent = 'Paste a key first.';
+                statusText.className = 'text-[11px] text-center font-medium text-rose-400';
+                statusEl.classList.remove('hidden');
+                return;
+            }
+
+            const originalBtnHtml = btn.innerHTML;
+            btn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> Testing...';
+            btn.disabled = true;
+            statusText.textContent = 'Pinging OpenRouter...';
+            statusText.className = 'text-[11px] text-center font-medium text-slate-400';
+            statusEl.classList.remove('hidden');
+
+            try {
+                const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${testKey}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ model: testModel, messages: [{ role: 'user', content: 'Reply with exactly one word: OK' }] })
+                });
+                if (response.ok) {
+                    statusText.textContent = '✓ Key works! OpenRouter responded successfully.';
+                    statusText.className = 'text-[11px] text-center font-medium text-emerald-400';
+                } else {
+                    let detail = '';
+                    try { const err = await response.json(); detail = err.error && err.error.message; } catch (e) {}
+                    statusText.textContent = `✗ Key failed: HTTP ${response.status}${detail ? ' — ' + detail : ''}`;
+                    statusText.className = 'text-[11px] text-center font-medium text-rose-400';
+                }
+            } catch (err) {
+                statusText.textContent = `✗ Network error: ${err.message}`;
+                statusText.className = 'text-[11px] text-center font-medium text-rose-400';
+            }
+            statusEl.classList.remove('hidden');
+            btn.innerHTML = originalBtnHtml;
+            btn.disabled = false;
+        }
+
+        function toggleApiKeyVisibility() {
+            const input = document.getElementById('settingsApiKeyInput');
+            const icon = document.getElementById('apiKeyEyeIcon');
+            if (!input) return;
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye'); icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash'); icon.classList.add('fa-eye');
+            }
+        }
+
+        function saveApiKey() {
+            const input = document.getElementById('settingsApiKeyInput');
+            const statusEl = document.getElementById('apiKeyStatus');
+            const statusText = document.getElementById('apiKeyStatusText');
+            const newKey = (input ? input.value.trim() : '');
+
+            if (!newKey) {
+                apiKey = '';
+                localStorage.removeItem('wv_gemini_api_key');
+                updateApiKeyDot();
+                if (statusText) statusText.textContent = 'API key cleared.';
+                if (statusText) statusText.className = 'text-[11px] text-center font-medium text-slate-400';
+                if (statusEl) statusEl.classList.remove('hidden');
+                return;
+            }
+
+            if (newKey.length < 20) {
+                if (statusText) statusText.textContent = 'That doesn\'t look like a valid API key.';
+                if (statusText) statusText.className = 'text-[11px] text-center font-medium text-rose-400';
+                if (statusEl) statusEl.classList.remove('hidden');
+                return;
+            }
+
+            apiKey = newKey;
+            localStorage.setItem('wv_gemini_api_key', newKey);
+            updateApiKeyDot();
+            if (statusText) statusText.textContent = '✓ API key saved — AI Coach is ready!';
+            if (statusText) statusText.className = 'text-[11px] text-center font-medium text-emerald-400';
+            if (statusEl) statusEl.classList.remove('hidden');
+            setTimeout(() => closeSettingsModal(), 1200);
+        }
+
+        function updateApiKeyDot() {
+            const dot = document.getElementById('api-key-dot');
+            if (!dot) return;
+            if (!apiKey && !openrouterApiKey) {
+                dot.classList.remove('hidden'); // amber dot = no provider configured
+            } else {
+                dot.classList.add('hidden');
+            }
+        }
+
+        function toggleOpenRouterKeyVisibility() {
+            const input = document.getElementById('settingsOpenRouterKeyInput');
+            const icon = document.getElementById('openRouterKeyEyeIcon');
+            if (!input) return;
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.classList.remove('fa-eye'); icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = 'password';
+                icon.classList.remove('fa-eye-slash'); icon.classList.add('fa-eye');
+            }
+        }
+
+        function saveOpenRouterSettings() {
+            const input = document.getElementById('settingsOpenRouterKeyInput');
+            const modelInput = document.getElementById('settingsOpenRouterModelInput');
+            const statusEl = document.getElementById('openRouterKeyStatus');
+            const statusText = document.getElementById('openRouterKeyStatusText');
+            const newKey = (input ? input.value.trim() : '');
+            const newModel = (modelInput ? modelInput.value.trim() : '') || 'qwen/qwen-2.5-72b-instruct:free';
+
+            openrouterModel = newModel;
+            localStorage.setItem('wv_openrouter_model', newModel);
+
+            if (!newKey) {
+                openrouterApiKey = '';
+                localStorage.removeItem('wv_openrouter_api_key');
+                updateApiKeyDot();
+                if (statusText) statusText.textContent = 'Backup key cleared.';
+                if (statusText) statusText.className = 'text-[11px] text-center font-medium text-slate-400';
+                if (statusEl) statusEl.classList.remove('hidden');
+                return;
+            }
+
+            openrouterApiKey = newKey;
+            localStorage.setItem('wv_openrouter_api_key', newKey);
+            updateApiKeyDot();
+            if (statusText) statusText.textContent = '✓ Backup provider saved!';
+            if (statusText) statusText.className = 'text-[11px] text-center font-medium text-emerald-400';
+            if (statusEl) statusEl.classList.remove('hidden');
+            setTimeout(() => closeSettingsModal(), 1200);
+        }
+
+        // Close settings modal on backdrop click
+        document.getElementById('settingsModal')?.addEventListener('click', function(e) {
+            if (e.target === this) closeSettingsModal();
+        });
+
+        // ═══════════ STATEMENT IMPORT: CSV + AI Screenshot ═══════════
+        const BUDGET_CATEGORY_META = {
+            housing: 'Housing (Rent/Mortgage)',
+            food: 'Groceries & Food',
+            trans: 'Transportation & Auto',
+            utils: 'Utilities & Subscriptions',
+            debt: 'Debt Payments',
+            lifestyle: 'Lifestyle, Shopping & Fun',
+            income: 'Income / Deposit',
+            ignore: 'Ignore (transfer, statement credit, etc.)'
+        };
+
+        // Keyword map used for free, client-side, no-AI-required categorization
+        const CATEGORY_KEYWORDS = {
+            housing: ['rent', 'mortgage', 'apartment', 'hoa ', 'landlord', 'property tax', 'lease'],
+            food: ['grocery', 'groceries', 'market', 'kroger', 'walmart', 'whole foods', 'trader joe', 'safeway', 'aldi', 'publix', 'restaurant', 'doordash', 'uber eats', 'ubereats', 'grubhub', 'starbucks', 'mcdonald', 'chipotle', 'pizza', 'cafe', 'diner', 'deli'],
+            trans: ['uber', 'lyft', 'shell', 'chevron', 'exxon', 'bp gas', 'gas station', 'parking', 'transit', 'metro', 'dmv', 'auto repair', 'car wash', 'supercharg', 'toll'],
+            utils: ['comcast', 'xfinity', 'at&t', 'att bill', 'verizon', 't-mobile', 'tmobile', 'electric', 'water bill', 'gas company', 'internet', 'netflix', 'spotify', 'hulu', 'disney+', 'insurance', 'utility', 'utilities'],
+            debt: ['loan payment', 'student loan', 'auto loan payment', 'credit card payment', 'card payment', 'loan pymt'],
+            lifestyle: ['amazon', 'target', 'shopping', 'entertainment', 'travel', 'hotel', 'airbnb', 'gym', 'movie', 'concert']
+        };
+
+        // Lines that look like a CC statement's own payment/credit rather than a real expense
+        const IGNORE_KEYWORDS = ['payment received', 'payment thank you', 'autopay', 'electronic payment', 'online payment', 'internal transfer'];
+        const INCOME_KEYWORDS = ['payroll', 'direct deposit', 'salary', 'paycheck'];
+
+        function categorizeTransactionRuleBased(description) {
+            const d = (description || '').toLowerCase();
+            if (INCOME_KEYWORDS.some(k => d.includes(k))) return 'income';
+            if (IGNORE_KEYWORDS.some(k => d.includes(k))) return 'ignore';
+            for (const cat in CATEGORY_KEYWORDS) {
+                if (CATEGORY_KEYWORDS[cat].some(k => d.includes(k))) return cat;
+            }
+            return 'lifestyle';
+        }
+
+        // Minimal CSV parser supporting quoted fields with embedded commas
+        function parseCsvRows(text) {
+            const rows = [];
+            let row = [];
+            let field = '';
+            let inQuotes = false;
+
+            for (let i = 0; i < text.length; i++) {
+                const c = text[i];
+                if (inQuotes) {
+                    if (c === '"') {
+                        if (text[i + 1] === '"') { field += '"'; i++; }
+                        else inQuotes = false;
+                    } else {
+                        field += c;
+                    }
+                } else {
+                    if (c === '"') inQuotes = true;
+                    else if (c === ',') { row.push(field); field = ''; }
+                    else if (c === '\n' || c === '\r') {
+                        if (c === '\r' && text[i + 1] === '\n') i++;
+                        row.push(field); field = '';
+                        if (row.some(f => f.trim() !== '')) rows.push(row);
+                        row = [];
+                    } else {
+                        field += c;
+                    }
+                }
+            }
+            if (field !== '' || row.length > 0) { row.push(field); if (row.some(f => f.trim() !== '')) rows.push(row); }
+            return rows;
+        }
+
+        // Parse raw CSV text into { date, description, amount } rows using header auto-detection
+        function parseCsvTransactions(text) {
+            const rows = parseCsvRows(text);
+            if (rows.length < 2) throw new Error("Couldn't find any data rows in that CSV.");
+
+            const header = rows[0].map(h => h.trim().toLowerCase());
+            const findCol = (...needles) => header.findIndex(h => needles.some(n => h.includes(n)));
+
+            const dateCol = findCol('trans date', 'transaction date', 'date');
+            const descCol = findCol('description', 'merchant', 'payee', 'name', 'memo');
+            const amountCol = findCol('amount');
+            const debitCol = findCol('debit');
+            const creditCol = findCol('credit');
+            const typeCol = findCol('type');
+
+            const hasHeaderShape = dateCol !== -1 && descCol !== -1 && (amountCol !== -1 || debitCol !== -1 || creditCol !== -1);
+
+            const dataRows = hasHeaderShape ? rows.slice(1) : rows;
+            const dCol = hasHeaderShape ? dateCol : 0;
+            const dsCol = hasHeaderShape ? descCol : 1;
+
+            const transactions = [];
+            dataRows.forEach(r => {
+                if (r.length === 0) return;
+                const date = (r[dCol] || '').trim();
+                const description = (r[dsCol] || '').trim();
+                if (!description) return;
+
+                let amount = null;
+                if (hasHeaderShape && amountCol !== -1) {
+                    amount = parseFloat(String(r[amountCol]).replace(/[^0-9.\-]/g, ''));
+                } else if (hasHeaderShape && (debitCol !== -1 || creditCol !== -1)) {
+                    const debitVal = debitCol !== -1 ? parseFloat(String(r[debitCol]).replace(/[^0-9.\-]/g, '')) : NaN;
+                    const creditVal = creditCol !== -1 ? parseFloat(String(r[creditCol]).replace(/[^0-9.\-]/g, '')) : NaN;
+                    if (!isNaN(debitVal) && debitVal !== 0) amount = -Math.abs(debitVal);
+                    else if (!isNaN(creditVal) && creditVal !== 0) amount = Math.abs(creditVal);
+                } else {
+                    // Positional fallback: find the last column on the row that parses as a number
+                    for (let i = r.length - 1; i >= 0; i--) {
+                        const val = parseFloat(String(r[i]).replace(/[^0-9.\-]/g, ''));
+                        if (!isNaN(val) && r[i].trim() !== '') { amount = val; break; }
+                    }
+                }
+                if (amount === null || isNaN(amount)) return;
+
+                const typeVal = (hasHeaderShape && typeCol !== -1) ? String(r[typeCol]).toLowerCase() : '';
+                transactions.push({ date, description, amount, typeHint: typeVal });
+            });
+
+            if (transactions.length === 0) throw new Error("Couldn't detect date/description/amount columns in that CSV.");
+            return transactions;
+        }
+
+        // Assign a starting category to each raw transaction using sign + type hints, then keyword/AI overrides
+        function preClassifyTransactions(transactions) {
+            // Detect whether amounts are mixed-sign (bank checking-style) or single-sign (CC purchase-only export)
+            const hasPositive = transactions.some(t => t.amount > 0);
+            const hasNegative = transactions.some(t => t.amount < 0);
+            const mixedSign = hasPositive && hasNegative;
+
+            return transactions.map(t => {
+                let category = categorizeTransactionRuleBased(t.description);
+                if (category === 'lifestyle') {
+                    // No keyword match — fall back to sign/type heuristics for income vs expense
+                    if (t.typeHint.includes('credit') || t.typeHint.includes('payment') || t.typeHint.includes('return')) {
+                        category = t.amount > 0 ? 'income' : 'ignore';
+                    } else if (mixedSign && t.amount > 0) {
+                        category = 'income';
+                    }
+                }
+                return { ...t, category };
+            });
+        }
+
+        // Batch AI categorization (text-only) — overrides the rule-based pass when an API key is configured
+        async function categorizeTransactionsWithAI(transactions) {
+            const systemText = `You are a transaction categorization engine for a personal budgeting app. Classify each transaction into exactly one of these codes: "housing", "food", "trans", "utils", "debt", "lifestyle", "income", "ignore". "income" = deposits, payroll, or refunds that add money. "ignore" = internal transfers or a credit card statement's own payment/autopay line (not a real purchase). Return ONLY a raw JSON array of strings (no markdown fences, no commentary), the same length and order as the input list, one code per transaction.`;
+            const listText = transactions.map((t, i) => `${i + 1}. ${t.date} | ${t.description} | ${t.amount}`).join('\n');
+            const promptText = `Classify these transactions:\n${listText}`;
+
+            const result = await callCoachAI([{ role: 'user', text: promptText }], systemText);
+            const raw = result.text.replace(/```json\s*/gi, '').replace(/```\s*/gi, '').trim();
+            const codes = JSON.parse(raw);
+            if (!Array.isArray(codes) || codes.length !== transactions.length) {
+                throw new Error("AI categorization response didn't match the transaction list — falling back to keyword categorization.");
+            }
+            return transactions.map((t, i) => ({ ...t, category: BUDGET_CATEGORY_META[codes[i]] ? codes[i] : t.category }));
+        }
+
+        // Gemini-only multimodal call for screenshot statement extraction (vision requires Gemini)
+        async function callGeminiVisionJSON(promptText, systemText, imageBase64, imageMime) {
+            if (!apiKey) throw new Error("Screenshot import requires a Gemini API key (for image recognition). Add one for free in Settings.");
+            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`;
+            const payload = {
+                contents: [{ parts: [{ text: promptText }, { inlineData: { mimeType: imageMime, data: imageBase64 } }] }],
+                systemInstruction: { parts: [{ text: systemText + " Always return ONLY raw JSON — no markdown fences, no commentary." }] },
+                generationConfig: { temperature: 0.2 }
+            };
+
+            const retryDelays = [2000, 5000, 10000];
+            for (let attempt = 0; attempt <= retryDelays.length; attempt++) {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.status === 429 || response.status >= 500) {
+                    if (attempt >= retryDelays.length) {
+                        let detail = '';
+                        try { const errBody = await response.json(); detail = errBody.error?.message || ''; } catch (e) {}
+                        throw new Error(`Gemini error: HTTP ${response.status} after retries${detail ? ' — ' + detail : ''}`);
+                    }
+                    await new Promise(r => setTimeout(r, retryDelays[attempt]));
+                    continue;
+                }
+
+                if (!response.ok) {
+                    let detail = '';
+                    try { const errBody = await response.json(); detail = errBody.error?.message || ''; } catch (e) {}
+                    throw new Error(`Gemini error: HTTP ${response.status}${detail ? ' — ' + detail : ''}`);
+                }
+
+                const data = await response.json();
+                let raw = (data.candidates && data.candidates[0] && data.candidates[0].content.parts[0].text) || '';
+                raw = raw.replace(/```json\s*/gi, '').replace(/```\s*/gi, '').trim();
+                if (!raw) throw new Error("Gemini returned an empty response.");
+                return JSON.parse(raw);
+            }
+            throw new Error("Gemini error: exhausted retries");
+        }
+
+        // ── Import Review Modal state + rendering ──
+        let importReview = { accounts: [], transactions: [], source: '' };
+
+        function openImportReviewModal(subtext) {
+            document.getElementById('import-review-subtext').innerText = subtext || 'Confirm what to add before it touches your vault';
+            renderImportReviewModal();
+            const modal = document.getElementById('importReviewModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeImportReviewModal() {
+            const modal = document.getElementById('importReviewModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            importReview = { accounts: [], transactions: [], source: '' };
+        }
+
+        function renderImportReviewModal() {
+            const accountsSection = document.getElementById('import-accounts-section');
+            const accountsList = document.getElementById('import-accounts-list');
+            const txnSection = document.getElementById('import-transactions-section');
+            const txnList = document.getElementById('import-transactions-list');
+            const txnCount = document.getElementById('import-txn-count');
+
+            // Accounts
+            if (importReview.accounts.length > 0) {
+                accountsSection.classList.remove('hidden');
+                accountsList.innerHTML = '';
+                importReview.accounts.forEach((a, i) => {
+                    const row = document.createElement('div');
+                    row.className = "flex items-center gap-2 bg-slate-950/60 border border-slate-850 rounded-xl p-2.5";
+                    row.innerHTML = `
+                        <input type="checkbox" ${a.include ? 'checked' : ''} onchange="importReview.accounts[${i}].include = this.checked" class="h-4 w-4 rounded border-slate-700 text-violet-600 focus:ring-violet-500 bg-slate-950 flex-shrink-0">
+                        <input type="text" value="${a.name.replace(/"/g, '&quot;')}" onchange="importReview.accounts[${i}].name = this.value" class="flex-1 min-w-0 bg-transparent border-b border-transparent focus:border-violet-500 text-xs text-slate-100 font-semibold focus:outline-none">
+                        <span class="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${a.type === 'asset' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'} flex-shrink-0">${a.type}</span>
+                        <input type="number" value="${a.value}" onchange="importReview.accounts[${i}].value = Number(this.value) || 0" class="w-24 bg-slate-900 border border-slate-800 rounded-lg px-2 py-1 text-xs text-right text-slate-100 font-bold focus:outline-none focus:border-violet-500 flex-shrink-0">
+                    `;
+                    accountsList.appendChild(row);
+                });
+            } else {
+                accountsSection.classList.add('hidden');
+            }
+
+            // Transactions
+            if (importReview.transactions.length > 0) {
+                txnSection.classList.remove('hidden');
+                txnCount.innerText = `${importReview.transactions.length} rows`;
+                txnList.innerHTML = '';
+
+                importReview.transactions.forEach((t, i) => {
+                    const row = document.createElement('div');
+                    row.className = "flex items-center gap-2 bg-slate-950/40 border border-slate-900 rounded-lg px-2.5 py-2 text-[11px]";
+                    const catOptions = Object.keys(BUDGET_CATEGORY_META).map(c => `<option value="${c}" ${t.category === c ? 'selected' : ''}>${BUDGET_CATEGORY_META[c]}</option>`).join('');
+                    row.innerHTML = `
+                        <span class="text-slate-500 w-20 flex-shrink-0 truncate">${t.date || ''}</span>
+                        <span class="text-slate-200 flex-1 min-w-0 truncate" title="${t.description.replace(/"/g, '&quot;')}">${t.description}</span>
+                        <span class="w-20 flex-shrink-0 text-right font-bold ${t.amount < 0 ? 'text-rose-400' : 'text-emerald-400'}">${formatCurrency(Math.abs(t.amount))}</span>
+                        <select onchange="importReview.transactions[${i}].category = this.value; renderImportTotals();" class="bg-slate-900 border border-slate-800 rounded-md px-1.5 py-1 text-[10px] text-slate-200 focus:outline-none flex-shrink-0">
+                            ${catOptions}
+                        </select>
+                    `;
+                    txnList.appendChild(row);
+                });
+
+                renderImportTotals();
+            } else {
+                txnSection.classList.add('hidden');
+            }
+        }
+
+        function renderImportTotals() {
+            const totalsEl = document.getElementById('import-category-totals');
+            const totals = { housing: 0, food: 0, trans: 0, utils: 0, debt: 0, lifestyle: 0, income: 0 };
+
+            importReview.transactions.forEach(t => {
+                if (t.category === 'ignore') return;
+                const magnitude = Math.abs(t.amount);
+                if (t.category === 'income') totals.income += magnitude;
+                else totals[t.category] += magnitude;
+            });
+
+            totalsEl.innerHTML = '';
+            Object.keys(totals).forEach(cat => {
+                if (totals[cat] === 0) return;
+                const row = document.createElement('div');
+                row.className = "flex justify-between text-[11px]";
+                row.innerHTML = `<span class="text-slate-400">${BUDGET_CATEGORY_META[cat]}</span><span class="font-bold ${cat === 'income' ? 'text-emerald-400' : 'text-slate-200'}">${formatCurrency(totals[cat])}</span>`;
+                totalsEl.appendChild(row);
+            });
+            if (totalsEl.innerHTML === '') {
+                totalsEl.innerHTML = '<span class="text-slate-600 text-[11px]">Nothing categorized as spending or income yet.</span>';
+            }
+
+            const incomeLabel = document.getElementById('import-update-income-label');
+            if (incomeLabel) incomeLabel.innerText = `Also update my monthly income to ${formatCurrency(totals.income)} from detected deposits`;
+        }
+
+        function applyImportReview() {
+            let addedAccounts = 0;
+            importReview.accounts.forEach(a => {
+                if (!a.include) return;
+                const target = a.type === 'asset' ? assets : liabilities;
+                const entry = { id: generateId(), name: a.name || 'Imported Account', category: a.category, value: Number(a.value) || 0 };
+                if (a.type === 'liability') entry.interestRate = Number(a.interestRate) || 0;
+                target.push(entry);
+                addedAccounts++;
+            });
+
+            const totals = { housing: 0, food: 0, trans: 0, utils: 0, debt: 0, lifestyle: 0, income: 0 };
+            importReview.transactions.forEach(t => {
+                if (t.category === 'ignore') return;
+                totals[t.category] += Math.abs(t.amount);
+            });
+
+            let updatedBudgetCats = 0;
+            ['housing', 'food', 'trans', 'utils', 'debt', 'lifestyle'].forEach(cat => {
+                if (totals[cat] > 0) {
+                    budget[cat] = Math.round(totals[cat]);
+                    updatedBudgetCats++;
+                }
+            });
+
+            const updateIncomeChk = document.getElementById('import-update-income');
+            if (updateIncomeChk && updateIncomeChk.checked && totals.income > 0) {
+                profile.monthlyIncome = Math.round(totals.income);
+            }
+
+            saveDatabase();
+            closeImportReviewModal();
+            renderAll();
+            switchLeftTab('cashflow');
+
+            showToast("Import Applied", `${addedAccounts ? addedAccounts + ' account(s) added, ' : ''}${updatedBudgetCats} budget categor${updatedBudgetCats === 1 ? 'y' : 'ies'} updated.`, "emerald");
+        }
+
+        // ── CSV Import Entry Point ──
+        async function handleCsvFileSelected(input) {
+            const file = input.files[0];
+            input.value = '';
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    const rawTransactions = parseCsvTransactions(e.target.result);
+                    let classified = preClassifyTransactions(rawTransactions);
+                    let usedAI = false;
+
+                    if (apiKey || openrouterApiKey) {
+                        try {
+                            classified = await categorizeTransactionsWithAI(rawTransactions);
+                            usedAI = true;
+                        } catch (err) {
+                            console.warn("AI categorization failed, using keyword categorization instead:", err);
+                        }
+                    }
+
+                    importReview = { accounts: [], transactions: classified, source: 'csv' };
+                    openImportReviewModal(`${classified.length} transactions detected via ${usedAI ? 'AI categorization' : 'free keyword categorization'}`);
+                } catch (err) {
+                    showToast("CSV Import Failed", err.message, "rose");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // ── Screenshot Import Entry Point (Gemini vision only) ──
+        function handleScreenshotFileSelected(input) {
+            const file = input.files[0];
+            input.value = '';
+            if (!file) return;
+
+            if (!apiKey) {
+                showToast("Gemini Key Required", "Screenshot import needs a free Gemini API key for image recognition. Add one in Settings.", "rose");
+                openSettingsModal();
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const imageBase64 = e.target.result.split(',')[1];
+                const imageMime = file.type || 'image/png';
+
+                showToast("Reading Screenshot", "Vera is analyzing your image with Gemini...", "emerald");
+
+                const systemText = "You are a financial document analyzer. You will be shown a screenshot from a banking, investment, credit card, or budgeting app. Extract any account balances (assets or liabilities) and any individual transactions visible. Only report what is actually visible in the image — never invent data.";
+                const schemaHint = `Return ONLY a raw JSON object matching exactly this shape: {"accounts": [{"name": string, "type": "asset"|"liability", "category": one of ["cash","invest","property","vehicle","other_asset","mortgage","student_loan","auto_loan","credit_card","other_debt"], "value": number, "interestRate": number or null}], "transactions": [{"date": string, "description": string, "amount": number}]}. Use empty arrays for anything not present in the image. For transactions, use a negative amount for money spent and a positive amount for money received.`;
+                const promptText = `Analyze this financial screenshot and extract structured data. ${schemaHint}`;
+
+                try {
+                    const result = await callGeminiVisionJSON(promptText, systemText, imageBase64, imageMime);
+                    const accounts = (result.accounts || []).map(a => ({
+                        include: true,
+                        name: a.name || 'Imported Account',
+                        type: a.type === 'liability' ? 'liability' : 'asset',
+                        category: (a.type === 'liability' ? LIABILITY_CATEGORIES[a.category] : ASSET_CATEGORIES[a.category]) ? a.category : (a.type === 'liability' ? 'other_debt' : 'other_asset'),
+                        value: Number(a.value) || 0,
+                        interestRate: Number(a.interestRate) || 0
+                    }));
+                    const rawTransactions = (result.transactions || []).map(t => ({ date: t.date || '', description: t.description || '', amount: Number(t.amount) || 0, typeHint: '' }));
+                    const classifiedTransactions = preClassifyTransactions(rawTransactions);
+
+                    if (accounts.length === 0 && classifiedTransactions.length === 0) {
+                        showToast("Nothing Detected", "Gemini couldn't find any account balances or transactions in that screenshot.", "rose");
+                        return;
+                    }
+
+                    importReview = { accounts, transactions: classifiedTransactions, source: 'screenshot' };
+                    openImportReviewModal(`${accounts.length} account(s) and ${classifiedTransactions.length} transaction(s) detected via Gemini vision`);
+                } catch (err) {
+                    showToast("Screenshot Import Failed", err.message, "rose");
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // System Log (Changelog) Modal
+        function openChangelog() {
+            const modal = document.getElementById('changelogModal');
+            if (modal) { modal.classList.remove('hidden'); modal.classList.add('flex'); }
+        }
+
+        function closeChangelog() {
+            const modal = document.getElementById('changelogModal');
+            if (modal) { modal.classList.add('hidden'); modal.classList.remove('flex'); }
+        }
+
+        // Close import review modal on backdrop click
+        document.getElementById('importReviewModal')?.addEventListener('click', function(e) {
+            if (e.target === this) closeImportReviewModal();
+        });
 
         // Premium Toast Alerts
         function showToast(title, subtext, color = "emerald") {
