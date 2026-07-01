@@ -136,7 +136,7 @@
             <div>
                 <div class="flex items-center gap-2">
                     <h1 class="font-extrabold text-xl leading-tight bg-gradient-to-r from-white to-slate-300 bg-clip-text text-transparent">Wealth Vault</h1>
-                    <span onclick="openChangelog()" class="cursor-pointer text-[10px] font-bold bg-violet-500/10 hover:bg-violet-500/20 text-violet-400 border border-violet-500/30 px-2 py-0.5 rounded-full transition flex items-center gap-1 select-none">v1.1.0</span>
+                    <span onclick="openChangelog()" class="cursor-pointer text-[10px] font-bold bg-violet-500/10 hover:bg-violet-500/20 text-violet-400 border border-violet-500/30 px-2 py-0.5 rounded-full transition flex items-center gap-1 select-none">v1.2.0</span>
                 </div>
                 <p class="text-[11px] text-slate-500 hidden md:block">Financial advisor &amp; net worth optimizer</p>
             </div>
@@ -329,6 +329,25 @@
 
             <!-- TAB content: Budget & Cash Flow -->
             <div id="panel-cashflow" class="space-y-4 hidden">
+                <!-- Statement Import -->
+                <div class="glass-card border border-slate-800 rounded-2xl p-4 space-y-3">
+                    <h3 class="font-extrabold text-sm text-slate-200 uppercase tracking-wider flex items-center gap-2 border-b border-slate-850 pb-2">
+                        <i class="fa-solid fa-file-import text-cyan-400"></i> Import Statement
+                    </h3>
+                    <p class="text-[10px] text-slate-500 leading-relaxed">Import a credit/debit card CSV export, or a screenshot of a statement or account balance, and auto-fill your budget categories.</p>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="document.getElementById('importCsvFile').click()" class="py-2.5 bg-slate-950 hover:bg-slate-900 border border-slate-800 hover:border-cyan-500/40 text-slate-200 text-[11px] font-bold rounded-xl transition flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-file-csv text-cyan-400"></i> Import CSV
+                        </button>
+                        <input type="file" id="importCsvFile" accept=".csv,text/csv" class="hidden" onchange="handleCsvFileSelected(this)">
+                        <button onclick="document.getElementById('importScreenshotFile').click()" class="py-2.5 bg-slate-950 hover:bg-slate-900 border border-slate-800 hover:border-violet-500/40 text-slate-200 text-[11px] font-bold rounded-xl transition flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-camera text-violet-400"></i> Import Screenshot
+                        </button>
+                        <input type="file" id="importScreenshotFile" accept="image/*" class="hidden" onchange="handleScreenshotFileSelected(this)">
+                    </div>
+                    <p class="text-[9px] text-slate-600 leading-relaxed"><i class="fa-solid fa-circle-info mr-1"></i>CSV import works instantly with free built-in categorization, or smarter AI categorization if you've added an API key in Settings. Screenshot import always requires your own Gemini API key (for image recognition) — add one for free in Settings.</p>
+                </div>
+
                 <div class="glass-card border border-slate-800 rounded-2xl p-4 space-y-4">
                     <h3 class="font-extrabold text-sm text-slate-200 uppercase tracking-wider flex items-center gap-2 border-b border-slate-850 pb-2">
                         <i class="fa-solid fa-hand-holding-dollar text-emerald-400"></i> Monthly Income Streams
@@ -1022,6 +1041,64 @@
         </div>
     </div>
 
+    <!-- ═══════════════════════════════════════════════════════
+         IMPORT REVIEW MODAL — CSV / Screenshot Statement Import
+    ═══════════════════════════════════════════════════════ -->
+    <div id="importReviewModal" class="fixed inset-0 z-[900] hidden items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 relative">
+            <button onclick="closeImportReviewModal()" class="absolute top-4 right-4 text-slate-500 hover:text-slate-300 transition">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <div class="flex items-center gap-3 mb-4">
+                <div class="h-10 w-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-violet-600 flex items-center justify-center shadow-lg flex-shrink-0">
+                    <i class="fa-solid fa-file-import text-white text-base"></i>
+                </div>
+                <div>
+                    <h3 class="font-bold text-white text-base leading-tight">Review Import</h3>
+                    <p id="import-review-subtext" class="text-[11px] text-slate-400">Confirm what to add before it touches your vault</p>
+                </div>
+            </div>
+
+            <!-- Detected Accounts (screenshot only) -->
+            <div id="import-accounts-section" class="mb-5 hidden">
+                <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider mb-2 flex items-center gap-2">
+                    <i class="fa-solid fa-vault text-emerald-400"></i> Detected Accounts
+                </h4>
+                <div id="import-accounts-list" class="space-y-2 max-h-[200px] overflow-y-auto pr-1"></div>
+            </div>
+
+            <!-- Detected Transactions -->
+            <div id="import-transactions-section" class="hidden">
+                <div class="flex items-center justify-between mb-2">
+                    <h4 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                        <i class="fa-solid fa-receipt text-rose-400"></i> Detected Transactions
+                    </h4>
+                    <span id="import-txn-count" class="text-[10px] text-slate-500 font-semibold"></span>
+                </div>
+                <div id="import-transactions-list" class="space-y-1.5 max-h-[280px] overflow-y-auto pr-1 mb-3"></div>
+
+                <div class="bg-slate-950 border border-slate-800 rounded-xl p-3 space-y-1.5 mb-3">
+                    <span class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Category Totals (this statement)</span>
+                    <div id="import-category-totals" class="space-y-1"></div>
+                </div>
+
+                <label class="flex items-center gap-2 mb-3 cursor-pointer select-none">
+                    <input type="checkbox" id="import-update-income" class="h-4 w-4 rounded border-slate-700 text-violet-600 focus:ring-violet-500 bg-slate-950">
+                    <span id="import-update-income-label" class="text-[11px] text-slate-400">Also update my monthly income from detected deposits</span>
+                </label>
+
+                <p class="text-[10px] text-slate-500 mb-3 leading-relaxed"><i class="fa-solid fa-circle-info mr-1"></i>Applying will set your monthly budget sliders to these category totals (assumes this statement covers about one month). You can re-adjust sliders afterward, and re-categorize any row above first.</p>
+            </div>
+
+            <div class="flex gap-2 pt-2 border-t border-slate-850">
+                <button onclick="closeImportReviewModal()" class="flex-1 px-3 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-xl transition">Cancel</button>
+                <button onclick="applyImportReview()" class="flex-1 px-3 py-2.5 bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-violet-600/20 transition flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-check"></i> Apply to Vault
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- ═══════════ APPLICATION JAVASCRIPT ═══════════ -->
     <script>
         // Database State variables
@@ -1141,14 +1218,18 @@
             // Populate cashflow forms
             document.getElementById('cashflow-income').value = profile.monthlyIncome;
             
-            // Sync budget ranges
+            // Sync budget ranges — set every slider's value/label first, THEN recalculate the
+            // summary once. (Calling syncRangeDisplay() per-slider here would recompute the
+            // summary from partially-synced DOM values, clobbering categories not yet visited.)
             for (let cat in budget) {
                 const range = document.getElementById(`budget-${cat}`);
                 if (range) {
                     range.value = budget[cat];
-                    syncRangeDisplay(range);
+                    const valEl = document.getElementById(`budget-val-${cat}`);
+                    if (valEl) valEl.innerText = Number(range.value).toLocaleString();
                 }
             }
+            updateBudgetSummary();
 
             // Sync retirement sliders from profile values
             document.getElementById('slider-ret-age').value = profile.targetAge;
@@ -2878,10 +2959,433 @@
             if (e.target === this) closeSettingsModal();
         });
 
+        // ═══════════ STATEMENT IMPORT: CSV + AI Screenshot ═══════════
+        const BUDGET_CATEGORY_META = {
+            housing: 'Housing (Rent/Mortgage)',
+            food: 'Groceries & Food',
+            trans: 'Transportation & Auto',
+            utils: 'Utilities & Subscriptions',
+            debt: 'Debt Payments',
+            lifestyle: 'Lifestyle, Shopping & Fun',
+            income: 'Income / Deposit',
+            ignore: 'Ignore (transfer, statement credit, etc.)'
+        };
+
+        // Keyword map used for free, client-side, no-AI-required categorization
+        const CATEGORY_KEYWORDS = {
+            housing: ['rent', 'mortgage', 'apartment', 'hoa ', 'landlord', 'property tax', 'lease'],
+            food: ['grocery', 'groceries', 'market', 'kroger', 'walmart', 'whole foods', 'trader joe', 'safeway', 'aldi', 'publix', 'restaurant', 'doordash', 'uber eats', 'ubereats', 'grubhub', 'starbucks', 'mcdonald', 'chipotle', 'pizza', 'cafe', 'diner', 'deli'],
+            trans: ['uber', 'lyft', 'shell', 'chevron', 'exxon', 'bp gas', 'gas station', 'parking', 'transit', 'metro', 'dmv', 'auto repair', 'car wash', 'supercharg', 'toll'],
+            utils: ['comcast', 'xfinity', 'at&t', 'att bill', 'verizon', 't-mobile', 'tmobile', 'electric', 'water bill', 'gas company', 'internet', 'netflix', 'spotify', 'hulu', 'disney+', 'insurance', 'utility', 'utilities'],
+            debt: ['loan payment', 'student loan', 'auto loan payment', 'credit card payment', 'card payment', 'loan pymt'],
+            lifestyle: ['amazon', 'target', 'shopping', 'entertainment', 'travel', 'hotel', 'airbnb', 'gym', 'movie', 'concert']
+        };
+
+        // Lines that look like a CC statement's own payment/credit rather than a real expense
+        const IGNORE_KEYWORDS = ['payment received', 'payment thank you', 'autopay', 'electronic payment', 'online payment', 'internal transfer'];
+        const INCOME_KEYWORDS = ['payroll', 'direct deposit', 'salary', 'paycheck'];
+
+        function categorizeTransactionRuleBased(description) {
+            const d = (description || '').toLowerCase();
+            if (INCOME_KEYWORDS.some(k => d.includes(k))) return 'income';
+            if (IGNORE_KEYWORDS.some(k => d.includes(k))) return 'ignore';
+            for (const cat in CATEGORY_KEYWORDS) {
+                if (CATEGORY_KEYWORDS[cat].some(k => d.includes(k))) return cat;
+            }
+            return 'lifestyle';
+        }
+
+        // Minimal CSV parser supporting quoted fields with embedded commas
+        function parseCsvRows(text) {
+            const rows = [];
+            let row = [];
+            let field = '';
+            let inQuotes = false;
+
+            for (let i = 0; i < text.length; i++) {
+                const c = text[i];
+                if (inQuotes) {
+                    if (c === '"') {
+                        if (text[i + 1] === '"') { field += '"'; i++; }
+                        else inQuotes = false;
+                    } else {
+                        field += c;
+                    }
+                } else {
+                    if (c === '"') inQuotes = true;
+                    else if (c === ',') { row.push(field); field = ''; }
+                    else if (c === '\n' || c === '\r') {
+                        if (c === '\r' && text[i + 1] === '\n') i++;
+                        row.push(field); field = '';
+                        if (row.some(f => f.trim() !== '')) rows.push(row);
+                        row = [];
+                    } else {
+                        field += c;
+                    }
+                }
+            }
+            if (field !== '' || row.length > 0) { row.push(field); if (row.some(f => f.trim() !== '')) rows.push(row); }
+            return rows;
+        }
+
+        // Parse raw CSV text into { date, description, amount } rows using header auto-detection
+        function parseCsvTransactions(text) {
+            const rows = parseCsvRows(text);
+            if (rows.length < 2) throw new Error("Couldn't find any data rows in that CSV.");
+
+            const header = rows[0].map(h => h.trim().toLowerCase());
+            const findCol = (...needles) => header.findIndex(h => needles.some(n => h.includes(n)));
+
+            const dateCol = findCol('trans date', 'transaction date', 'date');
+            const descCol = findCol('description', 'merchant', 'payee', 'name', 'memo');
+            const amountCol = findCol('amount');
+            const debitCol = findCol('debit');
+            const creditCol = findCol('credit');
+            const typeCol = findCol('type');
+
+            const hasHeaderShape = dateCol !== -1 && descCol !== -1 && (amountCol !== -1 || debitCol !== -1 || creditCol !== -1);
+
+            const dataRows = hasHeaderShape ? rows.slice(1) : rows;
+            const dCol = hasHeaderShape ? dateCol : 0;
+            const dsCol = hasHeaderShape ? descCol : 1;
+
+            const transactions = [];
+            dataRows.forEach(r => {
+                if (r.length === 0) return;
+                const date = (r[dCol] || '').trim();
+                const description = (r[dsCol] || '').trim();
+                if (!description) return;
+
+                let amount = null;
+                if (hasHeaderShape && amountCol !== -1) {
+                    amount = parseFloat(String(r[amountCol]).replace(/[^0-9.\-]/g, ''));
+                } else if (hasHeaderShape && (debitCol !== -1 || creditCol !== -1)) {
+                    const debitVal = debitCol !== -1 ? parseFloat(String(r[debitCol]).replace(/[^0-9.\-]/g, '')) : NaN;
+                    const creditVal = creditCol !== -1 ? parseFloat(String(r[creditCol]).replace(/[^0-9.\-]/g, '')) : NaN;
+                    if (!isNaN(debitVal) && debitVal !== 0) amount = -Math.abs(debitVal);
+                    else if (!isNaN(creditVal) && creditVal !== 0) amount = Math.abs(creditVal);
+                } else {
+                    // Positional fallback: find the last column on the row that parses as a number
+                    for (let i = r.length - 1; i >= 0; i--) {
+                        const val = parseFloat(String(r[i]).replace(/[^0-9.\-]/g, ''));
+                        if (!isNaN(val) && r[i].trim() !== '') { amount = val; break; }
+                    }
+                }
+                if (amount === null || isNaN(amount)) return;
+
+                const typeVal = (hasHeaderShape && typeCol !== -1) ? String(r[typeCol]).toLowerCase() : '';
+                transactions.push({ date, description, amount, typeHint: typeVal });
+            });
+
+            if (transactions.length === 0) throw new Error("Couldn't detect date/description/amount columns in that CSV.");
+            return transactions;
+        }
+
+        // Assign a starting category to each raw transaction using sign + type hints, then keyword/AI overrides
+        function preClassifyTransactions(transactions) {
+            // Detect whether amounts are mixed-sign (bank checking-style) or single-sign (CC purchase-only export)
+            const hasPositive = transactions.some(t => t.amount > 0);
+            const hasNegative = transactions.some(t => t.amount < 0);
+            const mixedSign = hasPositive && hasNegative;
+
+            return transactions.map(t => {
+                let category = categorizeTransactionRuleBased(t.description);
+                if (category === 'lifestyle') {
+                    // No keyword match — fall back to sign/type heuristics for income vs expense
+                    if (t.typeHint.includes('credit') || t.typeHint.includes('payment') || t.typeHint.includes('return')) {
+                        category = t.amount > 0 ? 'income' : 'ignore';
+                    } else if (mixedSign && t.amount > 0) {
+                        category = 'income';
+                    }
+                }
+                return { ...t, category };
+            });
+        }
+
+        // Batch AI categorization (text-only) — overrides the rule-based pass when an API key is configured
+        async function categorizeTransactionsWithAI(transactions) {
+            const systemText = `You are a transaction categorization engine for a personal budgeting app. Classify each transaction into exactly one of these codes: "housing", "food", "trans", "utils", "debt", "lifestyle", "income", "ignore". "income" = deposits, payroll, or refunds that add money. "ignore" = internal transfers or a credit card statement's own payment/autopay line (not a real purchase). Return ONLY a raw JSON array of strings (no markdown fences, no commentary), the same length and order as the input list, one code per transaction.`;
+            const listText = transactions.map((t, i) => `${i + 1}. ${t.date} | ${t.description} | ${t.amount}`).join('\n');
+            const promptText = `Classify these transactions:\n${listText}`;
+
+            const result = await callCoachAI([{ role: 'user', text: promptText }], systemText);
+            const raw = result.text.replace(/```json\s*/gi, '').replace(/```\s*/gi, '').trim();
+            const codes = JSON.parse(raw);
+            if (!Array.isArray(codes) || codes.length !== transactions.length) {
+                throw new Error("AI categorization response didn't match the transaction list — falling back to keyword categorization.");
+            }
+            return transactions.map((t, i) => ({ ...t, category: BUDGET_CATEGORY_META[codes[i]] ? codes[i] : t.category }));
+        }
+
+        // Gemini-only multimodal call for screenshot statement extraction (vision requires Gemini)
+        async function callGeminiVisionJSON(promptText, systemText, imageBase64, imageMime) {
+            if (!apiKey) throw new Error("Screenshot import requires a Gemini API key (for image recognition). Add one for free in Settings.");
+            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=${apiKey}`;
+            const payload = {
+                contents: [{ parts: [{ text: promptText }, { inlineData: { mimeType: imageMime, data: imageBase64 } }] }],
+                systemInstruction: { parts: [{ text: systemText + " Always return ONLY raw JSON — no markdown fences, no commentary." }] },
+                generationConfig: { temperature: 0.2 }
+            };
+
+            const retryDelays = [2000, 5000, 10000];
+            for (let attempt = 0; attempt <= retryDelays.length; attempt++) {
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.status === 429 || response.status >= 500) {
+                    if (attempt >= retryDelays.length) {
+                        let detail = '';
+                        try { const errBody = await response.json(); detail = errBody.error?.message || ''; } catch (e) {}
+                        throw new Error(`Gemini error: HTTP ${response.status} after retries${detail ? ' — ' + detail : ''}`);
+                    }
+                    await new Promise(r => setTimeout(r, retryDelays[attempt]));
+                    continue;
+                }
+
+                if (!response.ok) {
+                    let detail = '';
+                    try { const errBody = await response.json(); detail = errBody.error?.message || ''; } catch (e) {}
+                    throw new Error(`Gemini error: HTTP ${response.status}${detail ? ' — ' + detail : ''}`);
+                }
+
+                const data = await response.json();
+                let raw = (data.candidates && data.candidates[0] && data.candidates[0].content.parts[0].text) || '';
+                raw = raw.replace(/```json\s*/gi, '').replace(/```\s*/gi, '').trim();
+                if (!raw) throw new Error("Gemini returned an empty response.");
+                return JSON.parse(raw);
+            }
+            throw new Error("Gemini error: exhausted retries");
+        }
+
+        // ── Import Review Modal state + rendering ──
+        let importReview = { accounts: [], transactions: [], source: '' };
+
+        function openImportReviewModal(subtext) {
+            document.getElementById('import-review-subtext').innerText = subtext || 'Confirm what to add before it touches your vault';
+            renderImportReviewModal();
+            const modal = document.getElementById('importReviewModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function closeImportReviewModal() {
+            const modal = document.getElementById('importReviewModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            importReview = { accounts: [], transactions: [], source: '' };
+        }
+
+        function renderImportReviewModal() {
+            const accountsSection = document.getElementById('import-accounts-section');
+            const accountsList = document.getElementById('import-accounts-list');
+            const txnSection = document.getElementById('import-transactions-section');
+            const txnList = document.getElementById('import-transactions-list');
+            const txnCount = document.getElementById('import-txn-count');
+
+            // Accounts
+            if (importReview.accounts.length > 0) {
+                accountsSection.classList.remove('hidden');
+                accountsList.innerHTML = '';
+                importReview.accounts.forEach((a, i) => {
+                    const row = document.createElement('div');
+                    row.className = "flex items-center gap-2 bg-slate-950/60 border border-slate-850 rounded-xl p-2.5";
+                    row.innerHTML = `
+                        <input type="checkbox" ${a.include ? 'checked' : ''} onchange="importReview.accounts[${i}].include = this.checked" class="h-4 w-4 rounded border-slate-700 text-violet-600 focus:ring-violet-500 bg-slate-950 flex-shrink-0">
+                        <input type="text" value="${a.name.replace(/"/g, '&quot;')}" onchange="importReview.accounts[${i}].name = this.value" class="flex-1 min-w-0 bg-transparent border-b border-transparent focus:border-violet-500 text-xs text-slate-100 font-semibold focus:outline-none">
+                        <span class="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${a.type === 'asset' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'} flex-shrink-0">${a.type}</span>
+                        <input type="number" value="${a.value}" onchange="importReview.accounts[${i}].value = Number(this.value) || 0" class="w-24 bg-slate-900 border border-slate-800 rounded-lg px-2 py-1 text-xs text-right text-slate-100 font-bold focus:outline-none focus:border-violet-500 flex-shrink-0">
+                    `;
+                    accountsList.appendChild(row);
+                });
+            } else {
+                accountsSection.classList.add('hidden');
+            }
+
+            // Transactions
+            if (importReview.transactions.length > 0) {
+                txnSection.classList.remove('hidden');
+                txnCount.innerText = `${importReview.transactions.length} rows`;
+                txnList.innerHTML = '';
+
+                importReview.transactions.forEach((t, i) => {
+                    const row = document.createElement('div');
+                    row.className = "flex items-center gap-2 bg-slate-950/40 border border-slate-900 rounded-lg px-2.5 py-2 text-[11px]";
+                    const catOptions = Object.keys(BUDGET_CATEGORY_META).map(c => `<option value="${c}" ${t.category === c ? 'selected' : ''}>${BUDGET_CATEGORY_META[c]}</option>`).join('');
+                    row.innerHTML = `
+                        <span class="text-slate-500 w-20 flex-shrink-0 truncate">${t.date || ''}</span>
+                        <span class="text-slate-200 flex-1 min-w-0 truncate" title="${t.description.replace(/"/g, '&quot;')}">${t.description}</span>
+                        <span class="w-20 flex-shrink-0 text-right font-bold ${t.amount < 0 ? 'text-rose-400' : 'text-emerald-400'}">${formatCurrency(Math.abs(t.amount))}</span>
+                        <select onchange="importReview.transactions[${i}].category = this.value; renderImportTotals();" class="bg-slate-900 border border-slate-800 rounded-md px-1.5 py-1 text-[10px] text-slate-200 focus:outline-none flex-shrink-0">
+                            ${catOptions}
+                        </select>
+                    `;
+                    txnList.appendChild(row);
+                });
+
+                renderImportTotals();
+            } else {
+                txnSection.classList.add('hidden');
+            }
+        }
+
+        function renderImportTotals() {
+            const totalsEl = document.getElementById('import-category-totals');
+            const totals = { housing: 0, food: 0, trans: 0, utils: 0, debt: 0, lifestyle: 0, income: 0 };
+
+            importReview.transactions.forEach(t => {
+                if (t.category === 'ignore') return;
+                const magnitude = Math.abs(t.amount);
+                if (t.category === 'income') totals.income += magnitude;
+                else totals[t.category] += magnitude;
+            });
+
+            totalsEl.innerHTML = '';
+            Object.keys(totals).forEach(cat => {
+                if (totals[cat] === 0) return;
+                const row = document.createElement('div');
+                row.className = "flex justify-between text-[11px]";
+                row.innerHTML = `<span class="text-slate-400">${BUDGET_CATEGORY_META[cat]}</span><span class="font-bold ${cat === 'income' ? 'text-emerald-400' : 'text-slate-200'}">${formatCurrency(totals[cat])}</span>`;
+                totalsEl.appendChild(row);
+            });
+            if (totalsEl.innerHTML === '') {
+                totalsEl.innerHTML = '<span class="text-slate-600 text-[11px]">Nothing categorized as spending or income yet.</span>';
+            }
+
+            const incomeLabel = document.getElementById('import-update-income-label');
+            if (incomeLabel) incomeLabel.innerText = `Also update my monthly income to ${formatCurrency(totals.income)} from detected deposits`;
+        }
+
+        function applyImportReview() {
+            let addedAccounts = 0;
+            importReview.accounts.forEach(a => {
+                if (!a.include) return;
+                const target = a.type === 'asset' ? assets : liabilities;
+                const entry = { id: generateId(), name: a.name || 'Imported Account', category: a.category, value: Number(a.value) || 0 };
+                if (a.type === 'liability') entry.interestRate = Number(a.interestRate) || 0;
+                target.push(entry);
+                addedAccounts++;
+            });
+
+            const totals = { housing: 0, food: 0, trans: 0, utils: 0, debt: 0, lifestyle: 0, income: 0 };
+            importReview.transactions.forEach(t => {
+                if (t.category === 'ignore') return;
+                totals[t.category] += Math.abs(t.amount);
+            });
+
+            let updatedBudgetCats = 0;
+            ['housing', 'food', 'trans', 'utils', 'debt', 'lifestyle'].forEach(cat => {
+                if (totals[cat] > 0) {
+                    budget[cat] = Math.round(totals[cat]);
+                    updatedBudgetCats++;
+                }
+            });
+
+            const updateIncomeChk = document.getElementById('import-update-income');
+            if (updateIncomeChk && updateIncomeChk.checked && totals.income > 0) {
+                profile.monthlyIncome = Math.round(totals.income);
+            }
+
+            saveDatabase();
+            closeImportReviewModal();
+            renderAll();
+            switchLeftTab('cashflow');
+
+            showToast("Import Applied", `${addedAccounts ? addedAccounts + ' account(s) added, ' : ''}${updatedBudgetCats} budget categor${updatedBudgetCats === 1 ? 'y' : 'ies'} updated.`, "emerald");
+        }
+
+        // ── CSV Import Entry Point ──
+        async function handleCsvFileSelected(input) {
+            const file = input.files[0];
+            input.value = '';
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                try {
+                    const rawTransactions = parseCsvTransactions(e.target.result);
+                    let classified = preClassifyTransactions(rawTransactions);
+                    let usedAI = false;
+
+                    if (apiKey || openrouterApiKey) {
+                        try {
+                            classified = await categorizeTransactionsWithAI(rawTransactions);
+                            usedAI = true;
+                        } catch (err) {
+                            console.warn("AI categorization failed, using keyword categorization instead:", err);
+                        }
+                    }
+
+                    importReview = { accounts: [], transactions: classified, source: 'csv' };
+                    openImportReviewModal(`${classified.length} transactions detected via ${usedAI ? 'AI categorization' : 'free keyword categorization'}`);
+                } catch (err) {
+                    showToast("CSV Import Failed", err.message, "rose");
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // ── Screenshot Import Entry Point (Gemini vision only) ──
+        function handleScreenshotFileSelected(input) {
+            const file = input.files[0];
+            input.value = '';
+            if (!file) return;
+
+            if (!apiKey) {
+                showToast("Gemini Key Required", "Screenshot import needs a free Gemini API key for image recognition. Add one in Settings.", "rose");
+                openSettingsModal();
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const imageBase64 = e.target.result.split(',')[1];
+                const imageMime = file.type || 'image/png';
+
+                showToast("Reading Screenshot", "Vera is analyzing your image with Gemini...", "emerald");
+
+                const systemText = "You are a financial document analyzer. You will be shown a screenshot from a banking, investment, credit card, or budgeting app. Extract any account balances (assets or liabilities) and any individual transactions visible. Only report what is actually visible in the image — never invent data.";
+                const schemaHint = `Return ONLY a raw JSON object matching exactly this shape: {"accounts": [{"name": string, "type": "asset"|"liability", "category": one of ["cash","invest","property","vehicle","other_asset","mortgage","student_loan","auto_loan","credit_card","other_debt"], "value": number, "interestRate": number or null}], "transactions": [{"date": string, "description": string, "amount": number}]}. Use empty arrays for anything not present in the image. For transactions, use a negative amount for money spent and a positive amount for money received.`;
+                const promptText = `Analyze this financial screenshot and extract structured data. ${schemaHint}`;
+
+                try {
+                    const result = await callGeminiVisionJSON(promptText, systemText, imageBase64, imageMime);
+                    const accounts = (result.accounts || []).map(a => ({
+                        include: true,
+                        name: a.name || 'Imported Account',
+                        type: a.type === 'liability' ? 'liability' : 'asset',
+                        category: (a.type === 'liability' ? LIABILITY_CATEGORIES[a.category] : ASSET_CATEGORIES[a.category]) ? a.category : (a.type === 'liability' ? 'other_debt' : 'other_asset'),
+                        value: Number(a.value) || 0,
+                        interestRate: Number(a.interestRate) || 0
+                    }));
+                    const rawTransactions = (result.transactions || []).map(t => ({ date: t.date || '', description: t.description || '', amount: Number(t.amount) || 0, typeHint: '' }));
+                    const classifiedTransactions = preClassifyTransactions(rawTransactions);
+
+                    if (accounts.length === 0 && classifiedTransactions.length === 0) {
+                        showToast("Nothing Detected", "Gemini couldn't find any account balances or transactions in that screenshot.", "rose");
+                        return;
+                    }
+
+                    importReview = { accounts, transactions: classifiedTransactions, source: 'screenshot' };
+                    openImportReviewModal(`${accounts.length} account(s) and ${classifiedTransactions.length} transaction(s) detected via Gemini vision`);
+                } catch (err) {
+                    showToast("Screenshot Import Failed", err.message, "rose");
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+
         // Welcome / Changelog notification system
         function openChangelog() {
-            alert("Wealth Vault — v1.1.0 Changelog:\n\n- NEW: AI Financial Coach with personalized reports + follow-up chat (Gemini/OpenRouter)\n- NEW: AI Quick Start — describe your finances in plain English to auto-fill the wizard\n- NEW: Home/property assets and mortgage liabilities in the wizard\n- NEW: Editable Step 5 wizard review with assets/debts/savings breakdown and jump-to-step shortcuts\n- Settings modal for managing your own free AI API keys (stored locally only)\n- Client-Side secure calculations\n- Interactive Net Worth compose charts\n- Smart retirement trajectory simulations\n- Multi-factor advisory engines (Avalanche payoff checklists)\n- Offline JSON configuration migrations");
+            alert("Wealth Vault — v1.2.0 Changelog:\n\n- NEW: Import a credit/debit card CSV statement — auto-categorizes transactions into your budget for free, or with AI if you've added a key\n- NEW: Import a screenshot of a statement or account balance — Gemini vision extracts accounts and transactions automatically\n- NEW: Import Review modal to confirm/edit/re-categorize everything before it touches your vault\n- v1.1.0: AI Financial Coach with personalized reports + follow-up chat (Gemini/OpenRouter)\n- v1.1.0: AI Quick Start — describe your finances in plain English to auto-fill the wizard\n- v1.1.0: Home/property assets and mortgage liabilities in the wizard\n- v1.1.0: Editable Step 5 wizard review with assets/debts/savings breakdown and jump-to-step shortcuts\n- Settings modal for managing your own free AI API keys (stored locally only)\n- Client-Side secure calculations\n- Interactive Net Worth compose charts\n- Smart retirement trajectory simulations\n- Multi-factor advisory engines (Avalanche payoff checklists)\n- Offline JSON configuration migrations");
         }
+
+        // Close import review modal on backdrop click
+        document.getElementById('importReviewModal')?.addEventListener('click', function(e) {
+            if (e.target === this) closeImportReviewModal();
+        });
 
         // Premium Toast Alerts
         function showToast(title, subtext, color = "emerald") {
