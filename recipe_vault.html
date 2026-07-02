@@ -611,13 +611,29 @@
         renderRecipeGrid();
 
         if (isSignedIn && accessToken) {
+            if (isSyncing) {
+                // A full sync is already in flight and will pick up this just-saved local
+                // change via getLocalRecipes() — skip pushing here to avoid two concurrent
+                // writers racing each other and one silently clobbering the other's changes.
+                return;
+            }
+            isSyncing = true;
             updateSyncStatusPill('syncing');
             try {
-                await pushToDrive(accessToken, getLocalRecipes());
+                await ensureFreshToken();
+                // Merge with whatever is currently on Drive before pushing — a blind push here
+                // would silently erase any changes another device saved since our last sync.
+                const remoteRecipes = await fetchRemoteRecipes(accessToken);
+                const merged = mergeRecipes(getLocalRecipes(), remoteRecipes);
+                setLocalRecipes(merged);
+                renderRecipeGrid();
+                await pushToDrive(accessToken, merged);
                 updateSyncStatusPill('synced');
             } catch (err) {
                 updateSyncStatusPill('error');
                 showToast("Drive Save Pending", "Saved locally. Will retry Drive sync.", "amber");
+            } finally {
+                isSyncing = false;
             }
         }
     }
@@ -636,7 +652,7 @@
 
     function recipeCardHtml(r) {
         const photo = r.photo
-            ? `<img src="${r.photo}" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&q=80';" class="w-full h-full object-cover">`
+            ? `<img src="${escapeHtml(r.photo)}" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=500&q=80';" class="w-full h-full object-cover">`
             : `<div class="w-full h-full flex items-center justify-center bg-gradient-to-br from-slate-800 to-slate-900"><i class="fa-solid fa-utensils text-slate-700 text-3xl"></i></div>`;
         const tagChips = (r.tags || []).slice(0, 3).map(t => `<span class="text-[9px] font-semibold bg-slate-800 text-slate-400 px-1.5 py-0.5 rounded">${escapeHtml(t)}</span>`).join('');
         return `
@@ -684,9 +700,12 @@
     function filterRecipes() { renderRecipeGrid(); }
 
     function escapeHtml(str) {
+        // The innerText/innerHTML round-trip only escapes &, <, > — not quote characters,
+        // which breaks anything embedding the result inside a quoted HTML attribute (e.g.
+        // value="..."). Escape quotes explicitly so this is safe in both text and attribute contexts.
         const div = document.createElement('div');
         div.innerText = str == null ? '' : String(str);
-        return div.innerHTML;
+        return div.innerHTML.replace(/"/g, '&quot;').replace(/'/g, '&#039;');
     }
 
     // ── Add / Edit Modal ───────────────────────────────────────
@@ -1126,37 +1145,42 @@
         }
     }
 
+    // Discovers (or re-discovers) the Drive file and returns its recipes, or [] if none exists yet.
+    // orderBy=modifiedTime desc means that if a past race ever created duplicate-named files,
+    // every caller consistently picks the most recently modified one instead of an arbitrary copy.
+    async function fetchRemoteRecipes(token) {
+        const listResp = await driveFetch(
+            `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(`name='${DRIVE_FILE_NAME}' and trashed=false`)}&orderBy=modifiedTime desc&fields=files(id,modifiedTime)`,
+            token
+        );
+        const listData = await listResp.json();
+        const found = listData.files && listData.files[0];
+
+        if (!found) {
+            driveFileId = null;
+            localStorage.removeItem('rv_drive_file_id');
+            return [];
+        }
+
+        driveFileId = found.id;
+        localStorage.setItem('rv_drive_file_id', driveFileId);
+        const contentResp = await driveFetch(`https://www.googleapis.com/drive/v3/files/${driveFileId}?alt=media`, token);
+        const remoteDoc = await contentResp.json();
+        return remoteDoc.recipes || [];
+    }
+
     async function syncWithDrive(token) {
         if (isSyncing) return;
         isSyncing = true;
         updateSyncStatusPill('syncing');
 
         try {
-            const listResp = await driveFetch(
-                `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(`name='${DRIVE_FILE_NAME}' and trashed=false`)}&fields=files(id,modifiedTime)`,
-                token
-            );
-            const listData = await listResp.json();
-            const found = listData.files && listData.files[0];
+            const remoteRecipes = await fetchRemoteRecipes(token);
+            const merged = mergeRecipes(getLocalRecipes(), remoteRecipes);
+            setLocalRecipes(merged);
+            renderRecipeGrid();
 
-            if (found) {
-                driveFileId = found.id;
-                localStorage.setItem('rv_drive_file_id', driveFileId);
-
-                const contentResp = await driveFetch(`https://www.googleapis.com/drive/v3/files/${driveFileId}?alt=media`, token);
-                const remoteDoc = await contentResp.json();
-                const remoteRecipes = remoteDoc.recipes || [];
-
-                const merged = mergeRecipes(getLocalRecipes(), remoteRecipes);
-                setLocalRecipes(merged);
-                renderRecipeGrid();
-
-                await pushToDrive(token, merged);
-            } else {
-                driveFileId = null;
-                localStorage.removeItem('rv_drive_file_id');
-                await pushToDrive(token, getLocalRecipes());
-            }
+            await pushToDrive(token, merged);
 
             updateSyncStatusPill('synced');
             showToast("Synced", "Recipe Vault is up to date with Google Drive.", "emerald");

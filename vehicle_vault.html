@@ -1467,22 +1467,24 @@ function getSampleVehicle() {
         regImage: "mock_registration.jpg",
         maintenanceLogs: [
             {
+                id: 1747267200000,
                 date: "2026-05-15",
-                task: "Oil Change & Filter",
+                type: "Oil Change",
                 cost: 65,
                 mileage: 35000,
                 shop: "Valvoline Express",
                 notes: "Used full synthetic 0W-20 and OEM filter.",
-                receiptImage: ""
+                receiptUrl: ""
             },
             {
+                id: 1749513600000,
                 date: "2026-06-10",
-                task: "Tire Rotation",
+                type: "Tire Rotation",
                 cost: 25,
                 mileage: 35200,
                 shop: "Discount Tire",
                 notes: "Rear to front cross rotation pattern.",
-                receiptImage: ""
+                receiptUrl: ""
             }
         ],
         serviceIntervals: [
@@ -1678,6 +1680,18 @@ function getModelValue() {
     return modelText.value.trim();
 }
 
+// Same hidden-field guard as getModelValue(), but for the setup wizard's make/model pair —
+// onWizardMakeChange() hides the select without clearing its stale value, so callers must
+// never trust w-model-select's value while it's hidden.
+function getWizardModelValue() {
+    const modelSel = document.getElementById('w-model-select');
+    const modelText = document.getElementById('w-model-text');
+    if (!modelSel.classList.contains('hidden') && modelSel.value && modelSel.value !== '__other__') {
+        return modelSel.value;
+    }
+    return modelText.value.trim();
+}
+
 function getSmcSlugs(makeName, modelName) {
     const entry = SMC_DB[makeName];
     if (!entry) return { makeSlug: makeName.toLowerCase().replace(/\s+/g,'-'), modelSlug: modelName.toLowerCase().replace(/\s+/g,'-') };
@@ -1867,13 +1881,13 @@ function updateDashboard() {
         let alerts = [];
         vehicles.forEach(v => {
             (v.serviceIntervals || []).forEach(interval => {
-                const status = checkServiceIntervalStatus(v, interval);
-                if (status === 'due' || status === 'overdue') {
+                const { state } = getIntervalStatus(interval, v.currentMileage || 0);
+                if (state === 'overdue' || state === 'soon') {
                     alerts.push({
                         vName: v.nickname || `${v.year} ${v.make} ${v.model}`,
                         vId: v.id,
                         serviceName: interval.name,
-                        status: status
+                        status: state === 'soon' ? 'due' : 'overdue'
                     });
                 }
             });
@@ -1970,35 +1984,6 @@ function getLast6Months() {
     return months;
 }
 
-function checkServiceIntervalStatus(v, interval) {
-    if (!v.currentMileage) return 'ok';
-    const lastMileage = interval.lastMileage || 0;
-    const mileageSince = v.currentMileage - lastMileage;
-    
-    // Check date interval if set
-    let dateDue = false;
-    if (interval.lastDate && interval.monthInterval) {
-        const last = new Date(interval.lastDate);
-        const next = new Date(last.setMonth(last.getMonth() + interval.monthInterval));
-        if (new Date() > next) dateDue = true;
-    }
-
-    if (mileageSince >= interval.mileageInterval || dateDue) {
-        if (mileageSince >= interval.mileageInterval + 1000) return 'overdue';
-        return 'due';
-    }
-    return 'ok';
-}
-
-function countDueServices(v) {
-    let count = 0;
-    (v.serviceIntervals || []).forEach(interval => {
-        const status = checkServiceIntervalStatus(v, interval);
-        if (status === 'due' || status === 'overdue') count++;
-    });
-    return count;
-}
-
 function resetSelection() {
     selectedId = null;
     document.getElementById('detail-placeholder').classList.remove('hidden');
@@ -2006,6 +1991,20 @@ function resetSelection() {
     document.getElementById('detail-panel').classList.remove('flex');
     renderGrid();
     updateDashboard();
+}
+
+// Additive id-based merge for a vehicle's nested collections (logs/intervals/reports) —
+// existing local entries always win/stay; only genuinely new ids from the import are appended.
+function mergeArrayById(existingArr, importedArr) {
+    const result = Array.isArray(existingArr) ? [...existingArr] : [];
+    const existingIds = new Set(result.filter(item => item && item.id !== undefined && item.id !== null).map(item => item.id));
+    (Array.isArray(importedArr) ? importedArr : []).forEach(item => {
+        if (item && item.id !== undefined && item.id !== null && !existingIds.has(item.id)) {
+            result.push(item);
+            existingIds.add(item.id);
+        }
+    });
+    return result;
 }
 
 function importDatabase(input) {
@@ -2027,7 +2026,17 @@ function importDatabase(input) {
             imported.forEach(newItem => {
                 const existingIdx = vehicles.findIndex(item => item && (item.id === newItem.id || (item.nickname === newItem.nickname && item.make === newItem.make)));
                 if (existingIdx !== -1) {
-                    vehicles[existingIdx] = { ...vehicles[existingIdx], ...newItem };
+                    const existing = vehicles[existingIdx];
+                    // Merge nested collections by id instead of letting the spread below wholesale-replace
+                    // them — otherwise importing an older backup for an existing vehicle silently discards
+                    // any newer logs/reports/intervals recorded since that backup was taken.
+                    vehicles[existingIdx] = {
+                        ...existing,
+                        ...newItem,
+                        maintenanceLogs: mergeArrayById(existing.maintenanceLogs, newItem.maintenanceLogs),
+                        serviceIntervals: mergeArrayById(existing.serviceIntervals, newItem.serviceIntervals),
+                        accidentReports: mergeArrayById(existing.accidentReports, newItem.accidentReports)
+                    };
                 } else {
                     vehicles.push(newItem);
                     mergedCount++;
@@ -2223,7 +2232,7 @@ function buildCard(v) {
     const dueCount = countDueServices(v);
     const expiryStatus = getExpiryStatus(v);
     const imgHtml = v.imageUrl
-        ? `<img src="${v.imageUrl}" class="w-12 h-12 rounded-lg object-cover flex-shrink-0" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=500&q=80';">`
+        ? `<img src="${esc(v.imageUrl)}" class="w-12 h-12 rounded-lg object-cover flex-shrink-0" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=500&q=80';">`
         : `<div class="w-12 h-12 rounded-lg flex items-center justify-center bg-slate-850 flex-shrink-0"><i class="fa-solid fa-car text-slate-700 text-base"></i></div>`;
 
     const selected = selectedId === v.id ? 'border-cyan-500/80 bg-slate-800/40 shadow-lg shadow-cyan-500/5' : 'hover:border-slate-700 bg-slate-900/60';
@@ -4016,7 +4025,7 @@ function saveAccidentReport() {
 }
 
 // Close modals on backdrop click
-['settingsModal','vehicle-modal','log-modal','mileage-modal','glovebox-modal','doc-lightbox','changelogModal','accident-modal','welcome-modal'].forEach(id => {
+['settingsModal','vehicle-modal','wizard-modal','log-modal','mileage-modal','glovebox-modal','doc-lightbox','changelogModal','accident-modal','welcome-modal'].forEach(id => {
     document.getElementById(id)?.addEventListener('click', function(e) {
         if (e.target === this) {
             if (id === 'settingsModal') closeSettingsModal();
@@ -4122,13 +4131,10 @@ function wizardNext() {
     if (wizardStep === 1) {
         // Validation
         const make = document.getElementById('w-make').value;
-        let model = document.getElementById('w-model-select').value;
-        if (model === '__other__') {
-            model = document.getElementById('w-model-text').value.trim();
-        }
+        const model = getWizardModelValue();
         const year = parseInt(document.getElementById('w-year').value);
         const mileage = parseInt(document.getElementById('w-mileage').value);
-        
+
         if (!make || !model || isNaN(year) || isNaN(mileage)) {
             showToast("Missing Required Fields", "Please enter Year, Make, Model, and Current Mileage.", "rose");
             return;
@@ -4248,10 +4254,7 @@ function handleWizardImageUpload(e) {
 
 function finishWizardSetup() {
     const make = document.getElementById('w-make').value;
-    let model = document.getElementById('w-model-select').value;
-    if (model === '__other__' || !model) {
-        model = document.getElementById('w-model-text').value.trim();
-    }
+    const model = getWizardModelValue();
     const year = parseInt(document.getElementById('w-year').value);
     const mileage = parseInt(document.getElementById('w-mileage').value);
     const nickname = document.getElementById('w-nickname').value.trim();

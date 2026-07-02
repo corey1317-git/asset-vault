@@ -373,7 +373,7 @@
                             <div class="flex flex-col items-center justify-center pt-5 pb-6">
                                 <i class="fa-solid fa-receipt text-3xl text-indigo-400/80 mb-3 animate-bounce"></i>
                                 <p class="text-xs text-slate-300 font-bold" id="aiScanStatusLabel">Click to select receipt image</p>
-                                <p class="text-[10px] text-slate-500 mt-1">Supports PNG, JPG, or PDF captures</p>
+                                <p class="text-[10px] text-slate-500 mt-1">Supports PNG or JPG photos of your receipt</p>
                             </div>
                             <input id="aiReceiptUpload" type="file" accept="image/*" onchange="loadReceiptForAI(this)" class="hidden" />
                         </label>
@@ -1070,6 +1070,17 @@
             renderCharts();
         }
 
+        // Escapes user- or AI-supplied strings before they're interpolated into innerHTML
+        function esc(str) {
+            if (str === null || str === undefined) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
         // Save state to Storage
         function saveToStorage() {
             localStorage.setItem('vault_assets', JSON.stringify(assetData));
@@ -1633,20 +1644,20 @@
                 const imageSectionHtml = `
                     <div class="relative h-44 bg-slate-950 overflow-hidden border-b border-slate-800 flex items-center justify-center">
                         ${item.imageUrl ? `
-                            <img src="${item.imageUrl}" alt="${item.name}" onerror="handleImageError(this, '${item.category}')" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105">
+                            <img src="${esc(item.imageUrl)}" alt="${esc(item.name)}" onerror="handleImageError(this, '${esc(item.category)}')" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105">
                         ` : ''}
                         <div class="absolute inset-0 ${item.imageUrl ? 'hidden' : 'flex'} flex-col items-center justify-center bg-gradient-to-br from-slate-900 to-slate-950" style="${item.imageUrl ? 'display: none;' : ''}">
                             <i class="${item.icon || 'fa-solid fa-box'} text-slate-800 text-5xl mb-2"></i>
-                            <span class="text-[9px] text-slate-600 uppercase font-bold tracking-widest">${item.category}</span>
+                            <span class="text-[9px] text-slate-600 uppercase font-bold tracking-widest">${esc(item.category)}</span>
                         </div>
-                        
+
                         <!-- Gradient Overlay Legibility Protection -->
                         <div class="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-transparent to-transparent pointer-events-none"></div>
 
                         <!-- Absolute Tag Overlay -->
                         <div class="absolute bottom-3 left-3 flex gap-1.5 items-center">
                             <span class="text-[10px] font-bold tracking-wider uppercase px-2 py-0.5 rounded-lg ${tagClass}">
-                                ${item.category}
+                                ${esc(item.category)}
                             </span>
                             ${item.receiptImage ? `
                                 <span class="bg-indigo-500/25 border border-indigo-500/30 text-indigo-300 text-[9px] font-bold tracking-wider uppercase px-1.5 py-0.5 rounded-lg flex items-center gap-1">
@@ -1663,24 +1674,24 @@
                         <div>
                             <!-- Header Info -->
                             <div class="flex justify-between items-start mb-2 gap-3">
-                                <h4 class="font-extrabold text-base text-white tracking-tight leading-snug group-hover:text-emerald-400 transition-colors duration-150">${item.name}</h4>
+                                <h4 class="font-extrabold text-base text-white tracking-tight leading-snug group-hover:text-emerald-400 transition-colors duration-150">${esc(item.name)}</h4>
                                 <span class="text-sm font-bold font-mono text-emerald-400 whitespace-nowrap">
                                     ${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(item.price)}
                                 </span>
                             </div>
-                            
+
                             <div class="space-y-1.5 text-xs text-slate-400 border-t border-slate-800/80 pt-3 mt-3">
-                                <div class="flex justify-between"><span class="text-slate-500 font-medium">Model:</span> <span class="text-slate-300 font-medium">${item.model || 'N/A'}</span></div>
-                                <div class="flex justify-between items-center"><span class="text-slate-500 font-medium">Serial No:</span> <span class="bg-slate-950 px-2 py-0.5 rounded border border-slate-800 text-slate-300 font-mono text-[11px] select-all">${item.serial || 'N/A'}</span></div>
-                                ${item.serial2 && item.serial2.trim() !== "" ? `<div class="flex justify-between items-center"><span class="text-slate-500 font-medium">Secondary No:</span> <span class="bg-slate-950 px-2 py-0.5 rounded border border-slate-800 text-slate-300 font-mono text-[11px] select-all">${item.serial2}</span></div>` : ''}
-                                <div class="flex justify-between"><span class="text-slate-500 font-medium">Purchase Date:</span> <span class="text-slate-300 font-mono">${item.purchaseDate || 'N/A'}</span></div>
-                                <div class="flex justify-between items-center"><span class="text-slate-500 font-medium">Warranty Ends:</span> 
+                                <div class="flex justify-between"><span class="text-slate-500 font-medium">Model:</span> <span class="text-slate-300 font-medium">${esc(item.model) || 'N/A'}</span></div>
+                                <div class="flex justify-between items-center"><span class="text-slate-500 font-medium">Serial No:</span> <span class="bg-slate-950 px-2 py-0.5 rounded border border-slate-800 text-slate-300 font-mono text-[11px] select-all">${esc(item.serial) || 'N/A'}</span></div>
+                                ${item.serial2 && item.serial2.trim() !== "" ? `<div class="flex justify-between items-center"><span class="text-slate-500 font-medium">Secondary No:</span> <span class="bg-slate-950 px-2 py-0.5 rounded border border-slate-800 text-slate-300 font-mono text-[11px] select-all">${esc(item.serial2)}</span></div>` : ''}
+                                <div class="flex justify-between"><span class="text-slate-500 font-medium">Purchase Date:</span> <span class="text-slate-300 font-mono">${esc(item.purchaseDate) || 'N/A'}</span></div>
+                                <div class="flex justify-between items-center"><span class="text-slate-500 font-medium">Warranty Ends:</span>
                                     <div class="flex items-center gap-1.5">
-                                        <span class="text-slate-300 font-mono">${item.warrantyEndDate || 'N/A'}</span>
+                                        <span class="text-slate-300 font-mono">${esc(item.warrantyEndDate) || 'N/A'}</span>
                                         ${item.warrantyEndDate ? getWarrantyBadge(item.warrantyEndDate) : ''}
                                     </div>
                                 </div>
-                                <div class="flex justify-between"><span class="text-slate-500 font-medium">Vendor:</span> <span class="text-slate-300">${item.purchasedFrom || 'N/A'}</span></div>
+                                <div class="flex justify-between"><span class="text-slate-500 font-medium">Vendor:</span> <span class="text-slate-300">${esc(item.purchasedFrom) || 'N/A'}</span></div>
                             </div>
 
                             <!-- Parts Reference -->
@@ -1784,8 +1795,8 @@
                             <input type="checkbox" onchange="toggleTask(${task.id})" ${task.done ? 'checked' : ''} class="h-4 w-4 rounded border-slate-800 bg-slate-900 text-emerald-500 focus:ring-0 focus:ring-offset-0 cursor-pointer">
                         </div>
                         <div class="flex-1 min-w-0">
-                            <span class="text-xs font-medium text-slate-200 block truncate ${task.done ? 'line-through text-slate-500' : ''}">${task.desc}</span>
-                            <span class="text-[10px] text-slate-500 font-mono tracking-wide mt-0.5 block">${task.schedule || 'Regular basis'}</span>
+                            <span class="text-xs font-medium text-slate-200 block truncate ${task.done ? 'line-through text-slate-500' : ''}">${esc(task.desc)}</span>
+                            <span class="text-[10px] text-slate-500 font-mono tracking-wide mt-0.5 block">${esc(task.schedule) || 'Regular basis'}</span>
                         </div>
                         <button onclick="deleteTask(${task.id})" class="text-slate-600 hover:text-rose-400 p-1 opacity-0 group-hover:opacity-100 transition duration-150" title="Delete task">
                             <i class="fa-solid fa-xmark text-xs"></i>
@@ -2225,7 +2236,10 @@
                 document.getElementById('formModel').value = assetObj.model || '';
                 document.getElementById('formSerial').value = assetObj.serial || 'REPLACE_WITH_YOUR_SERIAL';
                 document.getElementById('formSerial2').value = assetObj.serial2 || '';
-                document.getElementById('formPrice').value = assetObj.price || '';
+                // AI models sometimes return a currency-formatted string (e.g. "$299.99") instead of a bare number;
+                // strip anything but digits/decimal so a type="number" field doesn't silently reject it.
+                const sanitizedPrice = parseFloat(String(assetObj.price ?? '').replace(/[^0-9.]/g, ''));
+                document.getElementById('formPrice').value = isNaN(sanitizedPrice) ? '' : sanitizedPrice;
                 document.getElementById('formPurchaseDate').value = assetObj.purchaseDate || '';
                 document.getElementById('formWarrantyEndDate').value = assetObj.warrantyEndDate || '';
                 document.getElementById('formPurchasedFrom').value = assetObj.purchasedFrom || '';
@@ -2429,7 +2443,7 @@ ${schemaHint}`;
                     }
 
                     successCount++;
-                    saveData();
+                    saveToStorage();
 
                 } catch (err) {
                     failCount++;
@@ -2563,23 +2577,23 @@ ${schemaHint}`;
                     tr.className = "border-b border-slate-850 hover:bg-slate-900/50";
                     tr.innerHTML = `
                         <td class="p-3 text-left">
-                            <span class="font-bold text-white text-xs block">${item.name || 'N/A'}</span>
-                            <span class="text-[10px] text-slate-500 font-mono mt-0.5 block">Model: ${item.model || 'N/A'}</span>
+                            <span class="font-bold text-white text-xs block">${esc(item.name) || 'N/A'}</span>
+                            <span class="text-[10px] text-slate-500 font-mono mt-0.5 block">Model: ${esc(item.model) || 'N/A'}</span>
                         </td>
                         <td class="p-3 text-left">
-                            <span class="bg-slate-950 px-2 py-0.5 rounded border border-slate-800 text-slate-300 font-mono text-[10px] select-all">${item.serial || 'N/A'}</span>
-                            ${item.serial2 && item.serial2.trim() !== "" ? `<br><span class="bg-slate-950 px-2 py-0.5 rounded border border-slate-800 text-slate-300/70 font-mono text-[9px] mt-1 inline-block select-all">Sec: ${item.serial2}</span>` : ''}
+                            <span class="bg-slate-950 px-2 py-0.5 rounded border border-slate-800 text-slate-300 font-mono text-[10px] select-all">${esc(item.serial) || 'N/A'}</span>
+                            ${item.serial2 && item.serial2.trim() !== "" ? `<br><span class="bg-slate-950 px-2 py-0.5 rounded border border-slate-800 text-slate-300/70 font-mono text-[9px] mt-1 inline-block select-all">Sec: ${esc(item.serial2)}</span>` : ''}
                         </td>
                         <td class="p-3 text-left">
-                            <span class="text-slate-300 block">${item.purchasedFrom || 'N/A'}</span>
-                            <span class="text-[10px] text-slate-500 font-mono mt-0.5 block">${item.purchaseDate || 'N/A'}</span>
+                            <span class="text-slate-300 block">${esc(item.purchasedFrom) || 'N/A'}</span>
+                            <span class="text-[10px] text-slate-500 font-mono mt-0.5 block">${esc(item.purchaseDate) || 'N/A'}</span>
                         </td>
                         <td class="p-3 text-left font-extrabold text-emerald-400 font-mono text-xs">
                             ${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(item.price)}
                         </td>
                         <td class="p-3 text-right">
-                            ${item.receiptImage 
-                                ? `<img src="${item.receiptImage}" class="h-10 w-10 object-cover rounded border border-slate-800 ml-auto shadow cursor-pointer" onclick="viewReceipt('${item.id}')" title="Zoom Receipt">` 
+                            ${item.receiptImage
+                                ? `<img src="${esc(item.receiptImage)}" class="h-10 w-10 object-cover rounded border border-slate-800 ml-auto shadow cursor-pointer" onclick="viewReceipt('${esc(item.id)}')" title="Zoom Receipt">`
                                 : '<span class="text-[10px] text-rose-500/80 font-bold uppercase tracking-wider">No File Attached</span>'}
                         </td>
                     `;
@@ -2681,6 +2695,7 @@ ${schemaHint}`;
                         version: "1.3.0"
                     },
                     assets: assetData,
+                    maintenanceTasks: careTasks,
                     metadataVersion: "1.3.0"
                 };
 
@@ -3104,9 +3119,9 @@ ${schemaHint}`;
                     version: "1.3.0"
                 },
                 assets: assetData,
-                tasks: careTasks
+                maintenanceTasks: careTasks
             };
-            
+
             const fileContent = JSON.stringify(fileData, null, 2);
             const boundary = 'foo_bar_baz';
             const delimiter = `\r\n--${boundary}\r\n`;

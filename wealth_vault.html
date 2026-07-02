@@ -377,42 +377,42 @@
                                 <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Housing (Rent/Mortgage)</label>
                                 <span class="text-xs text-slate-500"><span class="currency-symbol">$</span><span id="budget-val-housing">0</span></span>
                             </div>
-                            <input type="range" id="budget-housing" min="0" max="6000" step="50" oninput="syncRangeDisplay(this)" class="w-full cursor-pointer">
+                            <input type="range" id="budget-housing" min="0" max="10000" step="50" oninput="syncRangeDisplay(this)" class="w-full cursor-pointer">
                         </div>
                         <div>
                             <div class="flex justify-between mb-1">
                                 <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Groceries &amp; Food</label>
                                 <span class="text-xs text-slate-500"><span class="currency-symbol">$</span><span id="budget-val-food">0</span></span>
                             </div>
-                            <input type="range" id="budget-food" min="0" max="2500" step="50" oninput="syncRangeDisplay(this)" class="w-full cursor-pointer">
+                            <input type="range" id="budget-food" min="0" max="4000" step="50" oninput="syncRangeDisplay(this)" class="w-full cursor-pointer">
                         </div>
                         <div>
                             <div class="flex justify-between mb-1">
                                 <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Transportation &amp; Auto</label>
                                 <span class="text-xs text-slate-500"><span class="currency-symbol">$</span><span id="budget-val-trans">0</span></span>
                             </div>
-                            <input type="range" id="budget-trans" min="0" max="1500" step="25" oninput="syncRangeDisplay(this)" class="w-full cursor-pointer">
+                            <input type="range" id="budget-trans" min="0" max="2500" step="25" oninput="syncRangeDisplay(this)" class="w-full cursor-pointer">
                         </div>
                         <div>
                             <div class="flex justify-between mb-1">
                                 <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Utilities &amp; Subscriptions</label>
                                 <span class="text-xs text-slate-500"><span class="currency-symbol">$</span><span id="budget-val-utils">0</span></span>
                             </div>
-                            <input type="range" id="budget-utils" min="0" max="1200" step="25" oninput="syncRangeDisplay(this)" class="w-full cursor-pointer">
+                            <input type="range" id="budget-utils" min="0" max="2000" step="25" oninput="syncRangeDisplay(this)" class="w-full cursor-pointer">
                         </div>
                         <div>
                             <div class="flex justify-between mb-1">
                                 <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Debt Payments (Min Payments)</label>
                                 <span class="text-xs text-slate-500"><span class="currency-symbol">$</span><span id="budget-val-debt">0</span></span>
                             </div>
-                            <input type="range" id="budget-debt" min="0" max="3000" step="50" oninput="syncRangeDisplay(this)" class="w-full cursor-pointer">
+                            <input type="range" id="budget-debt" min="0" max="5000" step="50" oninput="syncRangeDisplay(this)" class="w-full cursor-pointer">
                         </div>
                         <div>
                             <div class="flex justify-between mb-1">
                                 <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Lifestyle, Shopping &amp; Fun</label>
                                 <span class="text-xs text-slate-500"><span class="currency-symbol">$</span><span id="budget-val-lifestyle">0</span></span>
                             </div>
-                            <input type="range" id="budget-lifestyle" min="0" max="4000" step="50" oninput="syncRangeDisplay(this)" class="w-full cursor-pointer">
+                            <input type="range" id="budget-lifestyle" min="0" max="6000" step="50" oninput="syncRangeDisplay(this)" class="w-full cursor-pointer">
                         </div>
                     </div>
 
@@ -521,7 +521,7 @@
                                     <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Expected Growth Rate (%)</label>
                                     <span class="text-xs text-slate-100 font-bold"><span id="slider-val-growth">7</span>%</span>
                                 </div>
-                                <input type="range" id="slider-growth" min="2" max="15" step="0.5" oninput="updateRetirementAnalysis()" class="w-full cursor-pointer">
+                                <input type="range" id="slider-growth" min="2" max="15" step="0.5" value="7" oninput="updateRetirementAnalysis()" class="w-full cursor-pointer">
                             </div>
                         </div>
 
@@ -531,14 +531,14 @@
                                     <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Expected Inflation Rate (%)</label>
                                     <span class="text-xs text-slate-100 font-bold"><span id="slider-val-inflation">2.5</span>%</span>
                                 </div>
-                                <input type="range" id="slider-inflation" min="0" max="8" step="0.1" oninput="updateRetirementAnalysis()" class="w-full cursor-pointer">
+                                <input type="range" id="slider-inflation" min="0" max="8" step="0.1" value="2.5" oninput="updateRetirementAnalysis()" class="w-full cursor-pointer">
                             </div>
                             <div>
                                 <div class="flex justify-between mb-1">
                                     <label class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Withdrawal Rate (%)</label>
                                     <span class="text-xs text-slate-100 font-bold"><span id="slider-val-withdrawal">4.0</span>%</span>
                                 </div>
-                                <input type="range" id="slider-withdrawal" min="2" max="8" step="0.1" oninput="updateRetirementAnalysis()" class="w-full cursor-pointer">
+                                <input type="range" id="slider-withdrawal" min="2" max="8" step="0.1" value="4.0" oninput="updateRetirementAnalysis()" class="w-full cursor-pointer">
                             </div>
                         </div>
                     </div>
@@ -1312,7 +1312,7 @@
                     if (valEl) valEl.innerText = Number(range.value).toLocaleString();
                 }
             }
-            updateBudgetSummary();
+            recalcBudgetSummaryDisplay();
 
             // Sync retirement sliders from profile values
             document.getElementById('slider-ret-age').value = profile.targetAge;
@@ -1466,23 +1466,23 @@
             updateBudgetSummary();
         }
 
-        function updateBudgetSummary() {
-            // Read values
-            for (let cat in budget) {
-                const el = document.getElementById(`budget-${cat}`);
-                if (el) budget[cat] = Number(el.value);
-            }
-
+        // Recomputes the displayed totals/savings/rate purely from the `budget` object — never
+        // touches the DOM sliders. Range inputs silently clamp any value past their `max`, so
+        // re-reading them back into `budget` (as updateBudgetSummary() below does) would
+        // permanently truncate legitimate larger numbers from the wizard, AI auto-fill, or
+        // statement import. Callers that aren't reacting to the user dragging a slider directly
+        // should use this instead.
+        function recalcBudgetSummaryDisplay() {
             const monthlyExpenses = Object.values(budget).reduce((sum, item) => sum + Number(item), 0);
             const savings = Math.max(0, profile.monthlyIncome - monthlyExpenses);
             const rate = calculateSavingsRate();
 
             document.getElementById('budget-total-expenses').innerText = monthlyExpenses.toLocaleString();
             document.getElementById('budget-projected-savings').innerText = savings.toLocaleString();
-            
+
             const rateEl = document.getElementById('budget-savings-rate');
             rateEl.innerText = `${rate}%`;
-            
+
             if (rate >= 20) {
                 rateEl.className = "font-bold text-emerald-400";
             } else if (rate >= 10) {
@@ -1492,11 +1492,22 @@
             }
         }
 
+        // Used only when the user directly drags a slider (via syncRangeDisplay) — DOM state at
+        // that point reflects genuine user interaction with an already-rendered slider, so
+        // reading it back into `budget` is the correct, intentional behavior here.
+        function updateBudgetSummary() {
+            for (let cat in budget) {
+                const el = document.getElementById(`budget-${cat}`);
+                if (el) budget[cat] = Number(el.value);
+            }
+            recalcBudgetSummaryDisplay();
+        }
+
         // On typing new primary income
         function updateCashflowState() {
             profile.monthlyIncome = Number(document.getElementById('cashflow-income').value) || 0;
             saveDatabase();
-            updateBudgetSummary();
+            recalcBudgetSummaryDisplay();
             calculateMetrics();
             renderRetirementAnalysis();
             renderAdvisorRecommendations();
@@ -1573,6 +1584,17 @@
             return Math.random().toString(36).substring(2, 9);
         }
 
+        // Escapes user- or AI-supplied strings before they're interpolated into innerHTML
+        function esc(str) {
+            if (str === null || str === undefined) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
         // Format currencies beautifully
         function formatCurrency(val) {
             const absVal = Math.abs(val);
@@ -1627,7 +1649,7 @@
                         <i class="fa-solid ${config.icon} ${config.color} text-xs"></i>
                     </div>
                     <div>
-                        <span class="block text-xs font-bold text-slate-100">${item.name}</span>
+                        <span class="block text-xs font-bold text-slate-100">${esc(item.name)}</span>
                         <div class="flex items-center gap-1.5 mt-0.5 text-[9px] font-semibold text-slate-500 uppercase">
                             <span>${config.name}</span>
                             ${item.interestRate !== undefined ? `<span>•</span><span class="text-rose-400 font-bold">${item.interestRate}% APR</span>` : ''}
@@ -1699,7 +1721,7 @@
                 pCashflow.classList.remove('hidden');
                 btnAssets.className = "flex-1 py-2 text-xs font-bold rounded-lg transition-all text-slate-400 hover:text-slate-200";
                 btnCashflow.className = "flex-1 py-2 text-xs font-bold rounded-lg transition-all bg-violet-600/10 text-violet-400 border border-violet-500/20";
-                updateBudgetSummary();
+                recalcBudgetSummaryDisplay();
             }
         }
 
@@ -2057,7 +2079,9 @@
                 suggestions.push({
                     id: 'adv-ef-fund',
                     title: 'Emergency Reserve Healthy',
-                    description: `Great job! Your current liquid cash reserves cover ${(liquidCash / monthlyExpenses).toFixed(1)} months of average living expenses (Target: 6 months).`,
+                    description: monthlyExpenses > 0
+                        ? `Great job! Your current liquid cash reserves cover ${(liquidCash / monthlyExpenses).toFixed(1)} months of average living expenses (Target: 6 months).`
+                        : `Great job! With no recorded monthly expenses, your liquid cash reserves comfortably cover your needs.`,
                     status: 'healthy',
                     icon: 'fa-circle-check'
                 });
@@ -2075,7 +2099,7 @@
                     id: 'adv-debt-paydown',
                     title: 'High-Interest Debt Alert',
                     description: `You have ${highInterestDebts.length} active debt accounts exceeding a 6% APR. We advise allocating extra capital using the <strong>Debt Avalanche</strong> method.`,
-                    action: `Prioritize paying off <strong>${firstDebt.name}</strong> (${firstDebt.interestRate}% APR)`,
+                    action: `Prioritize paying off <strong>${esc(firstDebt.name)}</strong> (${firstDebt.interestRate}% APR)`,
                     status: 'critical',
                     icon: 'fa-hand-holding-dollar',
                     details: avalanche
@@ -2114,6 +2138,7 @@
             // 4. Retirement Outlook Projection Gap
             const sim = runSimulatorProjections();
             if (sim.projectedCapital < sim.targetNeed) {
+                activeWarnings++;
                 const deficit = sim.targetNeed - sim.projectedCapital;
                 suggestions.push({
                     id: 'adv-retirement-gap',
@@ -2149,7 +2174,7 @@
                             <span class="block text-[10px] font-bold text-slate-500 uppercase">Avalanche Payoff Priority:</span>
                             ${s.details.map((d, index) => `
                                 <div class="flex justify-between text-[11px] font-mono">
-                                    <span class="text-slate-400">${index + 1}. ${d.name} (${d.interestRate}% APR)</span>
+                                    <span class="text-slate-400">${index + 1}. ${esc(d.name)} (${d.interestRate}% APR)</span>
                                     <span class="text-slate-200 font-bold">${formatCurrency(d.value)}</span>
                                 </div>
                             `).join('')}
@@ -2364,9 +2389,21 @@
 
         // ═══════════ ONBOARDING WIZARD NAVIGATION ═══════════
         function openWizard(manual = false) {
+            // Finishing the wizard rebuilds assets/liabilities from ONLY its own 7 fixed
+            // slots — without a clear warning, restarting to tweak your profile/income can
+            // silently collapse or discard any ledger entries the wizard can't represent.
+            if (manual && (assets.length > 0 || liabilities.length > 0)) {
+                const proceed = confirm(
+                    "Restarting the wizard will rebuild your Assets & Liabilities ledger from just the totals you enter in its Assets/Debts steps.\n\n" +
+                    "Your current entries will be pre-filled as aggregated totals per category, but multiple separate accounts of the same type will be combined into one, and anything categorized as \"Other Asset\" or \"Other Debt\" won't carry over.\n\n" +
+                    "Continue?"
+                );
+                if (!proceed) return;
+            }
+
             currentWizStep = 1;
-            
-            // Set wizard form default inputs from profile/budget states if manual restart
+
+            // Set wizard form default inputs from profile/budget/ledger state if manual restart
             if (manual) {
                 document.getElementById('wiz-name').value = profile.name;
                 document.getElementById('wiz-age').value = profile.currentAge;
@@ -2377,11 +2414,55 @@
                 document.getElementById('wiz-exp-food').value = budget.food;
                 document.getElementById('wiz-exp-trans').value = budget.trans;
                 document.getElementById('wiz-exp-utils').value = budget.utils;
+                prefillWizardLedgerFromCurrentData();
             }
 
             document.getElementById('wizard-close-btn').style.display = manual ? 'block' : 'none';
             document.getElementById('wizardModal').classList.remove('hidden');
             showWizStep(1);
+        }
+
+        // Best-effort reconstruction of the wizard's fixed asset/liability slots from the
+        // current ledger, so a manual restart round-trips existing totals instead of silently
+        // resetting them to the wizard's hardcoded defaults.
+        function prefillWizardLedgerFromCurrentData() {
+            const sumByCategory = (list, categories) => list
+                .filter(item => categories.includes(item.category))
+                .reduce((sum, item) => sum + Number(item.value), 0);
+            const firstRate = (list, categories) => {
+                const match = list.find(item => categories.includes(item.category) && item.interestRate);
+                return match ? match.interestRate : null;
+            };
+
+            const cashTotal = sumByCategory(assets, ['cash']);
+            const investTotal = sumByCategory(assets, ['invest']);
+            const carTotal = sumByCategory(assets, ['vehicle']);
+            const propertyTotal = sumByCategory(assets, ['property']);
+
+            document.getElementById('wiz-has-cash').checked = cashTotal > 0;
+            document.getElementById('wiz-val-cash').value = cashTotal;
+            document.getElementById('wiz-has-invest').checked = investTotal > 0;
+            document.getElementById('wiz-val-invest').value = investTotal;
+            document.getElementById('wiz-has-car').checked = carTotal > 0;
+            document.getElementById('wiz-val-car').value = carTotal;
+            document.getElementById('wiz-has-property').checked = propertyTotal > 0;
+            document.getElementById('wiz-val-property').value = propertyTotal;
+
+            const ccTotal = sumByCategory(liabilities, ['credit_card']);
+            const loanTotal = sumByCategory(liabilities, ['auto_loan', 'student_loan', 'other_debt']);
+            const mortgageTotal = sumByCategory(liabilities, ['mortgage']);
+
+            document.getElementById('wiz-has-cc').checked = ccTotal > 0;
+            document.getElementById('wiz-val-cc').value = ccTotal;
+            document.getElementById('wiz-rate-cc').value = firstRate(liabilities, ['credit_card']) ?? 19.5;
+
+            document.getElementById('wiz-has-loan').checked = loanTotal > 0;
+            document.getElementById('wiz-val-loan').value = loanTotal;
+            document.getElementById('wiz-rate-loan').value = firstRate(liabilities, ['auto_loan', 'student_loan', 'other_debt']) ?? 5.5;
+
+            document.getElementById('wiz-has-mortgage').checked = mortgageTotal > 0;
+            document.getElementById('wiz-val-mortgage').value = mortgageTotal;
+            document.getElementById('wiz-rate-mortgage').value = firstRate(liabilities, ['mortgage']) ?? 6.5;
         }
 
         function closeWizard() {
@@ -2763,10 +2844,10 @@
                 row.className = `p-3.5 border ${styles.border} rounded-2xl`;
                 row.innerHTML = `
                     <div class="flex items-center justify-between gap-2 mb-1">
-                        <h5 class="text-xs font-bold text-slate-100">${p.title || ''}</h5>
-                        <span class="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${styles.badge}">${p.impact || 'medium'}</span>
+                        <h5 class="text-xs font-bold text-slate-100">${esc(p.title)}</h5>
+                        <span class="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${styles.badge}">${esc(p.impact || 'medium')}</span>
                     </div>
-                    <p class="text-xs text-slate-400 leading-relaxed">${p.detail || ''}</p>
+                    <p class="text-xs text-slate-400 leading-relaxed">${esc(p.detail)}</p>
                 `;
                 list.appendChild(row);
             });
@@ -3145,6 +3226,10 @@
         const IGNORE_KEYWORDS = ['payment received', 'payment thank you', 'autopay', 'electronic payment', 'online payment', 'internal transfer'];
         const INCOME_KEYWORDS = ['payroll', 'direct deposit', 'salary', 'paycheck'];
 
+        // Returns null (rather than defaulting to 'lifestyle') when nothing matched, so callers
+        // can tell a genuine "lifestyle" keyword match (e.g. "Amazon", "Travel") apart from an
+        // unrecognized description — otherwise a real lifestyle purchase/refund gets treated as
+        // "unmatched" and can be wrongly reclassified as income based on sign alone.
         function categorizeTransactionRuleBased(description) {
             const d = (description || '').toLowerCase();
             if (INCOME_KEYWORDS.some(k => d.includes(k))) return 'income';
@@ -3152,7 +3237,7 @@
             for (const cat in CATEGORY_KEYWORDS) {
                 if (CATEGORY_KEYWORDS[cat].some(k => d.includes(k))) return cat;
             }
-            return 'lifestyle';
+            return null;
         }
 
         // Minimal CSV parser supporting quoted fields with embedded commas
@@ -3250,12 +3335,14 @@
 
             return transactions.map(t => {
                 let category = categorizeTransactionRuleBased(t.description);
-                if (category === 'lifestyle') {
+                if (category === null) {
                     // No keyword match — fall back to sign/type heuristics for income vs expense
                     if (t.typeHint.includes('credit') || t.typeHint.includes('payment') || t.typeHint.includes('return')) {
                         category = t.amount > 0 ? 'income' : 'ignore';
                     } else if (mixedSign && t.amount > 0) {
                         category = 'income';
+                    } else {
+                        category = 'lifestyle';
                     }
                 }
                 return { ...t, category };
@@ -3354,7 +3441,7 @@
                     row.className = "flex items-center gap-2 bg-slate-950/60 border border-slate-850 rounded-xl p-2.5";
                     row.innerHTML = `
                         <input type="checkbox" ${a.include ? 'checked' : ''} onchange="importReview.accounts[${i}].include = this.checked" class="h-4 w-4 rounded border-slate-700 text-violet-600 focus:ring-violet-500 bg-slate-950 flex-shrink-0">
-                        <input type="text" value="${a.name.replace(/"/g, '&quot;')}" onchange="importReview.accounts[${i}].name = this.value" class="flex-1 min-w-0 bg-transparent border-b border-transparent focus:border-violet-500 text-xs text-slate-100 font-semibold focus:outline-none">
+                        <input type="text" value="${esc(a.name)}" onchange="importReview.accounts[${i}].name = this.value" class="flex-1 min-w-0 bg-transparent border-b border-transparent focus:border-violet-500 text-xs text-slate-100 font-semibold focus:outline-none">
                         <span class="text-[9px] font-bold uppercase px-1.5 py-0.5 rounded ${a.type === 'asset' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'} flex-shrink-0">${a.type}</span>
                         <input type="number" value="${a.value}" onchange="importReview.accounts[${i}].value = Number(this.value) || 0" class="w-24 bg-slate-900 border border-slate-800 rounded-lg px-2 py-1 text-xs text-right text-slate-100 font-bold focus:outline-none focus:border-violet-500 flex-shrink-0">
                     `;
@@ -3375,8 +3462,8 @@
                     row.className = "flex items-center gap-2 bg-slate-950/40 border border-slate-900 rounded-lg px-2.5 py-2 text-[11px]";
                     const catOptions = Object.keys(BUDGET_CATEGORY_META).map(c => `<option value="${c}" ${t.category === c ? 'selected' : ''}>${BUDGET_CATEGORY_META[c]}</option>`).join('');
                     row.innerHTML = `
-                        <span class="text-slate-500 w-20 flex-shrink-0 truncate">${t.date || ''}</span>
-                        <span class="text-slate-200 flex-1 min-w-0 truncate" title="${t.description.replace(/"/g, '&quot;')}">${t.description}</span>
+                        <span class="text-slate-500 w-20 flex-shrink-0 truncate">${esc(t.date)}</span>
+                        <span class="text-slate-200 flex-1 min-w-0 truncate" title="${esc(t.description)}">${esc(t.description)}</span>
                         <span class="w-20 flex-shrink-0 text-right font-bold ${t.amount < 0 ? 'text-rose-400' : 'text-emerald-400'}">${formatCurrency(Math.abs(t.amount))}</span>
                         <select onchange="importReview.transactions[${i}].category = this.value; renderImportTotals();" class="bg-slate-900 border border-slate-800 rounded-md px-1.5 py-1 text-[10px] text-slate-200 focus:outline-none flex-shrink-0">
                             ${catOptions}
